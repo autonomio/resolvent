@@ -1,0 +1,49 @@
+{
+  "activity_type": "model_input_intra",
+  "kind": "input_shim",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/model_input_intra.json",
+    "docs/schemas/submission.schema.json",
+    "docs/contracts/activity/ingestion.json"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "input_method": "intra_model",
+  "output_contract": {
+    "input_method": "intra_model",
+    "requires_ingestion_handoff": true,
+    "normalization_only": true,
+    "direct_world_writes_forbidden": true
+  },
+  "required_inputs": [
+    "id",
+    "scope",
+    "researcher",
+    "origin",
+    "result",
+    "sources",
+    "method_metadata.source_claim_ids",
+    "method_metadata.source_commit",
+    "claims",
+    "evidence"
+  ],
+  "hard_rules": [
+    "intra_input_cannot_reduce_uncertainty_without_independent_evidence",
+    "circular_self_validation_forbidden",
+    "every_delta_requires_source_object_lineage",
+    "ambiguities_require_questions_or_follow_up",
+    "normalization_only_no_direct_world_writes"
+  ],
+  "procedure_steps": [
+    "resolve_intra_model_scope",
+    "map_findings_to_model_deltas_with_lineage",
+    "build_ingestion_handoff_package",
+    "submit_handoff_as_pull_request"
+  ],
+  "admission_authority": "Repository agents and independent PR review; no desktop canonical writes or operator confirmation field."
+}

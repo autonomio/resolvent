@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "source_of_truth": "docs/contracts/activity/",
+  "routes": {
+    "research": "model_input_research.json",
+    "conversation": "model_input_conversation.json",
+    "interview": "model_input_interview.json",
+    "source_material": "model_input_source.json",
+    "simulation": "model_input_simulation.json",
+    "intra_model": "model_input_intra.json",
+    "liminal_research": "model_input_liminal.json"
+  },
+  "shared": [
+    "ingestion.json",
+    "admission.json",
+    "maintenance.json"
+  ],
+  "research_phases": [
+    "research_brief_creation.json",
+    "research_brief_execution.json",
+    "model_input_research.json"
+  ]
+}

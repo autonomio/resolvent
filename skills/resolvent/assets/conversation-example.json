@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "id": "RUN-11111111111111111111111111111111",
+  "input_method": "conversation",
+  "created_at": "2026-01-01T12:00:00Z",
+  "researcher": "synthetic-test-fixture",
+  "title": "Synthetic software test, not research",
+  "scope": "Unit tests only",
+  "origin": {
+    "mode": "retrospective",
+    "coverage": "complete",
+    "limitations": []
+  },
+  "parent_run_id": null,
+  "brief": null,
+  "result": {
+    "summary": "Synthetic fixture for software tests.",
+    "acceptance_outcomes": [],
+    "limitations": [
+      "Not empirical research."
+    ],
+    "artifacts": []
+  },
+  "sources": [
+    {
+      "id": "s1",
+      "kind": "conversation",
+      "title": "Synthetic fixture",
+      "uri": null,
+      "date": "2026-01-01",
+      "locator": "Test fixture, line 1",
+      "excerpt": "A synthetic value is 7.",
+      "access": "inspected"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "kind": "statement",
+      "summary": "Synthetic reported statement, not independent evidence.",
+      "source_ids": [
+        "s1"
+      ],
+      "independent": false,
+      "limitations": [
+        "Synthetic."
+      ],
+      "premise_claim_ids": []
+    }
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "class": "hypothesis",
+      "statement": "The synthetic fixture value is 7.",
+      "uncertainty": "high",
+      "evidence_ids": [
+        "e1"
+      ]
+    }
+  ],
+  "connectors": [],
+  "questions": [],
+  "handoff": {
+    "summary": "Synthetic candidate for tests.",
+    "no_claims_reason": null,
+    "suggested_follow_up": []
+  },
+  "method_metadata": {
+    "new_research_performed": false
+  }
+}

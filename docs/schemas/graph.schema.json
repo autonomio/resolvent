@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^R-[0-9a-f]{32}$"
+    },
+    "from": {
+      "type": "string",
+      "minLength": 1
+    },
+    "to": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "enum": [
+        "dependency",
+        "coupling"
+      ]
+    },
+    "spec": {
+      "type": "string",
+      "pattern": "^(structural|economic|regulatory|narrative|temporal):(strong|moderate|weak):(inward|outward|balanced)$"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uncertainty": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "state": {
+      "enum": [
+        "active",
+        "retired"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "from",
+    "to",
+    "type",
+    "spec",
+    "reason",
+    "uncertainty",
+    "evidence_ids",
+    "state"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

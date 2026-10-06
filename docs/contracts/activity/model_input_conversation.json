@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "activity_type": "model_input_conversation",
+  "kind": "input_shim",
+  "required_inputs": [
+    "current_visible_chat_history",
+    "target_repository"
+  ],
+  "hard_rules": [
+    "new_research_forbidden",
+    "hidden_reasoning_capture_forbidden",
+    "retrospective_origin_required",
+    "partial_context_must_be_disclosed",
+    "assistant_text_not_independent_evidence",
+    "preserve_speaker_and_source_anchors",
+    "do_not_invent_missing_sources_or_messages",
+    "exclude_unrelated_or_sensitive_chat_content",
+    "normalization_only_no_direct_world_writes"
+  ],
+  "output_contract": {
+    "input_method": "conversation",
+    "requires_ingestion_handoff": true,
+    "direct_world_writes_forbidden": true
+  },
+  "schema": "docs/schemas/submission.schema.json"
+}

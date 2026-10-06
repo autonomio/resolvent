@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^C-[0-9a-f]{32}$"
+    },
+    "class": {
+      "enum": [
+        "observed_fact",
+        "derived_inference",
+        "assumption",
+        "hypothesis",
+        "forecast",
+        "scenario_variable",
+        "decision"
+      ]
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uncertainty": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "state": {
+      "enum": [
+        "active",
+        "retired"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "class",
+    "statement",
+    "uncertainty",
+    "evidence_ids",
+    "state"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

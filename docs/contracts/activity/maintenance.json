@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "activity_type": "maintenance",
+  "authority": "scheduled or explicitly invoked repository agent; changes through PR",
+  "hard_rules": [
+    "review_new_claims_and_rotating_older_claims",
+    "search_outside_existing_graph_neighbours",
+    "consider_old_to_old_relationships",
+    "reassess_existing_relationships",
+    "do_not_infer_support_from_topical_similarity",
+    "preserve_joint_premise_sets",
+    "no_automatic_uncertainty_upgrades_from_repetition",
+    "record_coverage_and_deferrals",
+    "finish_pending_record_before_merge",
+    "no_change_is_valid_with_reason"
+  ],
+  "procedure_steps": [
+    "read_workset",
+    "inspect_claims_and_evidence",
+    "discover_and_reassess_connections",
+    "propose_changes",
+    "complete_maintenance_record",
+    "run_compiler",
+    "request_independent_review"
+  ]
+}

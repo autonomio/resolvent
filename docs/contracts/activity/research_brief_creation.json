@@ -1,0 +1,54 @@
+{
+  "activity_type": "research_brief_creation",
+  "kind": "brief_authoring",
+  "purpose": "deterministic_research_brief_contract_creation",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/research_brief_creation.json",
+    "docs/schemas/submission.schema.json"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "required_brief_schema": {
+    "root_key": "brief",
+    "required_fields": [
+      "question",
+      "assumption_to_test",
+      "evidence_requirements",
+      "questions",
+      "acceptance_criteria",
+      "created_before_research"
+    ],
+    "questions_min": 1,
+    "acceptance_criteria_min": 1,
+    "depth_policy": "proportionate_to_request",
+    "created_before_research": true
+  },
+  "hard_rules": [
+    "research_question_or_gap_must_be_explicit",
+    "adverse_result_must_be_decision_valuable",
+    "context_must_be_minimal_and_executable",
+    "at_least_one_question_must_be_falsifiable",
+    "expected_return_must_be_evidence_answerable_not_effort_text",
+    "closure_update_rules_required_for_confirmed_disconfirmed_mixed_inconclusive"
+  ],
+  "completion_checklist": [
+    "question_and_scope_are_explicit",
+    "depth_matches_requested_research",
+    "questions_are_evidence_answerable",
+    "falsifier_path_present",
+    "acceptance_criteria_have_observable_outcomes",
+    "cold_read_executability_passed"
+  ],
+  "outcome_policy": {
+    "confirmed": "Propose appropriately scoped claims with inspected evidence; do not erase limitations.",
+    "disconfirmed": "Preserve adverse findings and propose challenges or revisions, not selective omission.",
+    "mixed": "Separate claims by scope and preserve conflicting evidence.",
+    "inconclusive": "Preserve the research and unresolved questions without manufacturing a positive claim."
+  },
+  "researcher_experience": "Agent infers the brief from the request; no routine administrative interview."
+}

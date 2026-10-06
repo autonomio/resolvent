@@ -1,0 +1,57 @@
+{
+  "activity_type": "model_input_liminal",
+  "kind": "input_shim",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/model_input_liminal.json",
+    "docs/schemas/submission.schema.json",
+    "docs/contracts/activity/ingestion.json",
+    "docs/directives/liminal_research.md"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "input_method": "liminal_research",
+  "output_contract": {
+    "input_method": "liminal_research",
+    "requires_ingestion_handoff": true,
+    "normalization_only": true,
+    "direct_world_writes_forbidden": true
+  },
+  "required_inputs": [
+    "id",
+    "scope",
+    "researcher",
+    "origin",
+    "result",
+    "method_metadata.topic",
+    "method_metadata.perspective",
+    "method_metadata.stage_outputs",
+    "claims",
+    "evidence"
+  ],
+  "hard_rules": [
+    "directive_must_execute_with_topic_and_perspective_only",
+    "external_search_forbidden_during_execution",
+    "world_model_reads_forbidden_during_execution",
+    "public_analytical_summary_for_each_directive_stage_required",
+    "liminal_claim_cap_class_assumption_uncertainty_high",
+    "questions_preferred_for_unresolved_material",
+    "normalization_only_no_direct_world_writes"
+  ],
+  "procedure_steps": [
+    "resolve_liminal_scope",
+    "execute_directive_exactly",
+    "map_findings_to_capped_model_deltas",
+    "build_ingestion_handoff_package",
+    "submit_handoff_as_pull_request"
+  ],
+  "admission_authority": "Repository agents and independent PR review; no desktop canonical writes or operator confirmation field.",
+  "method_constraints": {
+    "external_search_performed": false,
+    "world_model_read_during_generation": false
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "activity_type": "research_brief_execution",
+  "kind": "research_execution",
+  "purpose": "deterministic_research_brief_execution_artifact_generation",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/research_brief_execution.json",
+    "docs/schemas/submission.schema.json"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "analytical_standard": [
+    "causal_and_systems_thinking",
+    "decision_oriented_outputs_only",
+    "unit_level_mechanism_before_macro_proxy",
+    "value_chain_incentive_trace",
+    "temporal_dynamics_required",
+    "scenario_branching_when_material"
+  ],
+  "epistemic_standard": [
+    "assumption_tracking_with_falsifiability",
+    "disconfirming_evidence_required",
+    "explicit_uncertainty_and_limits_required"
+  ],
+  "evidence_standard": [
+    "primary_source_supremacy",
+    "source_triangulation_required",
+    "evidence_hierarchy_labeling_required"
+  ],
+  "required_output_sections": [
+    "key_assumptions_with_uncertainty_and_falsifiers",
+    "main_uncertainties_and_resolution_evidence",
+    "evidence_map_primary_confirmation_inference_speculation",
+    "scenario_implications_when_multi_future",
+    "canonical_entity_mapping",
+    "technical_issues_and_obstacles"
+  ],
+  "hard_rules": [
+    "load_bearing_claims_require_primary_or_canonical_evidence",
+    "disconfirming_evidence_required",
+    "explicit_uncertainty_and_limits_required",
+    "never_invent_inspection_or_independent_confirmation"
+  ],
+  "artifact_policy": {
+    "desktop": "Preserve original brief and result in the normalized submission; do not modify canonical files.",
+    "admission": "Archive brief in briefs/open/done/BR-<uuid>.yaml and result in briefs/ready/BR-<uuid>.yaml; final closure in briefs/closed/BC-<uuid>.yaml.",
+    "lifecycle": "One immutable research run; follow-up work is a linked new run, not a mutable copy."
+  }
+}

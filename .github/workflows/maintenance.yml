@@ -1,0 +1,65 @@
+name: Prepare maintenance PR
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: resolvent-maintenance
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.RESOLVENT_AUTOMATION_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          token: ${{ secrets.RESOLVENT_AUTOMATION_TOKEN || github.token }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Prepare a bounded workset for the existing PR agents
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.is_template')" = true ]; then
+            echo 'Template repository: maintenance skipped.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          OPEN=$(gh pr list --state open --limit 1000 --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("resolvent/maintenance/"))] | length')
+          if [ "$OPEN" -gt 0 ]; then
+            echo 'An open maintenance PR already exists; no duplicate created.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python scripts/gap_finder.py --write
+          FILE=$(git ls-files --others --exclude-standard maintenance/ | head -n 1)
+          if [ -z "$FILE" ]; then
+            echo 'Empty model: no maintenance needed.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          ID=$(basename "$FILE" .yaml)
+          BRANCH="resolvent/maintenance/$ID"
+          git switch -c "$BRANCH"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$FILE"
+          git commit -m "maintenance: prepare $ID"
+          git push origin "$BRANCH"
+          PR=$(gh pr create --base main --head "$BRANCH" \
+            --title 'maintain world model: bounded connection review' \
+            --body "Workset: $FILE. Existing repository agents: follow AGENTS.md and docs/AGENT_JOBS.md. Complete the maintenance record, propose justified changes, run the compiler, and request independent review. This PR is not ready to merge while the workset is pending.")
+          echo "Maintenance workset PR: $PR" >> "$GITHUB_STEP_SUMMARY"
+          # Explicit dispatch covers GitHub's suppression of token-authored PR events.
+          gh workflow run validate.yml --ref "$BRANCH"

@@ -1,0 +1,5 @@
+schema_version: "1.0"
+project: Resolvent
+scope: Research contributed to this repository; refine through a governance PR when needed.
+# No owner/repository is hardcoded. Use the repository selected in the conversation.
+# Authors may contribute through PRs; only the repository's merge authority admits them.

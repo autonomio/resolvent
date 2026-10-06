@@ -1,0 +1,72 @@
+{
+  "activity_type": "ingestion",
+  "kind": "mutation_pathway",
+  "purpose": "deterministic_normalized_input_to_world_model_transformation",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/ingestion.json",
+    "docs/schemas/submission.schema.json"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "required_inputs": [
+    "input-artefacts/RUN-<uuid>.json",
+    "reviewer_decisions",
+    "latest_base_revision"
+  ],
+  "world_building_input_methods": {
+    "research": "activity_model_input_research",
+    "simulation": "activity_model_input_simulation",
+    "interview": "activity_model_input_interview",
+    "source_material": "activity_model_input_source",
+    "intra_model": "activity_model_input_intra",
+    "liminal_research": "activity_model_input_liminal",
+    "conversation": "activity_model_input_conversation"
+  },
+  "canonical_input_root": "input-artefacts/",
+  "hard_rules": [
+    "read_approved_repository_contracts",
+    "shim_must_prepare_normalized_handoff",
+    "no_direct_main_branch_writes",
+    "dry_run_before_real_writes",
+    "compiler_gate_required",
+    "evidence_artifact_schema_required",
+    "evidence_claim_backlink_symmetry_required",
+    "evidence_source_link_coverage_required",
+    "closure_manifest_delta_consistency_required",
+    "liminal_claim_cap_class_assumption_uncertainty_high",
+    "no_mixed_governance_and_data_prs",
+    "retrospective_capture_never_starts_new_research",
+    "known_correctness_failures_block_admission",
+    "independent_semantic_review_required"
+  ],
+  "write_interface": {
+    "dry_run": "python scripts/world_control.py input-artefacts/RUN-<uuid>.json --decisions .resolvent/decisions.json",
+    "apply": "python scripts/world_control.py input-artefacts/RUN-<uuid>.json --decisions .resolvent/decisions.json --apply",
+    "validate": "python scripts/compiler.py --require-closure",
+    "authority": "PR-side worker; researcher supplies normalized input only"
+  },
+  "mutation_protocol_steps": [
+    "resolve_scope",
+    "review_evidence_and_candidates",
+    "resolve_identity_and_duplicates",
+    "record_bounded_connection_review",
+    "prepare_dispositions",
+    "run_dry_run",
+    "apply_on_pr_branch",
+    "verify_closure_and_link_integrity",
+    "run_compiler",
+    "request_independent_review"
+  ],
+  "allowed_mutation_modes": [
+    "add",
+    "merge_evidence",
+    "update_with_maintenance_record",
+    "retire_with_maintenance_record"
+  ],
+  "representation": "One canonical YAML record per object; derived graph views are rebuildable, never a second editable truth."
+}

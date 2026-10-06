@@ -1,0 +1,304 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^BC-[0-9a-f]{32}$"
+    },
+    "submission_id": {
+      "type": "string",
+      "pattern": "^RUN-[0-9a-f]{32}$"
+    },
+    "input_method": {
+      "enum": [
+        "research",
+        "conversation",
+        "interview",
+        "source_material",
+        "simulation",
+        "intra_model",
+        "liminal_research"
+      ]
+    },
+    "submission_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "claim_dispositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          },
+          "disposition": {
+            "enum": [
+              "created",
+              "merged",
+              "rejected",
+              "deferred"
+            ]
+          },
+          "claim_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^C-[0-9a-f]{32}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "candidate_id",
+          "disposition",
+          "claim_id",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0
+    },
+    "created": {
+      "type": "object",
+      "properties": {
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "graph": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "briefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "claims",
+        "evidence",
+        "sources",
+        "graph",
+        "questions",
+        "briefs"
+      ],
+      "additionalProperties": false
+    },
+    "updated": {
+      "type": "object",
+      "properties": {
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "graph": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "briefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "claims",
+        "evidence",
+        "sources",
+        "graph",
+        "questions",
+        "briefs"
+      ],
+      "additionalProperties": false
+    },
+    "touched_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "follow_up_gaps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "counts": {
+      "type": "object",
+      "properties": {
+        "created_claims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "merged_claims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected_claims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "deferred_claims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_connectors": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "created_claims",
+        "merged_claims",
+        "rejected_claims",
+        "deferred_claims",
+        "created_connectors"
+      ],
+      "additionalProperties": false
+    },
+    "connection_review": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "considered_claim_ids",
+          "outcome",
+          "reason"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "considered_claim_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "outcome": {
+            "enum": [
+              "linked",
+              "no_justified_connection",
+              "deferred"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "submission_id",
+    "input_method",
+    "submission_sha256",
+    "completed_at",
+    "claim_dispositions",
+    "created",
+    "updated",
+    "touched_files",
+    "follow_up_gaps",
+    "counts",
+    "connection_review"
+  ],
+  "additionalProperties": false
+}

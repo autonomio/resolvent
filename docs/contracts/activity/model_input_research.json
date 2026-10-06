@@ -1,0 +1,55 @@
+{
+  "activity_type": "model_input_research",
+  "kind": "input_shim",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/model_input_research.json",
+    "docs/schemas/submission.schema.json",
+    "docs/contracts/activity/ingestion.json",
+    "docs/contracts/activity/research_brief_creation.json",
+    "docs/contracts/activity/research_brief_execution.json"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "input_method": "research",
+  "output_contract": {
+    "input_method": "research",
+    "requires_ingestion_handoff": true,
+    "normalization_only": true,
+    "direct_world_writes_forbidden": true
+  },
+  "required_inputs": [
+    "id",
+    "scope",
+    "researcher",
+    "origin",
+    "brief",
+    "result",
+    "sources",
+    "evidence",
+    "claims",
+    "handoff"
+  ],
+  "hard_rules": [
+    "acceptance_criteria_must_have_explicit_pass_fail_or_inconclusive",
+    "lower_uncertainty_requires_evidence_and_review",
+    "every_candidate_requires_accept_merge_reject_or_defer_disposition",
+    "new_material_gaps_require_explicit_questions_or_follow_up",
+    "normalization_only_no_direct_world_writes",
+    "evidence_schema_and_bidirectional_claim_link_required",
+    "load_bearing_assertions_require_source_ids",
+    "closure_summary_counts_must_match_materialized_delta",
+    "research_artifacts_archived_once_at_admission"
+  ],
+  "procedure_steps": [
+    "resolve_closure_scope",
+    "build_evidence_and_delta_mapping",
+    "build_ingestion_handoff_package",
+    "submit_handoff_as_pull_request"
+  ],
+  "admission_authority": "Repository agents and independent PR review; no desktop canonical writes or operator confirmation field."
+}

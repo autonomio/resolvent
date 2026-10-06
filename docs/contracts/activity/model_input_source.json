@@ -1,0 +1,48 @@
+{
+  "activity_type": "model_input_source",
+  "kind": "input_shim",
+  "version": "1.0",
+  "profile": "autonomio_resolvent_template",
+  "schema": "docs/schemas/submission.schema.json",
+  "required_context_paths": [
+    "docs/contracts/activity/model_input_source.json",
+    "docs/schemas/submission.schema.json",
+    "docs/contracts/activity/ingestion.json"
+  ],
+  "enforcement": {
+    "structural": "JSON schemas and scripts/compiler.py",
+    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+  },
+  "input_method": "source_material",
+  "output_contract": {
+    "input_method": "source_material",
+    "requires_ingestion_handoff": true,
+    "normalization_only": true,
+    "direct_world_writes_forbidden": true
+  },
+  "required_inputs": [
+    "id",
+    "scope",
+    "researcher",
+    "origin",
+    "result",
+    "sources",
+    "claims",
+    "evidence",
+    "scope"
+  ],
+  "hard_rules": [
+    "load_bearing_deltas_require_evidence_quality_annotation",
+    "repeated_reporting_not_independent_confirmation",
+    "staleness_sensitive_findings_require_date_context",
+    "referents_scope_and_source_anchors_must_be_preserved",
+    "normalization_only_no_direct_world_writes"
+  ],
+  "procedure_steps": [
+    "resolve_source_material_scope",
+    "map_findings_to_model_deltas",
+    "build_ingestion_handoff_package",
+    "submit_handoff_as_pull_request"
+  ],
+  "admission_authority": "Repository agents and independent PR review; no desktop canonical writes or operator confirmation field."
+}

@@ -1,0 +1,10 @@
+[project]
+name = "autonomio-resolvent"
+version = "1.0.0"
+description = "An empty, governed world-model template by Autonomio"
+requires-python = ">=3.11"
+authors = [{name = "Autonomio"}]
+dependencies = ["PyYAML==6.0.3", "jsonschema==4.26.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

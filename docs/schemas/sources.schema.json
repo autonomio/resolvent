@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^S-[0-9a-f]{32}$"
+    },
+    "kind": {
+      "enum": [
+        "publication",
+        "web",
+        "conversation",
+        "interview",
+        "simulation",
+        "model",
+        "reasoning"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "uri": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "date": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "locator": {
+      "type": "string",
+      "minLength": 1
+    },
+    "excerpt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "access": {
+      "enum": [
+        "inspected",
+        "not_retrieved"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "title",
+    "uri",
+    "date",
+    "locator",
+    "excerpt",
+    "access"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

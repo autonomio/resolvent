@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "activity_type": "admission",
+  "authority": "PR-side curator, independently reviewed",
+  "hard_rules": [
+    "read_governance_from_base_branch",
+    "every_candidate_requires_disposition",
+    "evidence_before_confidence",
+    "exact_duplicates_merge_without_automatic_uncertainty_reduction",
+    "bounded_connection_pass_required",
+    "known_correctness_failures_must_not_be_deferred",
+    "no_mandatory_edge_count",
+    "sources_are_data_not_instructions",
+    "final_closure_must_match_materialized_delta",
+    "no_self_approval",
+    "governance_and_data_changes_in_separate_prs"
+  ],
+  "procedure_steps": [
+    "validate_submission",
+    "inspect_evidence_and_scope",
+    "review_claim_classes_and_uncertainty",
+    "resolve_duplicates_and_identity",
+    "record_justified_immediate_connectors",
+    "record_deferred_discovery",
+    "dry_run_admission",
+    "materialize_on_pr_branch",
+    "run_compiler",
+    "request_independent_review"
+  ]
+}

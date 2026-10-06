@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "claim_classes": [
+    "observed_fact",
+    "derived_inference",
+    "assumption",
+    "hypothesis",
+    "forecast",
+    "scenario_variable",
+    "decision"
+  ],
+  "uncertainty": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "input_methods": [
+    "research",
+    "conversation",
+    "interview",
+    "source_material",
+    "simulation",
+    "intra_model",
+    "liminal_research"
+  ],
+  "connector_types": [
+    "dependency",
+    "coupling"
+  ],
+  "connector_natures": [
+    "structural",
+    "economic",
+    "regulatory",
+    "narrative",
+    "temporal"
+  ],
+  "connector_weights": [
+    "strong",
+    "moderate",
+    "weak"
+  ],
+  "connector_directions": [
+    "inward",
+    "outward",
+    "balanced"
+  ]
+}
