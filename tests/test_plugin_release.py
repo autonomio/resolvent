@@ -19,7 +19,8 @@ class ReleaseTests(unittest.TestCase):
         self.root = Path(self.temp.name) / 'source'
         self.root.mkdir()
         for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', '.agents',
-                         'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
+                         'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification',
+                         'scripts/package_plugin.py', 'scripts/package_skill.py'):
             source, destination = ROOT / relative, self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             if source.is_dir():
@@ -43,6 +44,17 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'bump'):
             check_version(self.root, self.base)
 
+    def test_packagers_and_catalogs_require_a_version_bump(self):
+        for relative in ('scripts/package_plugin.py', 'scripts/package_skill.py',
+                         '.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json'):
+            with self.subTest(path=relative):
+                path = self.root / relative
+                original = path.read_bytes()
+                path.write_bytes(original + b'\n')
+                with self.assertRaisesRegex(ValueError, 'bump'):
+                    check_version(self.root, self.base)
+                path.write_bytes(original)
+
     def test_world_model_data_does_not_require_a_plugin_release(self):
         (self.root / 'claims').mkdir()
         (self.root / 'claims/C-test.yaml').write_text('statement: test\n')
@@ -58,15 +70,35 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(second['changed'], 'false')
         self.assertEqual(second['source_commit'], record['source_commit'])
 
-    def test_synchronized_version_bump_is_accepted(self):
+    def set_version(self, version):
         for relative in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json'):
             path = self.root / relative
             manifest = json.loads(path.read_text())
-            manifest['version'] = '2.0.0'
+            manifest['version'] = version
             path.write_text(json.dumps(manifest))
         path = self.root / 'skills/resolvent/SKILL.md'
-        path.write_text(path.read_text().replace('version: "' + self.version + '"', 'version: "2.0.0"'))
+        path.write_text(path.read_text().replace('version: "' + self.version + '"', 'version: "' + version + '"'))
+
+    def test_synchronized_version_bump_is_accepted(self):
+        self.set_version('2.0.0')
         check_version(self.root, self.base)
+
+    def test_versioned_catalog_change_reaches_the_release_branch(self):
+        first = Path(self.temp.name) / 'first'
+        prepare(self.root, first, None)
+        previous = json.loads((first / 'plugin/release.json').read_text())
+        relative = '.claude-plugin/marketplace.json'
+        path = self.root / relative
+        catalog = json.loads(path.read_text())
+        catalog['plugins'][0]['description'] = 'Updated public catalog listing'
+        path.write_text(json.dumps(catalog))
+        self.set_version('2.0.0')
+        check_version(self.root, self.base)
+        second = Path(self.temp.name) / 'second'
+        result = prepare(self.root, second, previous)
+        self.assertEqual(result['changed'], 'true')
+        published = json.loads((second / 'plugin' / relative).read_text())
+        self.assertEqual(published['plugins'][0]['description'], 'Updated public catalog listing')
 
     def test_first_portable_release_can_start_at_one(self):
         self.git('rm', 'plugin.json')

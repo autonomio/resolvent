@@ -16,6 +16,8 @@ concurrency:
 jobs:
   publish:
     name: Publish validated plugin
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
     if: >-
       github.repository == 'autonomio/resolvent' &&
       github.event.workflow_run.conclusion == 'success' &&
@@ -89,3 +91,28 @@ jobs:
           VERSION: ${{ steps.release.outputs.version }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
           SOURCE_COMMIT: ${{ steps.release.outputs.source_commit }}
+
+  notify_chatgpt:
+    name: Email actionable ChatGPT update
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Send once after the downloadable release is available
+        run: python scripts/notify_chatgpt_release.py --tag "$RELEASE_TAG"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.publish.outputs.tag }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESOLVENT_NOTIFY_TO: ${{ secrets.RESOLVENT_NOTIFY_TO }}
+          RESOLVENT_NOTIFY_FROM: ${{ vars.RESOLVENT_NOTIFY_FROM }}
+          CHATGPT_PLUGIN_UPDATE_URL: ${{ vars.CHATGPT_PLUGIN_UPDATE_URL }}

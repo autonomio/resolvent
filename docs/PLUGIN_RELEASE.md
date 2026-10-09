@@ -95,7 +95,8 @@ on an `autonomio/resolvent` main-branch push or manual validation run. It does n
 run on PR events, failed validation, or repositories created from this template.
 It checks out that exact validated commit; no PR artifacts are trusted for publishing.
 
-The PR checks require a higher shared version when packaged files change. A first
+The PR checks require a higher shared version when packaged files, packaging
+scripts or either published marketplace catalog change. A first
 portable release starts at 1.0.0. Release CI compares the ZIP digest against the
 last publication: data-only commits do not change the release branch or create
 another release, and changed bytes cannot reuse a published version. Older queued
@@ -106,12 +107,49 @@ the installable plugin, catalogs and a `release.json` provenance record. It crea
 `resolvent-v<VERSION>` on the validated main commit, with separate ChatGPT, Claude
 and compatibility skill ZIP names, `release.json`, and `SHA256SUMS` on a GitHub release.
 An existing release is compared with the expected assets, never overwritten.
-The existing `GITHUB_TOKEN` is sufficient; no publisher secrets belong in this repo.
+The existing `GITHUB_TOKEN` is sufficient for GitHub publication. Email delivery
+uses encrypted Actions secrets; credentials never belong in repository files.
 
 To recover a failed publication after fixing its cause, run `Resolvent validation`
 manually on main. Its successful completion invokes release CI again. A partially
 completed publication can finish without changing its version or source provenance.
 Do not force-push `plugin-release` or reuse a version to replace different bytes.
+
+## ChatGPT update email
+
+After publication succeeds, CI sends a Resend email with the version, downloadable
+ChatGPT ZIP, GitHub release/checksums and official plugin publisher portal link.
+It tells the publisher to upload, complete review and publish. It runs only for
+an available stable plugin release with its expected ZIP, never a PR or an ordinary
+merge notification. Data-only commits find the existing accepted receipt and skip.
+
+Configure repository Actions settings:
+
+- Secret `RESEND_API_KEY`: a key authorized to send using the verified `autonom.io` domain.
+- Secret `RESOLVENT_NOTIFY_TO`: `mailme@mikkokotila.com`.
+- Variable `RESOLVENT_NOTIFY_FROM`: `Resolvent <resolvent@autonom.io>`.
+- Optional variable `CHATGPT_PLUGIN_UPDATE_URL`: the specific Resolvent listing URL
+  under `https://platform.openai.com/plugins/`; defaults to that publisher portal.
+
+Resend authenticates the sender domain, not the GitHub runner's domain. No GitHub
+domain verification or custom mail server is required.
+
+The release's `chatgpt-notification.json` asset is a delivery journal, separate from
+the immutable plugin ZIPs and checksums. CI records a pending intent before sending
+and the provider message ID after acceptance. Retries use a stable idempotency key;
+accepted notices never resend. Resend retains keys for 24 hours, so an uncertain
+pending notice stops after 23 hours or when its payload changes. Inspect Resend's
+message log before recovery: if accepted, record its real ID; if confirmed unsent,
+remove only the pending journal asset and rerun validation on main. Do not remove
+an accepted receipt to force a duplicate. Provider acceptance does not prove inbox
+delivery; investigate delivery failures in Resend.
+
+Compatibility assessment: the email script and release workflow run outside the
+installed plugin. They do not change bundled instructions, protocol, manifests or
+ZIP bytes, so notification-only changes do not require another plugin version.
+
+References: https://resend.com/docs/api-reference/emails/send-email and
+https://resend.com/docs/dashboard/emails/idempotency-keys.
 
 ## Public directory setup
 
