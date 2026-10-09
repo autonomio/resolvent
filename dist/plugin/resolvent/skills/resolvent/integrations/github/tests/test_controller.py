@@ -226,6 +226,48 @@ class OriginatingTaskTests(unittest.TestCase):
         self.assertEqual(ready["status"], "READY_FOR_MERGE")
         self.assertIn("intermediate observation", ready["reason"])
 
+    def reviewed_correction(self):
+        s = snapshot()
+        s["reviews"] = [review(1, head=BASE, body="Fix the source.", state="CHANGES_REQUESTED"),
+                        review(2, submitted="2026-10-07T12:30:00Z")]
+        s["threads"] = [{"id": "old-thread", "isResolved": True, "isOutdated": True,
+                         "comments": [{"databaseId": 8, "body": "Fix the source.",
+                                       "updatedAt": "2026-10-07T12:00:00Z", "author": {"login": "reviewer"}}]}]
+        return s
+
+    def test_observer_recognizes_same_reviewer_current_head_reapproval(self):
+        p, s = self.originating_policy(), self.reviewed_correction()
+        result = c.evaluate(s, p, {})
+        self.assertEqual(result["status"], "READY_FOR_MERGE")
+        self.assertFalse(result["repair"])
+        # Legacy workers retain their explicit receipt requirements.
+        self.assertNotEqual(c.evaluate(s, policy(), {})["status"], "READY_FOR_MERGE")
+
+    def test_observer_reapproval_never_clears_unresolved_threads_or_other_feedback(self):
+        for mutation in ("thread", "issue", "mixed", "other-reviewer", "stale", "chronology"):
+            with self.subTest(mutation=mutation):
+                p, s = self.originating_policy(), self.reviewed_correction()
+                if mutation == "thread":
+                    s["threads"][0]["isResolved"] = False
+                elif mutation == "issue":
+                    s["issue_comments"] = feedback_snapshot()["issue_comments"]
+                elif mutation == "mixed":
+                    s["reviews"][1]["body"] = "LGTM, but fix another source."
+                elif mutation == "other-reviewer":
+                    p["reviews"]["reviewers"].append("another")
+                    s["reviews"][1]["user"]["login"] = "another"
+                elif mutation == "stale":
+                    s["reviews"][1]["commit_id"] = BASE
+                else:
+                    s["reviews"][1]["submitted_at"] = "2026-10-07T11:00:00Z"
+                self.assertNotEqual(c.evaluate(s, p, {})["status"], "READY_FOR_MERGE")
+
+    def test_observer_reapproval_does_not_clear_a_newer_change_request(self):
+        s = self.reviewed_correction()
+        s["reviews"].append(review(3, state="CHANGES_REQUESTED", body="New issue.",
+                                   submitted="2026-10-07T12:45:00Z"))
+        self.assertNotEqual(c.evaluate(s, self.originating_policy(), {})["status"], "READY_FOR_MERGE")
+
     def test_observer_never_creates_packet_or_reserves_model_attempt(self):
         _, s, state, _, _, _ = proposal_fixture()
         p = self.originating_policy()
@@ -919,6 +961,17 @@ class ProviderAndDataTests(unittest.TestCase):
         with patch.dict(os.environ, {"RESOLVENT_STATE_KEY": KEY}, clear=True):
             with self.assertRaises(c.Blocked):
                 c.ensure_no_local_secrets('diagnostic contains ' + KEY)
+
+    def test_json_escaped_credentials_never_reach_provider_packets(self):
+        for suffix in ('"quoted"', '\\backslash', '\nnewline', 'é-unicode'):
+            with self.subTest(suffix=suffix), patch.dict(os.environ, {"RESOLVENT_STATE_KEY": KEY + suffix}, clear=True):
+                secret = KEY + suffix
+                packets = [c.canonical({"diagnostics": [{"logs": "error " + secret}]}),
+                           c.canonical({"contribution_json": json.dumps({"title": secret})})]
+                for text in packets:
+                    with self.assertRaisesRegex(c.Blocked, "Local credential"):
+                        c.ensure_no_local_secrets(text)
+                c.ensure_no_local_secrets(c.canonical({"diagnostics": [{"logs": "ordinary failure"}]}))
 
     def test_github_log_redirect_never_forwards_authorization(self):
         api = c.GitHub("owner/repo", token="fake-github-token")

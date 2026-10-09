@@ -84,8 +84,12 @@ claude plugin validate .claude-plugin/marketplace.json --strict
 
 The local package checks reject host/version/schema drift, unsafe package paths,
 private app bindings, missing or undersized icons, and known organization-specific
-source residue. The observer only changes its unconfigured disabled-policy handling; active gates,
-schema evaluator, installer and all original test cases remain. `verification/source-preservation.json` records source provenance
+source residue. The observer permits an unconfigured repository only while disabled.
+The two user-approved inherited fixes recognize superseded change requests only
+after the same independent reviewer approves the exact current head with all
+threads resolved, and block JSON-escaped local credentials in provider packets.
+Other feedback, active CI/admission gates, the schema evaluator and installer remain;
+all original tests are retained. `verification/source-preservation.json` records source provenance
 and file hashes; it is not a live research or merge receipt.
 
 ## Automated releases

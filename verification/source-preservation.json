@@ -35,11 +35,11 @@
     },
     "skills/resolvent/integrations/github/README.md": {
       "source_sha256": "906ec7cb6833d73045cf17ea2ec963bd23bae36ee9e95c04c2f515ab80155482",
-      "release_sha256": "126a1a8114b280c74bf35562542ea57409b9075ff6bf95206d23263f9c91fe53"
+      "release_sha256": "a1cfb2963b6801e9b4e009992b6560d65c8d21dccfec88d963ab1a23d71955f5"
     },
     "skills/resolvent/integrations/github/overlay/.github/resolvent/controller.py": {
       "source_sha256": "40de4285950e9ebf5b643f22845386656c0427d1e11ddfb22da738e0a0d08f22",
-      "release_sha256": "650b2b298f8b2f7b60c73fdb2c37dbd26d1cfc59487a7aae2d26aecab37ad585"
+      "release_sha256": "561d3bff43ebee4b65ee4b769fa84967b8f9cb499c4fc2e53b7d1195677106d1"
     },
     "skills/resolvent/integrations/github/overlay/.github/resolvent/policy.json": {
       "source_sha256": "251cb99bbfb1f9c4f6b7c313f4d168c6b6c30e00a29d31f5cbd1c9a10635d686",
@@ -47,7 +47,7 @@
     },
     "skills/resolvent/integrations/github/tests/test_controller.py": {
       "source_sha256": "7867bdc4a1f2954c0990a342c35520b844936778dea0caba8a91fb7309cd8f65",
-      "release_sha256": "469ac8079099fa7617540b9183b41b588848db85297bc5d0b4fbd8a42e0717d6"
+      "release_sha256": "12483e51da02f367fccf16735c898d6a57188259c6699b5988a6108a3d5c7a41"
     },
     "skills/resolvent/references/CONTINUATION.md": {
       "source_sha256": "0bbdc3c5ecfc3f4ae7b6fd59d4024f0b990ed4396ae2509bd724cdc63a9c515b",
@@ -86,5 +86,12 @@
     "verification/portal-context.local-example.json": "390fcf08a1d568386f392bc8e5d35fb88f38f39b9a8bf8bea19a1957b8281bce",
     "verification/results.json": "a5d426eadace65c2a74e5a635d40544608a1025692f104ab02f36951bb229b12",
     "verification/test_portal_context.py": "a3f00f83ab6072a3efe90c14ede4f55b6615bea0cab86cf2c4233c11d2259cfe"
+  },
+  "approved_inherited_fixes": {
+    "approval": "User: Fix both inherited defects",
+    "changes": [
+      "Same-reviewer current-head approval with resolved threads concludes historical change requests in originating-task observer mode",
+      "Inspect decoded and JSON-escaped forms of local credentials before provider transmission"
+    ]
   }
 }

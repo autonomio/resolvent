@@ -362,7 +362,12 @@ alone cannot establish admission completion or make the PR ready.
 
 New and materially edited authorized comments/reviews are considered separately.
 Exact benign approval text such as `LGTM` is informational. Mixed text such as
-`LGTM, but fix the evidence` remains feedback for the originating task. In legacy
+`LGTM, but fix the evidence` remains feedback for the originating task. In the
+originating-task observer mode, a historical change request is concluded only by a later benign
+approval from that same independent reviewer on the current head, with all threads
+resolved. Issue comments and other feedback remain actionable. This observation
+does not replace the originating task's correction receipts or authorize a merge.
+In legacy
 mode, if the worker answers without a code
 change, it records an assessment; an independent reviewer must confirm that
 assessment with a later current-head approval and resolve required threads. A

@@ -562,6 +562,14 @@ def check_groups(snapshot, policy):
 def feedback_items(snapshot, policy, state):
     allowed = set(policy["reviews"].get("feedback_authors", [])) | set(policy["reviews"]["reviewers"])
     handled = set(state.get("handled_feedback_ids", [])) | confirmed_assessment(snapshot, policy, state)
+    # In observer mode the originating task owns correction receipts. A later
+    # benign approval by the requesting independent reviewer, on this exact
+    # head with every thread resolved, confirms their old review is concluded.
+    # This never clears issue comments or permits the observer to author/merge.
+    latest = {}
+    for review in sorted(snapshot["reviews"], key=lambda value: value["id"]):
+        if review["state"] in ("APPROVED", "CHANGES_REQUESTED", "DISMISSED"):
+            latest[review["user"]["login"]] = review
     items = []
     for thread in snapshot["threads"]:
         if thread["isResolved"]:
@@ -577,6 +585,16 @@ def feedback_items(snapshot, policy, state):
     for r in snapshot["reviews"]:
         key = feedback_id("review", r["id"], r.get("body", ""), r.get("updated_at", r.get("submitted_at")))
         if r["state"] == "APPROVED" and r["user"]["login"] in independent_logins(snapshot, policy) and benign_approval(r.get("body", "")):
+            continue
+        confirming = latest.get(r.get("user", {}).get("login"), {})
+        if (authoring_owner(policy) == "originating_task" and r["state"] == "CHANGES_REQUESTED"
+                and r["user"]["login"] in independent_logins(snapshot, policy)
+                and confirming.get("state") == "APPROVED"
+                and confirming.get("commit_id") == snapshot["head"]
+                and benign_approval(confirming.get("body", ""))
+                and confirming["id"] > r["id"]
+                and later_than(confirming.get("submitted_at", ""), r.get("updated_at") or r.get("submitted_at", ""))
+                and all(thread["isResolved"] for thread in snapshot["threads"])):
             continue
         if r.get("user", {}).get("login") in allowed and key not in handled and (r.get("body", "").strip() or r["state"] == "CHANGES_REQUESTED"):
             items.append({"id": key, "body": r.get("body", ""), "author": r["user"]["login"]})
@@ -804,9 +822,27 @@ def make_work(api, policy, snapshot, decision):
 
 
 def ensure_no_local_secrets(text):
+    candidates = [text]
+    try:
+        pending = [json.loads(text)]
+    except (ValueError, TypeError):
+        pending = []
+    while pending:
+        value = pending.pop()
+        if isinstance(value, str):
+            candidates.append(value)
+        elif isinstance(value, dict):
+            pending.extend(value.keys())
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
     for key in WRITER_CREDENTIALS + ("OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
         secret = os.environ.get(key)
-        if secret and secret in text:
+        # Inspect decoded strings and serialized forms, including JSON nested
+        # inside contribution_json. Quotes, backslashes, controls and Unicode
+        # escaping cannot hide a locally available credential.
+        forms = (secret, json.dumps(secret, ensure_ascii=False)[1:-1], json.dumps(secret, ensure_ascii=True)[1:-1]) if secret else ()
+        if any(form in candidate for form in forms for candidate in candidates):
             raise Blocked("Local credential found in work packet; refusing provider transmission")
 
 
