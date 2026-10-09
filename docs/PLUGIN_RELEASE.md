@@ -117,6 +117,8 @@ repair writes. Missing assets from a partial upload are then added; existing
 assets are never overwritten. Additional notification-journal assets are ignored.
 The existing `GITHUB_TOKEN` is sufficient for GitHub publication. Email delivery
 uses encrypted Actions secrets; credentials never belong in repository files.
+The Resend client sends an explicit Resolvent user agent: the provider's edge
+rejects Python's default identity with HTTP 403 before authenticating the request.
 
 To recover a failed publication after fixing its cause, run `Resolvent validation`
 manually on main. Its successful completion invokes release CI again. A partially

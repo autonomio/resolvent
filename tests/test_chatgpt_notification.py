@@ -1,10 +1,13 @@
 """Publisher notices require available assets and survive CI retries safely."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
+import json
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from urllib.error import HTTPError
 
-from scripts.notify_chatgpt_release import notify, REPOSITORY, UPDATE_URL
+from scripts.notify_chatgpt_release import notify, send_resend, REPOSITORY, UPDATE_URL
 
 
 class NotificationTests(unittest.TestCase):
@@ -88,6 +91,24 @@ class NotificationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'provider rejected'):
             self.notify()
         self.assertEqual([c.args[0]['status'] for c in self.persist.call_args_list], ['pending'])
+
+    def test_provider_accepts_identified_client_and_preserves_retry_request(self):
+        def provider(request, timeout):
+            agent = request.get_header('User-agent', '')
+            if not agent or agent.startswith('Python-urllib/'):
+                raise HTTPError(request.full_url, 403, 'Forbidden', {}, BytesIO(b'error code: 1010'))
+            self.assertEqual(request.full_url, 'https://api.resend.com/emails')
+            self.assertEqual(request.get_method(), 'POST')
+            self.assertEqual(request.get_header('Authorization'), 'Bearer test-key')
+            self.assertEqual(request.get_header('Idempotency-key'), 'release-retry-key')
+            self.assertEqual(json.loads(request.data), payload)
+            self.assertEqual(timeout, 30)
+            return BytesIO(b'{"id":"provider-message-id"}')
+
+        payload = {'from': 'sender@example.invalid', 'to': ['recipient@example.invalid'],
+                   'subject': 'Update ready', 'text': 'Download the published release'}
+        with patch('scripts.notify_chatgpt_release.urlopen', side_effect=provider):
+            self.assertEqual(send_resend(payload, 'test-key', 'release-retry-key'), 'provider-message-id')
 
     def test_journal_failure_prevents_external_send(self):
         self.persist.side_effect = ValueError('cannot record intent')
