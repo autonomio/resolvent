@@ -59,6 +59,7 @@ def send_resend(payload: dict, key: str, idempotency_key: str) -> str:
                           'Authorization': 'Bearer ' + key,
                           'Content-Type': 'application/json',
                           'Idempotency-Key': idempotency_key,
+                          'User-Agent': 'Resolvent/1.0 (+https://autonom.io)',
                       })
     try:
         with urlopen(request, timeout=30) as response:
