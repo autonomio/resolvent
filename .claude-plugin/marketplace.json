@@ -1,0 +1,17 @@
+{
+  "name": "autonomio",
+  "owner": {
+    "name": "Autonomio"
+  },
+  "plugins": [
+    {
+      "name": "resolvent",
+      "source": "./dist/plugin/resolvent",
+      "description": "Update a Resolvent world model in a GitHub repository you can access, from the chat where you invoke Resolvent. Supply OWNER/REPOSITORY and your question; Resolvent handles the contribution workflow."
+    }
+  ],
+  "metadata": {
+    "description": "Resolvent world-model research and contributions by Autonomio.",
+    "version": "1.0.0"
+  }
+}

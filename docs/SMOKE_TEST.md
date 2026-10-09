@@ -5,7 +5,7 @@ provenance and rejection cases using synthetic fixtures outside canonical direct
 They cannot establish that Claude selected a skill or that a user's connector has
 been authorized. Perform this once in the authenticated researcher's Claude account:
 
-1. Upload/enable the skill and enable the approved GitHub write connection.
+1. Install/enable the shared plugin (or compatibility skill) and authorize the GitHub connection.
 2. Request a capability-only preflight for the chosen world-model repository.
 3. In a real research chat, ask to capture one useful finding already present without
    new research. Verify that no new topic research was conducted, the provenance is

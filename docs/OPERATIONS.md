@@ -54,24 +54,26 @@ and deferrals remain in immutable maintenance records.
 
 ## Skill releases
 
-`skills/resolvent/` is canonical; `dist/resolvent.zip` is a reproducible build:
+`skills/resolvent/` is the canonical shared workflow. Root `plugin.json`,
+`.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` describe the same generic
+Autonomio plugin. The ChatGPT and Claude distributions contain identical source.
+See `docs/PLUGIN_RELEASE.md` for compatibility assessment and release preparation.
 
 ```sh
 python scripts/package_skill.py
+python scripts/package_plugin.py
 python scripts/package_skill.py --check
+python scripts/package_plugin.py --check
 ```
 
-For a pre-bound distribution (no impact on the generic template):
-
-```sh
-python scripts/package_skill.py --repository OWNER/REPOSITORY --output /tmp/resolvent-for-team.zip
-```
-
-The generic skill is reusable across repos; explicit target selection prevents
-cross-company misrouting. An installed skill is not a live GitHub checkout. It loads
-current repository contracts through the connector, and contributions record schema
-version. Re-upload after an incompatible skill/protocol release. Distribute via your
-existing Claude organization settings when supported; no custom deployment service.
+The generic plugin has no pre-bound distribution or repository setting. Users
+select OWNER/REPOSITORY in the invoking chat. Installed instructions load current
+repository contracts through authorized access; contributions retain schema version.
+System changes require assessing plugin compatibility and issuing a new plugin
+release when necessary. Validated main changes publish GitHub release assets and
+the standalone `plugin-release` branch through release CI. Claude directory updates
+can follow that branch automatically after initial setup; ChatGPT skill updates
+still require a publisher upload/review/publish step. See `docs/PLUGIN_RELEASE.md`.
 
 ## Scope and privacy
 

@@ -1,0 +1,50 @@
+{
+  "release": "1.0.0",
+  "publisher": "Autonomio",
+  "website": "https://autonom.io",
+  "scope": "Historical local package preparation before release CI and the packaged README; artifact hashes describe that earlier build, not current distribution files.",
+  "source_base": "b751fe563a300b451a9aa706a792b5e33e0849e6",
+  "checks": {
+    "repository_unit_tests": {
+      "passed": 45,
+      "failed": 0
+    },
+    "retained_integration_tests": {
+      "passed": 76,
+      "failed": 0
+    },
+    "packaging_regressions_after_final_manifest_change": {
+      "passed": 9,
+      "failed": 0
+    },
+    "empty_model_integrity": "passed",
+    "portable_manifest_schema": "passed: Agent Plugins 1.0.0",
+    "claude_plugin_strict_validation": "passed with no warnings",
+    "claude_catalog_strict_validation": "passed with no warnings",
+    "reproducible_shared_skill": "passed",
+    "reproducible_host_distributions": "passed",
+    "source_preservation_hashes": "passed",
+    "world_model_data": "unchanged empty template"
+  },
+  "artifacts": {
+    "chatgpt": {
+      "file": "dist/chatgpt/resolvent-1.0.0.zip",
+      "sha256": "9c62a5032907f54167920007bfc2d23af9771d27f64a533d47144fc7b8602b2d",
+      "files": 29,
+      "zip_integrity": "passed"
+    },
+    "claude": {
+      "file": "dist/claude/resolvent-1.0.0.zip",
+      "sha256": "9c62a5032907f54167920007bfc2d23af9771d27f64a533d47144fc7b8602b2d",
+      "files": 29,
+      "zip_integrity": "passed"
+    }
+  },
+  "not_run": [
+    "ChatGPT hosted installation",
+    "Claude hosted installation",
+    "live research/admission/review/merge",
+    "public directory submission or publication"
+  ],
+  "remote_writes": 0
+}

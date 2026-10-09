@@ -73,3 +73,6 @@ creating the GitHub repositories.
 - Claude remote connectors and request-header authentication: https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp
 - GitHub hosted MCP documentation: https://github.com/github/github-mcp-server/blob/main/docs/remote-server.md
 - Portable skill format: https://agentskills.io/specification
+> The generic Resolvent plugin is the primary distribution. See
+> [plugin releases](PLUGIN_RELEASE.md) for the shared ChatGPT/Claude package.
+> The standalone skill upload below remains an optional compatibility route.

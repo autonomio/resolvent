@@ -1,0 +1,97 @@
+{
+  "source_archive": "resolvent-chatgpt-plugin-1.4.1-fixed.zip",
+  "source_sha256": "ee9c1b83faa0c22a458eedaea114aa0f424769fdf9ab49ff313f2f9fb31504fb",
+  "release": "1.0.0",
+  "unchanged": {
+    "assets/resolvent.svg": "24a709f7921dca2803f4ac23d50b4942b5f926ceecfcf34fec467e79f17b5e25",
+    "skills/resolvent/assets/conversation-example.json": "967bb0dea617833432e6655725c0a4da56fd911be8238f9fb561187e25b5dc97",
+    "skills/resolvent/integrations/github/action-pins.json": "fbdb643c2d9cde03704c014e71ad29878409aba3f33c0ee4e41c62287f78d821",
+    "skills/resolvent/integrations/github/install.py": "621207d3ac08472ec437a74fe944876ad77d9fda969c44acc91feba1e2c37f62",
+    "skills/resolvent/integrations/github/overlay/.github/resolvent/schema_subset.py": "cb01ec270a1cccd2b9a2cb7ce6a87167207800bf0264aac3a9dca389c56f35d7",
+    "skills/resolvent/integrations/github/overlay/.github/resolvent/worker_prompt.md": "49181d3096162d739295e04c14fdb4c52e7ce00d4dca8662d8f61e95b0e05fd9",
+    "skills/resolvent/integrations/github/overlay/.github/workflows/resolvent-followup-pr.yml": "68a3c1810ff5fc3836f1e6e2f2e26cde82aea69eb0e71ce24fe9465b0966015a",
+    "skills/resolvent/integrations/github/overlay/.github/workflows/resolvent-followup.yml": "a8e6f4a2139f1c9087baafd972431e0abbd0f467e4f3ed8dee496f4e95eb5906",
+    "skills/resolvent/integrations/github/tests/test_install.py": "de883e5674a5f79cf87212c0ffecacae72f033a9c81418f48302244e09982a0c",
+    "skills/resolvent/references/ADMISSION.md": "9c70a1d737d92436b83ac576fda53d83f4fbd6aa74968ba5b25377be00860451",
+    "skills/resolvent/references/GITHUB_ACCESS.md": "77be77dd8551a0a2b2b8d6a0ddacb2bd8fb742f0ada13354866e91886bc4ada3",
+    "skills/resolvent/references/submission.schema.json": "7455ba3126a0d3834650ee6788dc3a20352a30e298b8aab37a29acb6784284f5"
+  },
+  "changed": {
+    ".codex-plugin/plugin.json": {
+      "source_sha256": "1f530af99d386ea07854b273621fb20b421a11640c5d418bca5f071785d00a58",
+      "release_sha256": "c191d4a72265f0bc1ccb8851ebf0b89a134837bac4764fb4d8f9d2e6266358d6"
+    },
+    "plugin.json": {
+      "source_sha256": "c200f761256c6b0a42aafd610d9391f3dc54955240ce4f9734abdfab3d8b0ef4",
+      "release_sha256": "b3be94847654dd992c5085d6725ce1766d074616d605b69b6e91115a3a23e065"
+    },
+    "skills/resolvent/SKILL.md": {
+      "source_sha256": "ea541c4580b04c158bcaf30c818d93bbdbdbd596419992947f7c45d92a9a52c8",
+      "release_sha256": "85d2634f90fd093d758e42e04cf44fbf19bf3d573e180225faf8d98493dda30d"
+    },
+    "skills/resolvent/agents/openai.yaml": {
+      "source_sha256": "c19b755acb7287c0f7b5bd51b2f6ade22ae3cd82f3c6b1930f627fbfd0f0d2ac",
+      "release_sha256": "d2e56dd02f7327b707f4d1bb4bd2771efe6e23ad102965a7f7572d261cd5c004"
+    },
+    "skills/resolvent/integrations/github/README.md": {
+      "source_sha256": "906ec7cb6833d73045cf17ea2ec963bd23bae36ee9e95c04c2f515ab80155482",
+      "release_sha256": "a1cfb2963b6801e9b4e009992b6560d65c8d21dccfec88d963ab1a23d71955f5"
+    },
+    "skills/resolvent/integrations/github/overlay/.github/resolvent/controller.py": {
+      "source_sha256": "40de4285950e9ebf5b643f22845386656c0427d1e11ddfb22da738e0a0d08f22",
+      "release_sha256": "8782917837a506159873abf5b699999ba853b67c00076b1b578a3ce2745025a5"
+    },
+    "skills/resolvent/integrations/github/overlay/.github/resolvent/policy.json": {
+      "source_sha256": "251cb99bbfb1f9c4f6b7c313f4d168c6b6c30e00a29d31f5cbd1c9a10635d686",
+      "release_sha256": "38b523362b2f5567339e2c33153bd98d67988e9e87443f1b70605e86956d23ed"
+    },
+    "skills/resolvent/integrations/github/tests/test_controller.py": {
+      "source_sha256": "7867bdc4a1f2954c0990a342c35520b844936778dea0caba8a91fb7309cd8f65",
+      "release_sha256": "7c458cd5cea1836113955392bb58a53bddf43a3c62168a631722332c90bdebf5"
+    },
+    "skills/resolvent/references/CONTINUATION.md": {
+      "source_sha256": "0bbdc3c5ecfc3f4ae7b6fd59d4024f0b990ed4396ae2509bd724cdc63a9c515b",
+      "release_sha256": "ca634c90fe8e9ea6910770f5c9be9ddce96ec0ea629933cae3a2b16b3ea88034"
+    },
+    "skills/resolvent/references/MERGE.md": {
+      "source_sha256": "06da794add1532a13830fe8ca87325dffeca6b3de19b19682dec82795c429832",
+      "release_sha256": "83771834eb295de709e4080cb711360ba56a26e477c30065b0d2879e0d26252b"
+    },
+    "skills/resolvent/references/PR_FOLLOWUP.md": {
+      "source_sha256": "77df46fcb3727147373ce051395b1400f02fac74ba2961c40479b200a39f71da",
+      "release_sha256": "089daff9f5e823411b40f7055c6c7d57cfccc383c79fb3195eb8b28551ef30a5"
+    },
+    "skills/resolvent/references/ROUTES.md": {
+      "source_sha256": "955a6914330a623214181b19b6b5cc3f7e12197df978cfdefed9bf9c7a11a13b",
+      "release_sha256": "826f8ae3b9a7089d3d3c8f4f89f4968ebda4806eeebdf4422752e2a9c7e6efb8"
+    },
+    "skills/resolvent/references/SUBMISSION.md": {
+      "source_sha256": "e870a6d271a7a4cb2196d7481c0e0d2b0fc8f8f87c202f3f8f239a570f6df52e",
+      "release_sha256": "c449715a66a5095215cd26e0ea71864e6d91f3235bd8e913948f7f5b93dd9cb4"
+    },
+    "skills/resolvent/references/TARGET.md": {
+      "source_sha256": "a39448e366d3bc2f941ef2e751a2d05f14e2120c9e775dd4bfa5bb7f6b4c3bee",
+      "release_sha256": "5ce5aa0ca884addc793ffd92f59bdd3705abc964e7c49adadfd1490a3a7b7138"
+    },
+    "verification/README.md": {
+      "source_sha256": "fc64762d7d4f4019d067e0d17de0411c21aca7b882da93780b887301a61305a3",
+      "release_sha256": "131527ef53ea0d4817d4bd1db9efe0d69d701f969901598df76eaeb6a9ed31a7"
+    }
+  },
+  "removed": {
+    "skills/resolvent/references/PORTAL_CONTEXT.md": "e7c72e30478dcf8a49dfdd174c4b2b55b305fa919c6e9e9fcb14382112395610",
+    "skills/resolvent/references/portal-context.v1.schema.json": "5dafb84c5d83fd1911adc870eaca0b5b338bfc11d40957051d0f662e890e0948",
+    "skills/resolvent/scripts/portal_context.py": "c70a5772834798b59c6716a0b330d00121381ed10d3e56dfe1f4d2110ecffe8c",
+    "verification/plugin-capture.fixtures.json": "16537638cb27e07b9d2e646c71b02192baae29aa9ee2aec6b4371143575a29df",
+    "verification/portal-context.local-example.json": "390fcf08a1d568386f392bc8e5d35fb88f38f39b9a8bf8bea19a1957b8281bce",
+    "verification/results.json": "a5d426eadace65c2a74e5a635d40544608a1025692f104ab02f36951bb229b12",
+    "verification/test_portal_context.py": "a3f00f83ab6072a3efe90c14ede4f55b6615bea0cab86cf2c4233c11d2259cfe"
+  },
+  "approved_inherited_fixes": {
+    "approval": "User: Fix both inherited defects",
+    "changes": [
+      "Same-reviewer current-head approval with resolved threads concludes historical change requests in originating-task observer mode",
+      "Recursively decode nested JSON, preserving duplicate members, and inspect decoded and escaped forms of local credentials before provider transmission"
+    ]
+  }
+}
