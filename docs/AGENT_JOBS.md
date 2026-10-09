@@ -97,7 +97,10 @@ It is a candidate selector, not a relationship-inference algorithm.
 ## Governance
 
 A governance PR changes the system, not research data. Keep canonical model changes
-out of that PR. Run the tests, regenerate `dist/resolvent.zip` after skill changes,
-and update the bundled protocol/version when changing the contribution schema.
+out of that PR. Assess plugin compatibility for every system/package change and
+record the affected behavior or evidenced reason that no plugin update is needed.
+Follow `docs/PLUGIN_RELEASE.md`, run the relevant tests, and regenerate the shared
+skill and both host distributions after plugin changes. Update the bundled
+protocol/version when changing the contribution schema.
 Coordinate deployment to existing world models explicitly; GitHub templates do not
 push future changes to repositories created from them.

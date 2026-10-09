@@ -1,0 +1,36 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "resolvent",
+  "version": "1.0.0",
+  "description": "Update a Resolvent world model in a GitHub repository you can access, from the chat where you invoke Resolvent. Supply OWNER/REPOSITORY and your question; Resolvent handles the contribution workflow.",
+  "author": {
+    "name": "Autonomio",
+    "url": "https://autonom.io"
+  },
+  "homepage": "https://autonom.io",
+  "keywords": [
+    "research",
+    "world-model",
+    "github",
+    "evidence"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "category": "Productivity",
+        "composerIcon": "./assets/resolvent.png",
+        "defaultPrompt": "Use Resolvent with OWNER/REPOSITORY to research [question] and update its world model.",
+        "developerName": "Autonomio",
+        "displayName": "Resolvent",
+        "logo": "./assets/resolvent.png",
+        "websiteURL": "https://autonom.io",
+        "longDescription": "Update a Resolvent world model in a GitHub repository you can access, from the chat where you invoke Resolvent. Give Resolvent OWNER/REPOSITORY and your question or selected conversation, sources, interview, simulation results, or reasoning. It reads that repository's contracts, conducts the requested work, prepares and admits justified claims with evidence and connections, addresses independent review and CI, and completes the authorized guarded merge. Explicit narrower instructions retain their endpoint. No organization, repository, Portal, or model provider is preconfigured. GitHub access comes from your authorized connection or an already available authenticated CLI. An optional Portal can explore the repository separately.",
+        "shortDescription": "Update your world model"
+      },
+      "publication": {
+        "release_notes": "Initial generic Autonomio release. Select the world-model repository in chat. Preserves the supplied 1.4.1 contribution workflow; removes organization-specific defaults, standing merge delegation and Portal capture coupling.",
+        "countries": []
+      }
+    }
+  }
+}

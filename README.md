@@ -1,91 +1,103 @@
 # Resolvent
 
-**An empty, governed world-model template by Autonomio.**
+**A world-model repository and a generic research plugin by [Autonomio](https://autonom.io).**
 
-Conduct research in Claude, or capture an existing conversation. One skill turns
-that work into a contribution PR. Your repository agents admit and review claims;
-regular maintenance improves connections across the accumulated model.
+Resolvent updates a world model in a GitHub repository you can access, from the chat
+where you invoke it. One plugin serves every compatible repository: supply its
+OWNER/REPOSITORY and your question or selected conversation. The plugin researches,
+prepares claims and evidence, completes canonical admission, handles independent
+review and CI, and performs the authorized guarded merge.
 
-A claim's semantic core is **a short self-contained statement, categorical
-uncertainty, and an evidence record**. IDs, class and lifecycle are bookkeeping.
-This template contains **no world-model claims or inherited research data**.
+A claim's semantic core is a short self-contained statement, categorical uncertainty
+and an evidence record. IDs, class and lifecycle are bookkeeping. This template
+contains no world-model claims or inherited research data.
 
 ## Start a world model
 
-1. Use **Use this template → Create a new repository**. Choose its owner and
-   visibility. There are no organization names, paths, or secrets to replace.
-2. Upload [`dist/resolvent.zip`](dist/resolvent.zip) in Claude's **Customize →
-   Skills**, and enable it. Authorize a **write-capable GitHub connection** for
-   the new repository in Claude. No terminal, local clone, Docker, or desktop
-   extension is required on a researcher's computer.
-3. In your chat, name the target repository and ask:
+1. Create a repository from this template. Choose its owner and visibility.
+2. Install **Resolvent** from the ChatGPT or Claude directory once published.
+   Use the authorized GitHub connection available in the invoking chat.
+3. Select your destination together with your question:
 
-   > Use Resolvent with OWNER/REPOSITORY. Research [my question] and contribute the findings.
+   > @resolvent OWNER/REPOSITORY Research [my question] and update the world model.
 
 For work already in the chat:
 
-> Use Resolvent with OWNER/REPOSITORY. Capture the useful findings from this conversation. Do not do new research.
+> @resolvent OWNER/REPOSITORY Capture the useful findings from this conversation. Do not do new research.
 
-The researcher receives their normal answer and a PR receipt. A submission is not
-an admitted claim until repository review and merge. The skill never merges.
+No organization or repository is configured in the plugin. If the destination is
+missing, Resolvent asks once and retains it for the current task. A full contribution
+finishes with verified merge under the user's actual authorization and repository
+rules; explicit preflight, submit-only, review-only and no-merge limits prevail.
 
-**One-time connection requirement:** Claude's “Add from GitHub” file-sync feature
-is not a PR-writing tool. A skill cannot grant itself write access. Use the
-[no-local-install connection guide](docs/CLAUDE_SETUP.md). If writes are unavailable,
-the skill returns the contribution file and explicitly says **not submitted**.
-Do not interpret that fallback as automatic ingestion.
+## Plugin releases and distributions
 
-## Repository-side setup
+Version **1.0.0** is the generic package derived from the supplied 1.4.1 workflow.
+Its developer is Autonomio and its website is https://autonom.io. After a reviewed
+main-branch change passes validation, CI publishes versioned GitHub assets and the
+standalone `plugin-release` branch. Public directory setup is a separate first step.
 
-Your existing trigger-based agents read [AGENTS.md](AGENTS.md) and
-[their job instructions](docs/AGENT_JOBS.md). No agent provider, model key, or new
-orchestration service is bundled. Give those agents access to each new repository.
+- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.0.0.zip)
+- [Claude plugin ZIP](dist/claude/resolvent-1.0.0.zip)
+- [Plugin release and compatibility instructions](docs/PLUGIN_RELEASE.md)
 
-GitHub copies files from a template, **not branch protections or app grants**.
-Enable Actions and require the `World model integrity` check plus independent PR
-review on the default branch. Dismiss stale approvals and require up-to-date
-branches. Do not give researchers direct canonical-branch write access.
+Both ZIPs contain identical code, skills, assets and synchronized host manifests.
+Local catalogs are in `.agents/plugins/marketplace.json` and
+`.claude-plugin/marketplace.json`; their source is the generated standalone plugin
+at `dist/plugin/resolvent/`. Claude's public directory can scan the release branch
+and automatically publish passing versions once enabled. ChatGPT skill changes
+require ZIP upload, review and publication. Data-only updates create no plugin release.
+For direct Claude marketplace distribution, the installation line is:
 
-The included weekly/manual maintenance workflow opens a bounded workset PR once
-claims exist. Your existing agent completes it. Empty models are a no-op. See
-[operations](docs/OPERATIONS.md) for the single GitHub permission this workflow uses.
+```text
+/plugin install resolvent --marketplace autonomio/resolvent
+```
+
+The standalone `dist/resolvent.zip` skill remains an optional compatibility artifact.
+A skill/plugin cannot grant GitHub permissions. File-sync-only access cannot create
+contribution PRs. If needed operations are unavailable, Resolvent provides a truthful
+incomplete receipt; installation alone is not evidence of research, admission or merge.
+
+## Repository setup
+
+Existing repository agents read [AGENTS.md](AGENTS.md) and
+[their job instructions](docs/AGENT_JOBS.md). Give independent review agents access.
+The originating chat owns its selected contribution's authoring and corrections;
+external review remains independent. No agent provider, model key or new service
+is required by the plugin.
+
+Template copies do not inherit branch protections or app grants. Enable Actions,
+require `World model integrity` and `Tests and skill package`, independent review,
+stale-approval dismissal, resolved conversations and up-to-date branches. See
+[operations](docs/OPERATIONS.md) for setup and weekly/manual maintenance.
 
 ## What lives where
 
 | Path | Purpose |
 |---|---|
-| `skills/resolvent/` | The one researcher-facing skill; distributable ZIP in `dist/`. |
-| `input-artefacts/RUN-*.json` | Researcher contribution packages; immutable after merge. |
-| `claims/`, `evidence/`, `sources/` | Canonical assertions, evidence records, and source anchors. |
+| `skills/resolvent/` | Shared generic researcher-facing workflow and references. |
+| `plugin.json`, `.codex-plugin/`, `.claude-plugin/` | Portable and host-compatible plugin metadata. |
+| `dist/chatgpt/`, `dist/claude/`, `dist/plugin/` | Reproducible plugin distributions and local catalog source. |
+| `input-artefacts/RUN-*.json` | Immutable retained research/capture contributions. |
+| `claims/`, `evidence/`, `sources/` | Canonical assertions, evidence and source anchors. |
 | `graph/R-*.yaml` | Justified claim-to-claim connectors, stored once. |
-| `briefs/` | Research briefs, results, and final closure manifests. |
-| `questions/`, `maintenance/` | Open questions and auditable maintenance coverage. |
-| `docs/contracts/`, `docs/schemas/` | Routed process contracts and executable schemas. |
-| `scripts/` | Small repository-side admission and integrity tools. |
+| `briefs/`, `questions/`, `maintenance/` | Research execution, closure, open questions and maintenance. |
+| `docs/contracts/`, `docs/schemas/`, `scripts/` | Governed processes, executable schemas and deterministic tools. |
 
-## Input routes
+The skill routes research, conversation, interview, source material, simulation,
+intra-model reasoning and liminal research. Existing-chat capture does no new topic
+research. Admission creates justified immediate connections; maintenance discovers
+broader old-to-new and old-to-old relationships. A no-connection finding is valid.
 
-The skill selects **research, conversation, interview, source material,
-simulation, intra-model reasoning, or liminal research** from the request.
-Ordinary literature review uses research. Existing-chat capture uses conversation
-and does **not** browse, rerun investigations, or fabricate a prospective brief.
+An optional Portal explores the repository through search and visualization. It is
+separate from this generic plugin and is not required for contributions.
 
-Admission makes the immediate, justified connections. Maintenance discovers
-broader connections—including new relationships between older claims—and revises
-existing ones. More edges are not automatically better; an explicit no-connection
-finding is valid. A connection has its own evidence, reason and uncertainty.
+## Maintainers
 
-## For maintainers
-
-```sh
-python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
-python scripts/compiler.py --require-closure
-```
-
-These commands run in CI or an agent workspace, not on researchers' computers.
-See [ontology](docs/Ontology.md), [extraction notes](docs/EXTRACTION.md), and
-[release/update instructions](docs/OPERATIONS.md).
+Follow the plugin compatibility rule in [AGENTS.md](AGENTS.md) for every system/package
+change. Assess whether installed plugin behavior needs updating; ordinary model-data
+updates alone do not require a plugin release. Build and check both distributions
+as documented in [plugin releases](docs/PLUGIN_RELEASE.md).
 
 Resolvent is an access-controlled Autonomio project. No public open-source license
 is assigned by this bootstrap. Decide wider redistribution terms before publishing.

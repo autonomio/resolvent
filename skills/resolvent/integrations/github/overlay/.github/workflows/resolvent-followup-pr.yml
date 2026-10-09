@@ -1,0 +1,130 @@
+name: Resolvent follow-up one PR
+
+on:
+  workflow_call:
+    inputs:
+      pr:
+        required: true
+        type: number
+      trusted_sha:
+        required: true
+        type: string
+
+# Every trigger for a PR uses the same lock. Do not install a second writer.
+# GitHub may replace queued pending runs; scheduled reconciliation recovers state.
+concurrency:
+  group: resolvent-followup-pr-${{ inputs.pr }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: resolvent-followup
+    outputs:
+      repair: ${{ steps.observe.outputs.repair }}
+      status: ${{ steps.observe.outputs.status }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5; verified 2026-10-07
+        with:
+          ref: ${{ inputs.trusted_sha }}
+          persist-credentials: false
+      - id: token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2; verified 2026-10-07
+        with:
+          app-id: ${{ vars.RESOLVENT_APP_ID }}
+          private-key: ${{ secrets.RESOLVENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: read
+          permission-actions: read
+          permission-checks: read
+          permission-statuses: read
+      - id: observe
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RESOLVENT_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          RESOLVENT_STATE_KEY: ${{ secrets.RESOLVENT_STATE_KEY }}
+          RESOLVENT_CODE_SHA: ${{ inputs.trusted_sha }}
+          PR_NUMBER: ${{ inputs.pr }}
+        run: python3 .github/resolvent/controller.py observe --pr "$PR_NUMBER" --out observed
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4; verified 2026-10-07
+        with:
+          name: resolvent-observation-${{ inputs.pr }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: observed/
+          if-no-files-found: error
+          retention-days: 14
+
+  worker:
+    needs: observe
+    if: needs.observe.outputs.repair == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: resolvent-followup-model
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5; verified 2026-10-07
+        with:
+          ref: ${{ inputs.trusted_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4; verified 2026-10-07
+        with:
+          name: resolvent-observation-${{ inputs.pr }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: observed/
+      - name: Propose a bounded data correction using the selected provider
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 .github/resolvent/controller.py work --packet observed/work.json --proposal result/proposal.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4; verified 2026-10-07
+        with:
+          name: resolvent-proposal-${{ inputs.pr }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: result/proposal.json
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: [observe, worker]
+    if: always() && needs.observe.result == 'success' && needs.observe.outputs.repair == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: resolvent-followup
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5; verified 2026-10-07
+        with:
+          ref: ${{ inputs.trusted_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4; verified 2026-10-07
+        with:
+          name: resolvent-observation-${{ inputs.pr }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: observed/
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4; verified 2026-10-07
+        continue-on-error: true
+        with:
+          name: resolvent-proposal-${{ inputs.pr }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: result/
+      - id: token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2; verified 2026-10-07
+        with:
+          app-id: ${{ vars.RESOLVENT_APP_ID }}
+          private-key: ${{ secrets.RESOLVENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: read
+          permission-actions: read
+          permission-checks: read
+          permission-statuses: read
+      - name: Verify scope, append one guarded commit, and checkpoint
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RESOLVENT_APP_SLUG: ${{ steps.token.outputs.app-slug }}
+          RESOLVENT_STATE_KEY: ${{ secrets.RESOLVENT_STATE_KEY }}
+          RESOLVENT_CODE_SHA: ${{ inputs.trusted_sha }}
+          PR_NUMBER: ${{ inputs.pr }}
+        run: python3 .github/resolvent/controller.py publish --pr "$PR_NUMBER" --plan observed/plan.json --packet observed/work.json --proposal result/proposal.json

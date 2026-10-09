@@ -1,0 +1,91 @@
+name: Resolvent plugin release
+
+on:
+  workflow_run:
+    workflows: [Resolvent validation]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: resolvent-plugin-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish validated plugin
+    if: >-
+      github.repository == 'autonomio/resolvent' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch == 'main' &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Set publication paths
+        run: |
+          printf 'RELEASE_ROOT=%s/resolvent-publication\nRELEASE_CHECKOUT=%s/resolvent-release-branch\n' \
+            "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Check out the validated main commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install packaging dependencies
+        run: python -m pip install --disable-pip-version-check -r requirements.txt
+      - name: Verify the published bytes match validated source
+        run: |
+          python scripts/package_skill.py --check
+          python scripts/package_plugin.py --check
+      - name: Prepare the release or preserve the existing version
+        id: release
+        run: python scripts/plugin_release.py prepare --output "$RELEASE_ROOT" --github-output "$GITHUB_OUTPUT"
+      - name: Update the directory's tracked plugin branch
+        if: steps.release.outputs.changed == 'true'
+        run: |
+          gh auth setup-git --hostname github.com
+          git init "$RELEASE_CHECKOUT"
+          git -C "$RELEASE_CHECKOUT" remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          if git show-ref --verify --quiet refs/remotes/origin/plugin-release; then
+            git -C "$RELEASE_CHECKOUT" fetch origin refs/heads/plugin-release
+            git -C "$RELEASE_CHECKOUT" checkout -b plugin-release FETCH_HEAD
+          else
+            git -C "$RELEASE_CHECKOUT" checkout --orphan plugin-release
+          fi
+          rsync -a --delete --exclude=.git "$RELEASE_ROOT/plugin/" "$RELEASE_CHECKOUT/"
+          git -C "$RELEASE_CHECKOUT" config user.name 'github-actions[bot]'
+          git -C "$RELEASE_CHECKOUT" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$RELEASE_CHECKOUT" add --all
+          git -C "$RELEASE_CHECKOUT" commit -m "Release Resolvent $VERSION from $SOURCE_COMMIT"
+          git -C "$RELEASE_CHECKOUT" push origin HEAD:refs/heads/plugin-release
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          SOURCE_COMMIT: ${{ steps.release.outputs.source_commit }}
+      - name: Publish immutable release assets or verify an existing release
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            mkdir "$RUNNER_TEMP/existing-release"
+            gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/existing-release"
+            for asset in "$RELEASE_ROOT"/assets/*; do
+              cmp "$asset" "$RUNNER_TEMP/existing-release/$(basename "$asset")"
+            done
+          else
+            gh release create "$RELEASE_TAG" "$RELEASE_ROOT"/assets/* \
+              --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" \
+              --title "Resolvent $VERSION" --notes-file "$RELEASE_ROOT/notes.md"
+          fi
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          SOURCE_COMMIT: ${{ steps.release.outputs.source_commit }}
