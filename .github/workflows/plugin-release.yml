@@ -77,11 +77,7 @@ jobs:
       - name: Publish immutable release assets or verify an existing release
         run: |
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            mkdir "$RUNNER_TEMP/existing-release"
-            gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/existing-release"
-            for asset in "$RELEASE_ROOT"/assets/*; do
-              cmp "$asset" "$RUNNER_TEMP/existing-release/$(basename "$asset")"
-            done
+            python scripts/reconcile_plugin_assets.py --tag "$RELEASE_TAG" --assets "$RELEASE_ROOT/assets"
           else
             gh release create "$RELEASE_TAG" "$RELEASE_ROOT"/assets/* \
               --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" \

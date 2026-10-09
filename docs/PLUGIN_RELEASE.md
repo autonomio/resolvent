@@ -106,7 +106,9 @@ The workflow publishes a fast-forward commit to `plugin-release`, containing onl
 the installable plugin, catalogs and a `release.json` provenance record. It creates
 `resolvent-v<VERSION>` on the validated main commit, with separate ChatGPT, Claude
 and compatibility skill ZIP names, `release.json`, and `SHA256SUMS` on a GitHub release.
-An existing release is compared with the expected assets, never overwritten.
+All present expected assets are compared with the validated bytes before any
+repair writes. Missing assets from a partial upload are then added; existing
+assets are never overwritten. Additional notification-journal assets are ignored.
 The existing `GITHUB_TOKEN` is sufficient for GitHub publication. Email delivery
 uses encrypted Actions secrets; credentials never belong in repository files.
 
