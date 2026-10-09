@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "enabled": false,
+  "authoring_owner": "originating_task",
+  "repository": "",
+  "base_branch": null,
+  "enrollment_label": "resolvent-followup",
+  "allowed_authors": [],
+  "controller_login": "REPLACE_WITH_YOUR_APP_SLUG[bot]",
+  "provider": "unconfigured",
+  "model": "",
+  "expected_checks": [],
+  "accepted_nonrequired_checks": [],
+  "reviews": {
+    "reviewers": [],
+    "minimum": 1,
+    "feedback_authors": []
+  },
+  "admission_checks": [],
+  "admission_attests_entire_diff": false,
+  "admission_may_consume_proposal": false,
+  "amendments": {
+    "authorized": false,
+    "contract_paths": []
+  },
+  "schema_path": "docs/schemas/submission.schema.json",
+  "max_attempts_per_pr": 4,
+  "max_attempts_per_feedback": 1,
+  "max_open_prs": 20,
+  "max_observation_seconds": 300,
+  "max_input_bytes": 524288,
+  "max_output_tokens": 16000
+}
