@@ -973,6 +973,26 @@ class ProviderAndDataTests(unittest.TestCase):
                         c.ensure_no_local_secrets(text)
                 c.ensure_no_local_secrets(c.canonical({"diagnostics": [{"logs": "ordinary failure"}]}))
 
+    def test_all_unicode_escapes_in_nested_contribution_json_are_blocked(self):
+        secret = KEY + '"\\\n'
+        escaped = ''.join('\\u%04x' % ord(character) for character in secret)
+        with patch.dict(os.environ, {"RESOLVENT_STATE_KEY": secret}, clear=True):
+            for duplicate in (False, True):
+                nested = '{"title":"' + escaped + '"' + (',"title":"safe"' if duplicate else '') + '}'
+                for depth in range(3):
+                    with self.subTest(duplicate=duplicate, depth=depth), self.assertRaisesRegex(c.Blocked, "Local credential"):
+                        c.ensure_no_local_secrets(c.canonical({"contribution_json": nested}))
+                    nested = json.dumps(nested)
+
+    def test_unicode_escaped_provider_credential_prevents_network_request(self):
+        p, _, _, packet, _, _ = proposal_fixture()
+        escaped = ''.join('\\u%04x' % ord(character) for character in KEY)
+        packet["contribution_json"] = '{"title":"' + escaped + '"}'
+        with patch.dict(os.environ, {"OPENAI_API_KEY": KEY}, clear=True), patch.object(c, "request") as request:
+            with self.assertRaisesRegex(c.Blocked, "Local credential"):
+                c.call_provider(p, packet, "trusted prompt")
+        request.assert_not_called()
+
     def test_github_log_redirect_never_forwards_authorization(self):
         api = c.GitHub("owner/repo", token="fake-github-token")
         def responder(url, headers, *args, **kwargs):

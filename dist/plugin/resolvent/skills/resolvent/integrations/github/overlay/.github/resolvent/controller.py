@@ -822,15 +822,21 @@ def make_work(api, policy, snapshot, decision):
 
 
 def ensure_no_local_secrets(text):
-    candidates = [text]
-    try:
-        pending = [json.loads(text)]
-    except (ValueError, TypeError):
-        pending = []
+    candidates = []
+    pending = [text]
     while pending:
         value = pending.pop()
         if isinstance(value, str):
             candidates.append(value)
+            try:
+                # Packets contain serialized JSON in contribution_json and can
+                # nest it again. Decode each JSON string through to its leaves.
+                # Preserve duplicate members so none can hide a credential.
+                pending.append(json.loads(value, object_pairs_hook=lambda pairs: [part for pair in pairs for part in pair]))
+            except (ValueError, TypeError):
+                pass
+            except RecursionError:
+                raise Blocked("Nested work packet cannot be safely screened for credentials") from None
         elif isinstance(value, dict):
             pending.extend(value.keys())
             pending.extend(value.values())

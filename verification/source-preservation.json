@@ -39,7 +39,7 @@
     },
     "skills/resolvent/integrations/github/overlay/.github/resolvent/controller.py": {
       "source_sha256": "40de4285950e9ebf5b643f22845386656c0427d1e11ddfb22da738e0a0d08f22",
-      "release_sha256": "561d3bff43ebee4b65ee4b769fa84967b8f9cb499c4fc2e53b7d1195677106d1"
+      "release_sha256": "8782917837a506159873abf5b699999ba853b67c00076b1b578a3ce2745025a5"
     },
     "skills/resolvent/integrations/github/overlay/.github/resolvent/policy.json": {
       "source_sha256": "251cb99bbfb1f9c4f6b7c313f4d168c6b6c30e00a29d31f5cbd1c9a10635d686",
@@ -47,7 +47,7 @@
     },
     "skills/resolvent/integrations/github/tests/test_controller.py": {
       "source_sha256": "7867bdc4a1f2954c0990a342c35520b844936778dea0caba8a91fb7309cd8f65",
-      "release_sha256": "12483e51da02f367fccf16735c898d6a57188259c6699b5988a6108a3d5c7a41"
+      "release_sha256": "7c458cd5cea1836113955392bb58a53bddf43a3c62168a631722332c90bdebf5"
     },
     "skills/resolvent/references/CONTINUATION.md": {
       "source_sha256": "0bbdc3c5ecfc3f4ae7b6fd59d4024f0b990ed4396ae2509bd724cdc63a9c515b",
@@ -91,7 +91,7 @@
     "approval": "User: Fix both inherited defects",
     "changes": [
       "Same-reviewer current-head approval with resolved threads concludes historical change requests in originating-task observer mode",
-      "Inspect decoded and JSON-escaped forms of local credentials before provider transmission"
+      "Recursively decode nested JSON, preserving duplicate members, and inspect decoded and escaped forms of local credentials before provider transmission"
     ]
   }
 }

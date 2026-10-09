@@ -87,7 +87,9 @@ private app bindings, missing or undersized icons, and known organization-specif
 source residue. The observer permits an unconfigured repository only while disabled.
 The two user-approved inherited fixes recognize superseded change requests only
 after the same independent reviewer approves the exact current head with all
-threads resolved, and block JSON-escaped local credentials in provider packets.
+threads resolved, and recursively decode nested JSON to block escaped local
+credentials, including fully Unicode-escaped values and duplicate object members,
+before provider transmission.
 Other feedback, active CI/admission gates, the schema evaluator and installer remain;
 all original tests are retained. `verification/source-preservation.json` records source provenance
 and file hashes; it is not a live research or merge receipt.
