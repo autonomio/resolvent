@@ -40,6 +40,27 @@ jobs:
         run: |
           python policy/scripts/compiler.py \
             --root candidate --policy-root policy --base policy --require-closure
+      - name: Record the exact main push range
+        if: github.event_name == 'push'
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/resolvent-push-range"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          record = {'format_version':'1.0', 'repository':os.environ['GITHUB_REPOSITORY'],
+                    'before':os.environ['PUSH_BEFORE'], 'after':os.environ['PUSH_AFTER']}
+          (Path(os.environ['RUNNER_TEMP'])/'resolvent-push-range/push-range.json').write_text(json.dumps(record))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: github.event_name == 'push'
+        with:
+          name: resolvent-push-range
+          path: ${{ runner.temp }}/resolvent-push-range/push-range.json
+          retention-days: 7
+          if-no-files-found: error
 
   tests:
     name: Tests and skill package

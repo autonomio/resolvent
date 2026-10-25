@@ -28,7 +28,8 @@ def workset(root: Path, limit: int = 40) -> dict | None:
     never_reviewed = [cid for cid in active if cid not in reviewed]
     # Half prioritizes never-reviewed claims, half rotates through the entire model.
     # This reaches disconnected old regions instead of only following existing edges.
-    completed_runs = sum(1 for record in idx.get('maintenance', {}).values() if record['status'] == 'completed')
+    completed_runs = sum(1 for record in idx.get('maintenance', {}).values()
+                         if record['status'] == 'completed' and not record.get('trigger'))
     start = (completed_runs * max(1, limit // 2)) % len(active)
     rotating = active[start:] + active[:start]
     selected = list(dict.fromkeys(never_reviewed[:limit // 2] + rotating[:limit // 2]))
