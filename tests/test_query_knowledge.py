@@ -22,7 +22,7 @@ def ident(group, local):
     return canonical_id(RUN, group, local)
 
 
-def query_state():
+def query_state(connector_support=False):
     proposal = contribution(token='8' * 32)
     parent = contribution(token='7' * 32)
     parent.update(claims=[], evidence=[], sources=[])
@@ -51,6 +51,14 @@ def query_state():
          'uncertainty': 'high', 'evidence_ids': ['e3']},
     ]
     proposal['questions'] = [{'id': 'q1', 'question': 'What remains unknown in this fixture?', 'claim_ids': ['c1']}]
+    if connector_support:
+        proposal['evidence'][1]['premise_claim_ids'] = []
+        proposal['evidence'][3]['premise_claim_ids'] = ['c1']
+        proposal['connectors'][0].update(to='c3', evidence_ids=['e4'])
+        proposal['claims'].append({**copy.deepcopy(claim), 'id': 'c5',
+                                   'statement': 'A synthetic downstream consumer.', 'evidence_ids': ['e3']})
+        proposal['connectors'].append({**copy.deepcopy(proposal['connectors'][0]), 'id': 'r3',
+                                       'from': 'c5', 'to': 'c2', 'evidence_ids': ['e3']})
     decision = decisions(proposal)
     decision['claims']['c4']['action'] = 'reject'
     decision['connection_review'].pop('c4')
@@ -215,6 +223,30 @@ class QueryTests(unittest.TestCase):
         path = query.dependents(ident('claims', 'c1'))['items'][0]['path'][0]
         self.assertEqual(path['relation'], 'evidence_premise')
         self.assertEqual(path['premise_claim_ids'], [ident('claims', 'c1')])
+
+    def test_reverse_dependencies_follow_connector_only_evidence_and_downstream_claims(self):
+        state = query_state(connector_support=True)
+        evidence = state[f"evidence/{ident('evidence', 'e4')}.yaml"]
+        self.assertEqual(evidence['claim_ids'], [])
+        repo = self.package / 'fixture-repo'
+        repo.mkdir()
+        write_state(repo, state)
+        subprocess.run(['git', 'init', '-q', '--initial-branch=main', str(repo)], check=True)
+        subprocess.run(['git', '-C', str(repo), 'add', '.'], check=True)
+        subprocess.run(['git', '-C', str(repo), '-c', 'user.name=Synthetic test',
+                        '-c', 'user.email=test@example.invalid', 'commit', '-qm', 'Connector-only support fixture'], check=True)
+        for name, contents in compile_revision(repo, 'HEAD').items():
+            (self.package / name).write_bytes(contents)
+        query = Knowledge(self.package)
+        result = query.dependents(ident('claims', 'c1'), depth=2)
+        by_id = {item['claim']['record']['id']: item['path'] for item in result['items']}
+        self.assertEqual(set(by_id), {ident('claims', 'c2'), ident('claims', 'c5')})
+        support = by_id[ident('claims', 'c2')][0]
+        self.assertEqual(support['relation'], 'connector_evidence_premise')
+        self.assertEqual(support['via'], ident('evidence', 'e4'))
+        self.assertEqual(support['connector_id'], ident('graph', 'r1'))
+        self.assertEqual(support['premise_claim_ids'], [ident('claims', 'c1')])
+        self.assertEqual(len(by_id[ident('claims', 'c5')]), 2)
 
     def test_retired_connectors_are_explicitly_opted_in(self):
         self.rewrite(lambda value: value['records']['graph'][ident('graph', 'r1')].update(state='retired'))

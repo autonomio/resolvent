@@ -183,8 +183,10 @@ records or search matches do not establish that a proposition is false.
 Traversal follows declared connectors using `--direction incoming|outgoing|both`
 and optional `--connector-type dependency|coupling`. Direction refers to canonical
 connector endpoints: a dependency goes from dependent to premise. `dependents`
-instead walks reverse dependencies and evidential premise sets, preserving joint
-premises in the returned paths; coupling is excluded. Active connectors are used
+instead walks reverse dependencies and evidential premise sets, including premises
+of evidence supporting dependency connectors without a direct claim backlink.
+Paths preserve joint premises and the supporting evidence/connector IDs; coupling
+is excluded. Active connectors are used
 by default. `--include-retired` adds retired connectors and exposes their state in
 each step. Claim lifecycle and uncertainty remain visible at every level.
 

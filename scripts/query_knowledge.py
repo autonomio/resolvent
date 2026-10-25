@@ -243,6 +243,13 @@ class Knowledge:
             extra = {'connector_state': connector['state'], 'evidence_ids': connector['evidence_ids']}
             if reverse or direction in ('incoming', 'both'):
                 edge(b, a, connector['type'], connector['id'], **extra)
+            if reverse:
+                for eid in connector['evidence_ids']:
+                    evidence = self.records['evidence'][eid]
+                    for premise in evidence['premise_claim_ids']:
+                        edge(premise, a, 'connector_evidence_premise', eid,
+                             connector_id=connector['id'], connector_state=connector['state'],
+                             premise_claim_ids=evidence['premise_claim_ids'])
             if not reverse and direction in ('outgoing', 'both'):
                 edge(a, b, connector['type'], connector['id'], **extra)
         if reverse:
