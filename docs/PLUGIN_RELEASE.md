@@ -169,6 +169,11 @@ projections and emits an advisory report. It changes no canonical schema,
 contribution/admission rule, installed plugin behavior or packaged byte. The
 existing plugin remains compatible; this read-only command needs no plugin release.
 
+The retrieval command (`scripts/query_knowledge.py`) is a local read interface over
+that compiled format. It changes no submission schema, admission behavior,
+installed skill, host manifest or distribution bytes. The existing plugin remains
+compatible, so this repository-only query API requires no plugin release.
+
 References: https://resend.com/docs/api-reference/emails/send-email and
 https://resend.com/docs/dashboard/emails/idempotency-keys.
 
