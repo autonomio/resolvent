@@ -10,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 
+import yaml
+
 if __package__ in (None, ''):
     sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from scripts.core_release import (CHANNEL, LOCK, UPSTREAM, checked_lock, core_path, decode, git,
@@ -32,6 +34,42 @@ def matches(root,entry,item):
     return len(data)==item['bytes'] and hashlib.sha256(data).hexdigest()==item['sha256']
 
 
+def readonly_candidate_workflows(root,source,files):
+    """Candidate PR/dispatch jobs must not acquire secrets or a write token."""
+    import re
+    for path in files:
+        if not path.startswith('.github/workflows/') or not path.endswith(('.yml','.yaml')):
+            continue
+        raw=git(root,'show',source+':'+path).decode()
+        workflow=yaml.load(raw,Loader=yaml.BaseLoader)
+        if not isinstance(workflow,dict):
+            raise ValueError('Malformed candidate workflow')
+        events=workflow.get('on',{})
+        events=[events] if isinstance(events,str) else events
+        immediate={'pull_request','pull_request_target','merge_group'}.intersection(events)
+        if path=='.github/workflows/validate.yml' and 'workflow_dispatch' in events:
+            immediate.add('workflow_dispatch')  # The only dispatch this updater performs.
+        if 'push' in events and (not isinstance(events,dict) or
+                                (events.get('push') or {}).get('branches')!=['main']):
+            immediate.add('push')
+        if not immediate:
+            continue  # Other workflow definitions activate only after reviewed main merge.
+        if re.search(r'\$\{\{(?:(?!\}\}).)*\bsecrets\b',raw,re.I|re.S):
+            raise ValueError('Candidate PR/dispatch workflow cannot request secrets')
+        top=workflow.get('permissions')
+        if not isinstance(top,dict) or any(value not in ('read','none') for value in top.values()):
+            raise ValueError('Candidate workflow requires explicit read-only permissions')
+        for job in workflow.get('jobs',{}).values():
+            permissions=job.get('permissions',top)
+            if (not isinstance(permissions,dict) or 'secrets' in job or
+                    any(value not in ('read','none') for value in permissions.values())):
+                raise ValueError('Candidate validation jobs cannot acquire write permissions or secrets')
+            for step in job.get('steps',[]):
+                if (step.get('uses','').startswith('actions/checkout@') and
+                        step.get('with',{}).get('persist-credentials')!='false'):
+                    raise ValueError('Candidate validation checkout must not persist credentials')
+
+
 def plan(root,source,index):
     validate_index(index)
     if source!=index['source_commit']:
@@ -51,6 +89,7 @@ def plan(root,source,index):
     candidate=checked_lock(root,source)
     if candidate['core_version']!=index['core_version']:
         raise ValueError('Candidate core version mismatch')
+    readonly_candidate_workflows(root,source,candidate['files'])
     if version(candidate['core_version'])<version(installed['core_version']):
         raise ValueError('Upstream core version is older than this world')
     if version(candidate['core_version'])==version(installed['core_version']):
@@ -181,7 +220,7 @@ def main():
         if os.environ.get('GITHUB_STEP_SUMMARY'):
             with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as stream:
                 stream.write('Core update: '+result['status']+'\n')
-    except (ValueError,OSError,subprocess.CalledProcessError,KeyError):
+    except (ValueError,OSError,subprocess.CalledProcessError,KeyError,yaml.YAMLError,TypeError):
         parser.exit(1,'Core update stopped; data and main were not changed. Inspect the locked core and retry.\n')
 
 

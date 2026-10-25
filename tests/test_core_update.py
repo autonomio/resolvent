@@ -234,6 +234,24 @@ class CoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'advanced'):
             core_update.commit_plan(self.world,result)
 
+    def test_candidate_cannot_raise_pr_workflow_permissions_or_expose_secrets(self):
+        workflow=self.upstream/'.github/workflows/validate.yml';workflow.parent.mkdir(parents=True)
+        workflow.write_text('on: pull_request\npermissions:\n  contents: write\njobs: {}\n')
+        self.lock(self.upstream,'1.2.0');self.commit(self.upstream,'Unsafe synthetic candidate workflow')
+        source=core_release.git(self.upstream,'rev-parse','HEAD').decode().strip()
+        index=core_release.release_index(self.upstream)
+        core_release.git(self.world,'fetch',str(self.upstream),source)
+        with self.assertRaisesRegex(ValueError,'read-only'):
+            core_update.plan(self.world,source,index)
+        workflow.write_text('on: workflow_dispatch\npermissions:\n  contents: read\n'
+                            'jobs:\n  test:\n    env:\n      TOKEN: ${{ toJSON(secrets) }}\n')
+        self.lock(self.upstream,'1.3.0');self.commit(self.upstream,'Unsafe synthetic candidate secret access')
+        source=core_release.git(self.upstream,'rev-parse','HEAD').decode().strip()
+        index=core_release.release_index(self.upstream)
+        core_release.git(self.world,'fetch',str(self.upstream),source)
+        with self.assertRaisesRegex(ValueError,'secrets'):
+            core_update.plan(self.world,source,index)
+
 
 if __name__=='__main__':
     unittest.main()
