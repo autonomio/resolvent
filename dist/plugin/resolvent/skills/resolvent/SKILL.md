@@ -3,7 +3,7 @@ name: resolvent
 description: Research and refine questions, distill selected discussion, read your Resolvent world model, or explicitly add findings and questions through your authorized GitHub connection.
 metadata:
   author: Autonomio
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # Resolvent
@@ -121,7 +121,7 @@ recorded knowledge. A bounded search does not prove completeness or truth.
 
 For contributions, use the verified workflow and bundled `references/CONTRIBUTION.md`.
 Only the selected world's approved schema/contracts authorize its format; the bundled
-1.0/1.1 schema is a compatibility reference, not authority to upgrade a world. Never
+1.0/1.1/1.2 schema is a compatibility reference, not authority to upgrade a world. Never
 drop unsupported fields or invent their semantics. Explicit preflight, draft-only,
 submit-only, review-only, no-merge and other narrower instructions retain their limits.
 Verified live guidance may update operational details within these same intents;

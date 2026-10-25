@@ -1,6 +1,6 @@
 # Resolvent plugin releases
 
-Resolvent 1.2.0 is the generic Autonomio plugin. The developer and website are
+Resolvent 1.3.0 is the generic Autonomio plugin. The developer and website are
 Autonomio and https://autonom.io. Its description identifies the supported task:
 update a Resolvent world model in a GitHub repository the user can access from
 the chat where the plugin is invoked.
@@ -43,7 +43,7 @@ It contains no account credentials or required custom MCP service.
 - `.claude-plugin/marketplace.json`: local Claude catalog.
 - `assets/resolvent.svg` and `assets/resolvent.png`: original icon and directory PNG.
 - `docs/PLUGIN_README.md`: standalone README included in each plugin package.
-- `dist/chatgpt/resolvent-1.2.0.zip` and `dist/claude/resolvent-1.2.0.zip`: identical
+- `dist/chatgpt/resolvent-1.3.0.zip` and `dist/claude/resolvent-1.3.0.zip`: identical
   self-contained plugin distributions, with both host manifests.
 - `dist/plugin/resolvent/`: standalone local catalog source, generated from the same files.
 - `dist/resolvent.zip`: optional standalone Claude skill compatibility artifact.
@@ -237,6 +237,24 @@ before installed clients may emit 1.1 annotations. `docs/Ontology.md` and
 
 References: https://resend.com/docs/api-reference/emails/send-email and
 https://resend.com/docs/dashboard/emails/idempotency-keys.
+
+## Source ancestry compatibility
+
+Optional source ancestry changes the contribution protocol. Plugin 1.3.0 therefore
+synchronizes all host versions and the bundled 1.2 schema while retaining immutable
+1.0/1.1 inputs. Workflow 1.0.1 describes reviewed ancestry, declared exact-content
+digests, missing metadata and advisory lineage reports. The fixed client boundary
+and its protocol 1.0 are unchanged. Installed 1.2.0 clients can consume this compatible
+live guidance under the selected world's approved schema; no live reference upgrades
+that repository or replaces the older client's bundled compatibility snapshot.
+
+The compiler enforces known source references and acyclic ancestry. The read-only
+report and L2/search ancestor discovery preserve source anchors, evidence premises,
+access and uncertainty. Metadata equality and similarity remain review cues; no
+automatic independence judgment or confidence change is introduced. The retained
+observer's schema evaluator already supports the extension's existing keywords;
+its original tests remain, with one 1.2 protocol regression added. Its policy version,
+credential protections and disabled-by-default setup are unchanged.
 
 ## Public directory setup
 

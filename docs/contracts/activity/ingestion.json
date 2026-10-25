@@ -2,7 +2,7 @@
   "activity_type": "ingestion",
   "kind": "mutation_pathway",
   "purpose": "deterministic_normalized_input_to_world_model_transformation",
-  "version": "1.1",
+  "version": "1.2",
   "profile": "autonomio_resolvent_template",
   "schema": "docs/schemas/submission.schema.json",
   "required_context_paths": [
@@ -45,7 +45,10 @@
     "independent_semantic_review_required",
     "temporal_intervals_reference_claim_evidence",
     "source_and_admission_dates_do_not_imply_valid_time",
-    "temporal_scope_changes_never_silently_reuse_claim_ids"
+    "temporal_scope_changes_never_silently_reuse_claim_ids",
+    "source_ancestry_references_resolve",
+    "source_ancestry_is_acyclic",
+    "source_ancestry_metadata_does_not_establish_independence"
   ],
   "write_interface": {
     "dry_run": "python scripts/world_control.py input-artefacts/RUN-<uuid>.json --decisions .resolvent/decisions.json",

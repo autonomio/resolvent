@@ -1,6 +1,6 @@
 {
   "name": "resolvent",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Research and refine questions, read your Resolvent world model, or explicitly add selected findings and discussion through your authorized GitHub connection.",
   "author": {
     "name": "Autonomio",
@@ -32,7 +32,7 @@
   "extensions": {
     "com.openai": {
       "publication": {
-        "release_notes": "Adds a fixed client with natural-language read/write intent and separately versioned GitHub workflow references. Supports chat research, world-model reads, selected distillation, integrated Reformulate and question-only contributions. No repository migration or hosted service.",
+        "release_notes": "Adds optional reviewed source ancestry through contribution protocol 1.2, preserving unknown ancestry, exact anchors and legacy 1.0/1.1 inputs. A read-only lineage report distinguishes declared common origins and content hashes from heuristic duplicate cues without changing independence or uncertainty.",
         "countries": []
       },
       "review": {

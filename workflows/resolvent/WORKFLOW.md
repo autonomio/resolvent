@@ -1,4 +1,4 @@
-# Resolvent workflow 1.0.0
+# Resolvent workflow
 
 These live references serve installed client protocol 1.0. The installed intent,
 privacy, destination and review boundaries always apply; this document grants no
@@ -43,6 +43,27 @@ The bundled contribution procedure applies only to an authorized write. Its phra
 “contributing useful findings” does not authorize capturing other turns. “Research X”
 alone is not “research and add X”. A later addition may reuse inspected sources; do
 not mislabel retrospective work as prospectively designed research.
+
+## Preserve source ancestry when supported
+
+On a world that has adopted contribution protocol 1.2, sources may include optional
+`ancestry`: status `original`, `derived` or `unknown`, `parent_source_ids` and
+nonempty limitation `notes`. Use only justified declared parent links; unknown
+ancestry stays unknown. Preserve exact source locator/access/excerpt. Optional
+`version` identifies the source version; `content_sha256` describes explicitly
+identified exact content bytes, never a guessed hash or a normalized excerpt
+misrepresented as the whole source. A declared digest need not mean the source was
+inspected; retain its access and provenance limitations.
+
+Local parent IDs are remapped by admission; an existing canonical parent source ID
+is retained. Parent records must exist, self-links/cycles are invalid, originals
+have no reused parents, and derived sources need a declared parent. Do not infer
+actual independence from this metadata or automatically change uncertainty.
+The approved read-only `Knowledge.lineage()` / `query_knowledge.py lineage` report
+can expose shared declared ancestors, shared declared hashes and possible URI or
+excerpt duplicates. Deterministic metadata equality and heuristic resemblance are
+review cues, not independence verdicts. Legacy worlds keep their approved protocol;
+never silently drop unsupported ancestry or upgrade their governance.
 
 ## Distill selected discussion
 

@@ -45,6 +45,9 @@
         "inspected",
         "not_retrieved"
       ]
+    },
+    "ancestry": {
+      "$ref": "#/$defs/source_ancestry"
     }
   },
   "required": [
@@ -58,5 +61,51 @@
     "access"
   ],
   "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "source_ancestry": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "original",
+            "derived",
+            "unknown"
+          ]
+        },
+        "parent_source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "status",
+        "parent_source_ids",
+        "notes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$comment": "Schema 1.2: optional reviewed source ancestry; legacy records remain valid."
 }

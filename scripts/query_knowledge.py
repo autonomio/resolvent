@@ -98,10 +98,20 @@ class Knowledge:
             for eid in claim['evidence_ids']:
                 evidence = self.records['evidence'][eid]
                 texts[eid] = evidence['summary'] + ' ' + ' '.join(evidence['limitations'])
-                for sid in evidence['source_ids']:
+                for sid in self.source_ancestors(evidence['source_ids']):
                     source = self.records['sources'][sid]
                     texts[sid] = ' '.join(source[key] or '' for key in ('title', 'uri', 'date', 'locator', 'excerpt'))
             self.documents[cid] = {record_id: Counter(tokens(text)) for record_id, text in texts.items()}
+
+    def source_ancestors(self, source_ids) -> set[str]:
+        result, pending = set(source_ids), list(source_ids)
+        while pending:
+            source = self.records['sources'][pending.pop()]
+            for parent in source.get('ancestry', {}).get('parent_source_ids', []):
+                if parent not in result:
+                    result.add(parent)
+                    pending.append(parent)
+        return result
 
     def envelope(self, operation: str, **result) -> dict:
         return {'format_version': '1.0', 'build': dict(self.build), 'operation': operation, **result}
@@ -131,6 +141,7 @@ class Knowledge:
             evidence = self.records['evidence'][eid]
             ids['sources'].update(evidence['source_ids'])
             ids['claims'].update(evidence['claim_ids'])
+        ids['sources'] = self.source_ancestors(ids['sources'])
         for cid in ids['claims']:
             ids['questions'].update(self.knowledge['reverse_links']['claims'][cid]['question_ids'])
         paths = {f'{kind}/{item_id}.yaml' for kind, values in ids.items() for item_id in values}
@@ -317,6 +328,10 @@ class Knowledge:
         return self.envelope('valid_at', at=at, interpretation='recorded_applicability_only',
                              outside_recorded_intervals=outside, **result)
 
+    def lineage(self, evidence_id: str | None = None) -> dict:
+        from scripts.source_lineage import source_lineage
+        return source_lineage(self, evidence_id)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -335,6 +350,8 @@ def main() -> int:
     temporal = sub.add_parser('valid-at')
     temporal.add_argument('at')
     temporal.add_argument('--offset', type=int, default=0)
+    lineage = sub.add_parser('lineage')
+    lineage.add_argument('--evidence', dest='evidence_id')
     for name in ('traverse', 'dependents'):
         walk = sub.add_parser(name)
         walk.add_argument('seed')

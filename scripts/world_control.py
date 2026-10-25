@@ -116,6 +116,9 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
     for source in p['sources']:
         rec = copy.deepcopy(source)
         rec['id'] = maps['sources'][source['id']]
+        if 'ancestry' in rec:
+            rec['ancestry']['parent_source_ids'] = [maps['sources'].get(parent, parent)
+                                                   for parent in rec['ancestry']['parent_source_ids']]
         set_record(f"sources/{rec['id']}.yaml", rec)
     for evidence in p['evidence']:
         rec = copy.deepcopy(evidence)

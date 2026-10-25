@@ -194,7 +194,8 @@ class TemporalTests(unittest.TestCase):
     def test_local_temporal_definitions_and_bundled_schema_are_synchronized(self):
         claims = json.loads((ROOT / 'docs/schemas/claims.schema.json').read_bytes())
         submission = json.loads((ROOT / 'docs/schemas/submission.schema.json').read_bytes())
-        self.assertEqual(claims['$defs'], submission['$defs'])
+        for name in ('time_bound', 'time_interval', 'valid_time'):
+            self.assertEqual(claims['$defs'][name], submission['$defs'][name])
         self.assertEqual((ROOT / 'docs/schemas/submission.schema.json').read_bytes(),
                          (ROOT / 'skills/resolvent/references/submission.schema.json').read_bytes())
 

@@ -237,6 +237,39 @@ dates, merged provenance and run IDs. The shared plugin 1.1.0 understands both
 protocols and must use legacy 1.0 on a repository that has not adopted 1.1.
 See `docs/Ontology.md` for reviewed interval semantics and identity rules.
 
+## Source lineage reports
+
+From an existing verified compiled package, inspect all recorded source/evidence
+lineage or focus on a canonical evidence item:
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge lineage
+python scripts/query_knowledge.py --package .resolvent/knowledge lineage --evidence E-<uuid>
+```
+
+`Knowledge.lineage(evidence_id=None)` returns a deterministic read-only report pinned
+to the package's build/revision. It retains source/evidence records and anchors,
+declared source ancestors, unknown/unretrieved nodes, upstream evidence through
+joint claim premises, associated claims and connector-only evidence. A focused
+report includes related evidence sharing an origin plus the required upstream nodes.
+Unfiltered reports preserve unused source records too. L2 retrieval and keyword
+discovery include declared source ancestors without changing relevance into confidence.
+
+Flags distinguish `deterministic_metadata` (same declared source/ancestor or identical
+declared SHA-256) from `heuristic` (same normalized HTTP(S) URI or repeated substantial
+excerpt). Hash equality is a declaration about exact content, not proof of truth or
+inspection. Source URIs are never fetched. Excerpt comparison normalizes case and
+whitespace and requires 80 characters/12 words; common boilerplate can match.
+Flags include source/evidence IDs, claim associations, access and an unresolved
+independence assessment. No flag or missing flag changes canonical independence,
+uncertainty, lifecycle or admission. Missing ancestry remains usable and unresolved.
+
+The format remains derived wrapper 1.0; native optional source ancestry is retained.
+Compiler 1.2.0 fingerprints the updated schema/policy. New contributions use protocol
+1.2 only after that world's reviewed governance upgrade; no old record rewrite is
+required. See `docs/Ontology.md` for field semantics and `docs/PLUGIN_RELEASE.md` for
+client/workflow compatibility. Reports and rebuilt indexes never write model data.
+
 ## Scheduled maintenance
 
 The weekly Monday workflow and its **Run workflow** button create one workset PR

@@ -145,6 +145,19 @@ def check_temporal(claim: dict) -> None:
             raise Invalid(f"{claim['id']}: {exc}") from exc
 
 
+def check_ancestry(source: dict, known_source_ids: set[str]) -> None:
+    if 'ancestry' not in source:
+        return
+    ancestry = source['ancestry']
+    parents = ancestry['parent_source_ids']
+    fail(set(parents) <= known_source_ids, f"{source['id']}: unresolved ancestry source")
+    fail(source['id'] not in parents, f"{source['id']}: self source ancestry")
+    fail(ancestry['status'] != 'original' or not parents,
+         f"{source['id']}: declared original source cannot also declare reused parents")
+    fail(ancestry['status'] != 'derived' or bool(parents),
+         f"{source['id']}: derived source needs declared parents; use unknown when not established")
+
+
 def no_duplicates(values: list[Any], name: str) -> None:
     fail(len(values) == len(set(values)), f"Duplicate entries in {name}")
 
@@ -172,13 +185,19 @@ def acyclic(edges: list[tuple[str, str]], description: str) -> None:
             stack.extend((target, False) for target in graph.get(node, []))
 
 
-def validate_submission(p: dict, existing: dict[str, dict]) -> None:
+def validate_submission(p: dict, existing: dict[str, dict], existing_sources: dict | None = None) -> None:
     local: dict[str, set[str]] = {}
     for group in ("sources", "evidence", "claims", "connectors", "questions"):
         ids = [x["id"] for x in p[group]]
         no_duplicates(ids, f"{p['id']}.{group}")
         local[group] = set(ids)
     sources = {s["id"]: s for s in p["sources"]}
+    known_sources = set(sources) | set(existing_sources or {})
+    for source in sources.values():
+        check_ancestry(source, known_sources)
+    acyclic([(source['id'], parent) for source in sources.values()
+             for parent in source.get('ancestry', {}).get('parent_source_ids', [])
+             if parent in sources], 'source ancestry')
     evidence = {e["id"]: e for e in p["evidence"]}
     known_claims = local["claims"] | set(existing)
     for e in p["evidence"]:
@@ -267,12 +286,16 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
     idx = indexes(state)
     claims, evidence, sources, graph = [idx.get(n, {}) for n in ("claims", "evidence", "sources", "graph")]
     for p in idx.get("submission", {}).values():
-        validate_submission(p, claims)
+        validate_submission(p, claims, sources)
         parent = p["parent_run_id"]
         fail(parent is None or parent in idx.get("submission", {}), f"{p['id']}: unknown parent contribution")
         fail(parent != p["id"], "A contribution cannot be its own parent")
     acyclic([(p['id'], p['parent_run_id']) for p in idx.get('submission', {}).values() if p['parent_run_id']], 'contribution lineage')
     premise_edges = []
+    for source in sources.values():
+        check_ancestry(source, set(sources))
+    acyclic([(source['id'], parent) for source in sources.values()
+             for parent in source.get('ancestry', {}).get('parent_source_ids', [])], 'source ancestry')
     for c in claims.values():
         check_temporal(c)
         fail(set(c["evidence_ids"]) <= set(evidence), f"{c['id']}: unresolved canonical evidence")

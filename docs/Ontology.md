@@ -100,6 +100,34 @@ Claims and evidence link both ways; the admission tool maintains those backlinks
 A source may be referenced by several evidence records. Never promote confidence by
 counting repeated summaries of the same underlying observation.
 
+## Source ancestry (schema/protocol 1.2)
+
+A source may have optional reviewed `ancestry` metadata: `status` (`original`,
+`derived` or `unknown`), `parent_source_ids`, and nonempty limitation `notes`.
+Absence means unknown. A declared original has no reused parents; a derived source
+requires at least one known parent. Unknown may preserve partially known parents
+without inventing the missing lineage. All references resolve to source records;
+self-links and cycles are invalid. Existing IDs, excerpts, locators and inspection
+status remain unchanged. An unavailable upstream source may remain unknown or be
+represented by an honestly anchored `not_retrieved` source; never invent its passage.
+
+Optional `version` identifies the source version; `content_sha256` is a lowercase
+SHA-256 digest of explicitly identified exact content bytes. Do not present a hash
+of a title, normalized excerpt or guessed content as a whole-source fingerprint.
+A publisher-declared digest can be retained without pretending that the source was
+retrieved; preserve the limitation in notes and the actual access status.
+
+Declared parent links and matching declared digests establish metadata relationships,
+not truth or independent observation. Same-URI and repeated-excerpt cues remain
+heuristics. Different URLs, missing flags or declared originals do not establish
+independence either. Reviewers inspect actual support and scope; reports never
+automatically promote evidence, alter uncertainty or retire a record. Preserve joint
+premise sets when tracing evidence through earlier claims.
+
+Protocol 1.2 adds only this optional source field. Immutable 1.0/1.1 inputs and older
+canonical records remain valid; old inputs cannot retroactively acquire new fields.
+Adopt the extension through repository governance before submitting it.
+
 ## Connectors
 
 Keep two canonical types initially:
