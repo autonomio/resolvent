@@ -365,6 +365,15 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
     if require_closure:
         fail(set(submissions) <= closed, "Awaiting admission agent: contributions need a materialized closure before merge: " + ", ".join(sorted(set(submissions)-closed)))
     for m in idx.get("maintenance", {}).values():
+        if 'trigger' in m:
+            from scripts.signal_contract import metadata_instant, signal_id, validate_signal
+            try:
+                validate_signal(m['trigger']['signal'], policy_root)
+                metadata_instant(m['created_at'])
+                fail(m['trigger']['signal_id'] == signal_id(m['trigger']['signal']),
+                     'Maintenance change-signal fingerprint is inconsistent')
+            except ValueError as error:
+                raise Invalid(str(error)) from error
         fail(set(m["claim_ids"]) <= set(claims), f"{m['id']}: unresolved maintenance claim")
         fail(set(m["reviewed_claim_ids"]) <= set(m["claim_ids"]), f"{m['id']}: reviewed claims outside workset")
         fail(all(safe_relative(p) and p in state and p.split('/')[0] in CANONICAL_ROOTS for p in m["touched_files"]), "Invalid maintenance touched file")

@@ -170,3 +170,23 @@ changes. These are different artifacts, not duplicate mutable model truth.
 
 For retrospective chat capture, `brief` is null: never pretend criteria existed
 before the work. All routes still receive a closure manifest after admission.
+
+## Change signals
+
+A change signal is observation metadata that can suggest reassessment, not an
+assertion in the world model. Schema 1.0 records event type, origin, reference,
+upstream revision, observed instant, content/event fingerprint, explicit affected
+IDs, reason and limitations. The instant describes observation, not claim valid
+time. A `model_changed` signal also identifies its prior full Git revision.
+
+Signal identity hashes version/type/origin/reference/revision/fingerprint, sorted
+affected IDs and optional prior revision. Observation time, reason and limitations
+do not make the same upstream event new. The fingerprint is declared metadata; it
+does not establish that content was fetched or independently confirmed.
+
+Maintenance profile 1.1 adds required `trigger: {signal_id, signal}`. Legacy 1.0
+records cannot gain a trigger. The compiler validates the payload and recomputes
+its identity. New records remain pending until the usual agent processing and
+independent review; the pending record cannot merge. Completed records retain the
+existing immutability rule. Contribution protocol 1.2 and canonical record formats
+are unchanged.

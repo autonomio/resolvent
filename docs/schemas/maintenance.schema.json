@@ -2,7 +2,10 @@
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": "1.0"
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
     },
     "id": {
       "type": "string",
@@ -67,6 +70,23 @@
         "string",
         "null"
       ]
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "signal_id": {
+          "type": "string",
+          "pattern": "^CS-[0-9a-f]{64}$"
+        },
+        "signal": {
+          "$ref": "#/$defs/change_signal"
+        }
+      },
+      "required": [
+        "signal_id",
+        "signal"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
@@ -82,5 +102,133 @@
     "deferred",
     "no_change_reason"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "change_signal": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "event_type": {
+          "enum": [
+            "source_available",
+            "source_revised",
+            "agent_observation",
+            "model_changed",
+            "manual"
+          ]
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}[Tt](?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:[Zz]|[+-](?:[01]\\d|2[0-3]):[0-5]\\d)$"
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "affected_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[CESRQM]-[0-9a-f]{32}$"
+          },
+          "uniqueItems": true,
+          "maxItems": 200
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "uniqueItems": true,
+          "maxItems": 16
+        },
+        "before_revision": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+        }
+      },
+      "required": [
+        "schema_version",
+        "event_type",
+        "origin",
+        "reference",
+        "revision",
+        "observed_at",
+        "fingerprint",
+        "affected_ids",
+        "reason",
+        "limitations"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "event_type": {
+                "const": "model_changed"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "before_revision"
+            ],
+            "properties": {
+              "revision": {
+                "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "trigger"
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "trigger"
+        ]
+      }
+    }
+  ]
 }
