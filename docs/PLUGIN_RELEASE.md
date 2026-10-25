@@ -108,7 +108,7 @@ The user authorized development/testing of a fixed client with future reviewed
 Autonomio workflow references on 2026-10-25. This does not establish public-directory
 acceptance or authorize unrelated repository access. The installed client fixes
 intent, destination, privacy and review boundaries. Its bundled contribution and
-1.0/1.1 schema references remain a compatibility baseline; the selected world's
+1.0/1.1/1.2 schema references remain a compatibility baseline; the selected world's
 approved current contracts and supported live guidance govern operational details.
 
 `workflows/resolvent/workflow.json` declares workflow version, entrypoint and client
@@ -313,7 +313,7 @@ components still require host publication. The authorized publisher completes
 legal/policy attestations; package checks do not complete them.
 
 The interaction contract and remaining host/fork acceptance checks are in
-[PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). Client 1.2.0 and workflow 1.0.0 implement the
+[PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). Client 1.3.0 and workflow 1.0.1 implement the
 approved reference approach; end-to-end host acceptance remains to be verified.
 Fork updating is a separate proposal and is not enabled by this release.
 
