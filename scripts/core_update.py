@@ -95,7 +95,6 @@ def plan(root,source,index):
     candidate=checked_lock(root,source)
     if candidate['core_version']!=index['core_version']:
         raise ValueError('Candidate core version mismatch')
-    readonly_candidate_workflows(root,source,candidate['files'])
     if version(candidate['core_version'])<version(installed['core_version']):
         raise ValueError('Upstream core version is older than this world')
     if version(candidate['core_version'])==version(installed['core_version']):
@@ -145,6 +144,7 @@ def commit_plan(root,result):
     actual={path for path in set(before)|set(after) if before.get(path)!=after.get(path)}
     if actual!=set(result['changes']):
         raise ValueError('Proposed core tree differs from the bounded plan')
+    readonly_candidate_workflows(root,tree,after)
     message='Update Resolvent core '+result['from_version']+' to '+result['to_version']+'\n'
     return git(root,'commit-tree',tree,'-p',result['base'],input=message.encode(),extra_env={
         'GIT_AUTHOR_NAME':'github-actions[bot]','GIT_COMMITTER_NAME':'github-actions[bot]',
@@ -186,6 +186,9 @@ def publish(root,repository,*,provider=api):
     old=provider('pr','list','--repo',repository,'--state','all','--head',branch,'--limit','1','--json','state,url')
     if old:
         if old[0]['state']=='OPEN':
+            git(root,'fetch','--no-tags','origin','refs/heads/'+branch)
+            existing=git(root,'rev-parse','FETCH_HEAD').decode().strip()
+            readonly_candidate_workflows(root,existing,tree_entries(root,existing))
             provider('workflow','run','validate.yml','--repo',repository,'--ref',branch)
         return {'status':'existing_pr','pull_request':old[0]['url']}
     if any(pr['headRefName'].startswith('resolvent/core/') for pr in pending):

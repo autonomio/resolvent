@@ -46,9 +46,11 @@ Tracked upstream files outside the fixed generic core paths cannot enter the pla
 The proposed Git tree preserves **every other blob and mode**, including all
 canonical/provenance data roots, `resolvent.yaml`, and unmanaged organization files.
 The updater never checks out or executes candidate code with its write credential.
-It also rejects candidate PR/dispatch workflows requesting secrets or write tokens,
+It also checks the actual proposed tree, including preserved local and unmanaged
+workflows, and rejects PR/validation-dispatch jobs requesting secrets or write tokens,
 and requires their checkouts to disable persisted credentials. Changing those
 boundaries needs explicit governance adoption, not an automatic update.
+Retries check the actual existing PR branch before dispatching validation again.
 It creates Git objects and a ready `resolvent/core/<version>` PR, never a main write,
 data migration, force push or merge. Existing/closed PRs deduplicate; an interrupted
 publication can resume only an identical original branch. An unfamiliar branch stops.

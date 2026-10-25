@@ -55,14 +55,15 @@ class CoreTests(unittest.TestCase):
         for name,content in {'scripts/compiler.py':b'# Synthetic baseline compiler.\n',
                              'scripts/retained.py':b'# Synthetic retained file.\n',
                              'scripts/removed.py':b'# Synthetic removable file.\n',
+                             '.github/workflows/validate.yml':b'on: [pull_request, workflow_dispatch]\npermissions:\n  contents: read\njobs:\n  tests:\n    permissions:\n      contents: read\n    runs-on: ubuntu-latest\n    steps:\n      - run: python scripts/compiler.py --require-closure\n',
                              'docs/guide.md':b'Synthetic core guide.\n'}.items():
-            path=self.upstream/name;path.parent.mkdir(exist_ok=True);path.write_bytes(content)
+            path=self.upstream/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(content)
         self.commit(self.upstream,'Synthetic core baseline')
         self.lock(self.upstream,'1.0.0');self.commit(self.upstream,'Synthetic core lock')
         self.v1=core_release.git(self.upstream,'rev-parse','HEAD').decode().strip()
         self.installed=core_release.checked_lock(self.upstream)
         for path in list(self.installed['files'])+[core_release.LOCK]:
-            target=self.world/path;target.parent.mkdir(exist_ok=True);target.write_bytes((self.upstream/path).read_bytes())
+            target=self.world/path;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes((self.upstream/path).read_bytes())
         write_state(self.world,query_state())
         (self.world/'resolvent.yaml').write_text('project: Synthetic organization\n')
         (self.world/'docs'/'organization.md').write_text('Synthetic organization-owned material.\n')
@@ -239,14 +240,14 @@ class CoreTests(unittest.TestCase):
             core_update.commit_plan(self.world,result)
 
     def test_candidate_cannot_raise_pr_workflow_permissions_or_expose_secrets(self):
-        workflow=self.upstream/'.github/workflows/validate.yml';workflow.parent.mkdir(parents=True)
+        workflow=self.upstream/'.github/workflows/validate.yml'
         workflow.write_text('on: pull_request\npermissions:\n  contents: write\njobs: {}\n')
         self.lock(self.upstream,'1.2.0');self.commit(self.upstream,'Unsafe synthetic candidate workflow')
         source=core_release.git(self.upstream,'rev-parse','HEAD').decode().strip()
         index=core_release.release_index(self.upstream)
         core_release.git(self.world,'fetch',str(self.upstream),source)
         with self.assertRaisesRegex(ValueError,'read-only'):
-            core_update.plan(self.world,source,index)
+            core_update.commit_plan(self.world,core_update.plan(self.world,source,index))
         workflow.write_text('on: workflow_dispatch\npermissions:\n  contents: read\n'
                             'jobs:\n  test:\n    env:\n      TOKEN: ${{ format(\'}}{0}\', toJSON(secrets)) }}\n')
         self.lock(self.upstream,'1.3.0');self.commit(self.upstream,'Unsafe synthetic candidate secret access')
@@ -254,7 +255,40 @@ class CoreTests(unittest.TestCase):
         index=core_release.release_index(self.upstream)
         core_release.git(self.world,'fetch',str(self.upstream),source)
         with self.assertRaisesRegex(ValueError,'secrets'):
-            core_update.plan(self.world,source,index)
+            core_update.commit_plan(self.world,core_update.plan(self.world,source,index))
+
+    def test_preserved_local_and_unmanaged_workflows_cannot_grant_candidate_credentials(self):
+        workflow=self.world/'.github/workflows/validate.yml'
+        baseline=workflow.read_text()
+        for unsafe,reason in ((baseline.replace('      contents: read','      contents: write'),'write permissions'),
+                              (baseline+'    env:\n      TOKEN: ${{ secrets.PRIVATE_TOKEN }}\n','secrets')):
+            workflow.write_text(unsafe);self.commit(self.world,'Synthetic local workflow customization')
+            result=self.planned()
+            self.assertNotIn('.github/workflows/validate.yml',result['changes'])
+            with self.assertRaisesRegex(ValueError,reason):
+                core_update.commit_plan(self.world,result)
+        workflow.write_text(baseline)
+        (workflow.parent/'organization.yml').write_text(baseline.replace('contents: read','contents: write'))
+        self.commit(self.world,'Synthetic organization-owned workflow')
+        with self.assertRaisesRegex(ValueError,'read-only'):
+            core_update.commit_plan(self.world,self.planned())
+        self.assertFalse(self.marker.exists())
+
+    def test_existing_pr_retries_check_the_actual_branch_before_dispatch(self):
+        provider=Provider()
+        with patch.object(core_update,'git',side_effect=self.local_fetch):
+            self.assertEqual(core_update.publish(self.world,'example/world',provider=provider)['status'],'pr_created')
+            core_release.git(self.world,'fetch','origin','refs/heads/resolvent/core/1.1.0')
+            core_release.git(self.world,'checkout','-b','synthetic-pr','FETCH_HEAD')
+            workflow=self.world/'.github/workflows/validate.yml'
+            workflow.write_text(workflow.read_text().replace('contents: read','contents: write'))
+            self.commit(self.world,'Synthetic unsafe edit on the pending PR')
+            core_release.git(self.world,'push','origin','HEAD:refs/heads/resolvent/core/1.1.0')
+            core_release.git(self.world,'checkout','main')
+            with self.assertRaisesRegex(ValueError,'read-only'):
+                core_update.publish(self.world,'example/world',provider=provider)
+        self.assertEqual(sum(args[:2]==('workflow','run') for args,_ in provider.calls),1)
+        self.assertFalse(self.marker.exists())
 
 
 if __name__=='__main__':
