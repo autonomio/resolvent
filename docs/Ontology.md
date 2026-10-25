@@ -21,6 +21,67 @@ sparse evidence or an untested assumption. Low uncertainty requires independent
 inspected evidence in this MVP; it never means certainty. Do not translate these
 labels into numerical probabilities without a separately reviewed calibration.
 
+## Temporal semantics (schema/protocol 1.1)
+
+Keep three clocks distinct:
+
+- **Valid time:** when the proposition applies in the world, according to the
+  cited evidence. It is optional, reviewed claim metadata, not a date inferred
+  from the statement or the source's publication date.
+- **Source/report time:** `sources.date` remains the date as reported for that
+  source. It is not silently reinterpreted as an event's effective date. An
+  observation's time, when material, belongs in its scoped assertion and evidence;
+  timing of relationships can likewise be represented by an evidence-backed claim.
+- **Knowledge/admission time:** the canonical state present in a selected admitted
+  Git revision. Time selection uses recorded committer timestamps along that
+  revision's first-parent history. Those timestamps are repository metadata, not
+  independently verified wall-clock observations or source dates.
+
+An optional claim `valid_time` has `status` (specified, unknown or disputed),
+`intervals`, and limitation `notes`. Each interval requires `start`, `end`, explicit
+inclusivity booleans, and nonempty `evidence_ids` drawn from the same claim's
+evidence. Null bounds explicitly assert an open/unbounded side; absence of the
+annotation means unknown, never unbounded validity. Unknown status has no intervals
+and needs an explanation. Disputed status keeps at least two evidence-backed
+alternatives and notes; the compiler does not pick the preferred account.
+
+A bound is `{precision, value}`. Calendar precision is year (`YYYY`), month
+(`YYYY-MM`) or day (`YYYY-MM-DD`). Partial precision is preserved as the range of
+possible boundary days; it is not replaced by a guessed first or last effective
+date. Instant precision uses a timestamp with an explicit numeric offset or `Z`,
+up to microseconds. Calendar and instant bounds are separate domains: without an
+explicit evidence-backed conversion, do not assume a timezone to combine them.
+Invalid calendars, reversed/necessarily empty intervals and unsupported precision
+are rejected. Preserve unsupported or ambiguous source dates as unknown/disputed
+metadata with limitations, rather than truncating or inventing precision.
+
+The query asks either for a full calendar day or a timezone-qualified instant.
+An interval matches only when its boundary precision establishes inclusion.
+Ambiguous partial boundaries or mixed query/interval domains are unresolved.
+Overlapping specified intervals express a union; declared disputed alternatives
+remain unresolved. Unknown/disputed claims appear in a separate unresolved group.
+Temporal applicability does not establish truth or change class, uncertainty,
+evidence access or lifecycle. Retired records remain inspectable at past world times.
+
+Temporal scope is material to identity. Admission remaps its evidence IDs, merges
+additional support only for the same supplied temporal scope, and cannot silently
+overwrite an existing ID with another temporal proposition. A meaning-changing
+replacement needs a new ID and reviewed retirement of the old claim. Metadata-only
+annotations preserving an already scoped statement may retain the ID through
+reviewed maintenance. Dates still belong in the self-contained statement when
+material; the annotation is not a substitute for that requirement.
+
+Protocol 1.1 adds this optional claim field; old 1.0 submissions and canonical
+records remain valid and immutable. Source and connector schemas are unchanged.
+Upgrade repository governance before using the extension; installing a plugin does
+not migrate existing repositories or reinterpret their dates. The compiled wrapper
+format stays 1.0, preserving native fields, with compiler/policy fingerprints updated.
+
+Timestamp reference: [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339.html) and
+its [RFC 9557 offset clarification](https://www.rfc-editor.org/rfc/rfc9557.html#section-2).
+`-00:00` retains unknown local-zone context while specifying a known UTC instant;
+the original offset spelling remains in the source annotation.
+
 ## Evidence and sources
 
 Every claim has an evidence record, including assumptions. Evidence can explicitly

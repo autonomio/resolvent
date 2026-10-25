@@ -1,6 +1,6 @@
 # Resolvent plugin releases
 
-Resolvent 1.0.0 is the generic Autonomio plugin. The developer and website are
+Resolvent 1.1.0 is the generic Autonomio plugin. The developer and website are
 Autonomio and https://autonom.io. Its description identifies the supported task:
 update a Resolvent world model in a GitHub repository the user can access from
 the chat where the plugin is invoked.
@@ -40,7 +40,7 @@ It contains no account credentials or required custom MCP service.
 - `.claude-plugin/marketplace.json`: local Claude catalog.
 - `assets/resolvent.svg` and `assets/resolvent.png`: original icon and directory PNG.
 - `docs/PLUGIN_README.md`: standalone README included in each plugin package.
-- `dist/chatgpt/resolvent-1.0.0.zip` and `dist/claude/resolvent-1.0.0.zip`: identical
+- `dist/chatgpt/resolvent-1.1.0.zip` and `dist/claude/resolvent-1.1.0.zip`: identical
   self-contained plugin distributions, with both host manifests.
 - `dist/plugin/resolvent/`: standalone local catalog source, generated from the same files.
 - `dist/resolvent.zip`: optional standalone Claude skill compatibility artifact.
@@ -59,9 +59,12 @@ is required. World-model data alone does not trigger a release unless it exposes
 a system/protocol incompatibility. Never change the world model just to reset a
 release or validation check.
 
-Keep the shared workflow, host manifests and release versions aligned. Protocol
-1.0 remains protocol 1.0 in this release: resetting the public plugin version does
-not reset run identities, schema semantics or the retained observer's policy version.
+Keep the shared workflow, host manifests and release versions aligned. Release
+1.1.0 adds optional evidence-linked claim valid time through contribution protocol
+1.1 while continuing to accept immutable 1.0 runs and unannotated canonical records.
+Run identities, closure schema 1.0 and the retained observer's policy version remain
+unchanged. Old repositories require an explicit governance upgrade before 1.1 fields
+can be submitted; installing the plugin does not upgrade their schemas or history.
 Synchronize `skills/resolvent/references/submission.schema.json` with the approved
 `docs/schemas/submission.schema.json` when that protocol changes. Coordinate upgrades
 to existing world-model repositories; templates do not distribute later changes.
@@ -103,7 +106,7 @@ It checks out that exact validated commit; no PR artifacts are trusted for publi
 
 The PR checks require a higher shared version when packaged files, packaging
 scripts or either published marketplace catalog change. A first
-portable release starts at 1.0.0. Release CI compares the ZIP digest against the
+portable release starts at 1.1.0. Release CI compares the ZIP digest against the
 last publication: data-only commits do not change the release branch or create
 another release, and changed bytes cannot reuse a published version. Older queued
 runs cannot roll publication back. Release retries retain the original source SHA.
@@ -173,6 +176,16 @@ The retrieval command (`scripts/query_knowledge.py`) is a local read interface o
 that compiled format. It changes no submission schema, admission behavior,
 installed skill, host manifest or distribution bytes. The existing plugin remains
 compatible, so this repository-only query API requires no plugin release.
+
+Valid-time support changes the installed contribution protocol and shared workflow.
+Release 1.1.0 therefore synchronizes the optional 1.1 submission schema, skill,
+host manifests and both distributions. The schema evaluator remains fail-closed;
+its existing local-reference/conditional support handles the new optional structure.
+The observer policy and existing credential protections are unchanged. Canonical
+source/connector fields and closure schema 1.0 are unchanged, and existing 1.0
+records require no rewrite. Explicit repository governance adoption is required
+before installed clients may emit 1.1 annotations. `docs/Ontology.md` and
+`docs/OPERATIONS.md` specify the clock separation and migration path.
 
 References: https://resend.com/docs/api-reference/emails/send-email and
 https://resend.com/docs/dashboard/emails/idempotency-keys.

@@ -1,6 +1,6 @@
 {
   "name": "resolvent",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Update a Resolvent world model in a GitHub repository you can access, from the chat where you invoke Resolvent. Supply OWNER/REPOSITORY and your question; Resolvent handles the contribution workflow.",
   "author": {
     "name": "Autonomio",
@@ -28,7 +28,7 @@
   "extensions": {
     "com.openai": {
       "publication": {
-        "release_notes": "Initial generic Autonomio release. Select the world-model repository in chat. Preserves the supplied 1.4.1 contribution workflow; removes organization-specific defaults, standing merge delegation and Portal capture coupling.",
+        "release_notes": "Adds optional, evidence-linked claim valid time through protocol 1.1 while retaining legacy 1.0 contributions. Preserves unknown and disputed dates, source/admission clock separation and reviewed temporal scope identity.",
         "countries": []
       }
     }

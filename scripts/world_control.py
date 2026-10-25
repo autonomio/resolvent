@@ -19,6 +19,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.model import Invalid, digest, fail, indexes, load_state, read_data, validate_state
+from scripts.temporal import merge_temporal, temporal_scope
 
 NAMESPACE = uuid.UUID('f546a1e4-a5b6-4a1d-9b85-d348abf54b03')
 FAMILIES = ('claims', 'evidence', 'sources', 'graph', 'questions', 'briefs')
@@ -56,6 +57,12 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
     for group in ('sources', 'evidence', 'graph', 'questions'):
         input_group = 'connectors' if group == 'graph' else group
         maps[group] = {v['id']: canonical_id(submission_id, group, v['id']) for v in p[input_group]}
+
+    def mapped_temporal(candidate: dict) -> dict:
+        value = copy.deepcopy(candidate['valid_time'])
+        for interval in value['intervals']:
+            interval['evidence_ids'] = [maps['evidence'][eid] for eid in interval['evidence_ids']]
+        return value
     current_claims = copy.deepcopy(idx.get('claims', {}))
     # Retired claims are not silently revived by duplicate matching.
     exact = {}
@@ -72,15 +79,23 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
         if action == 'merge':
             cid = d.get('target')
             fail(cid in current_claims and current_claims[cid]['state'] == 'active', 'Merge target must be an active canonical claim')
+            if 'valid_time' in c:
+                fail(temporal_scope(c['valid_time']) == temporal_scope(current_claims[cid].get('valid_time')),
+                     'Temporal scope differs; do not rewrite an existing claim proposition')
             disposition = 'merged'
         elif action == 'accept':
             match = exact.get((normalized(c['statement']), c['class']), [])
+            if 'valid_time' in c:
+                match = [target for target in match if temporal_scope(current_claims[target].get('valid_time')) ==
+                         temporal_scope(c['valid_time'])]
             fail(len(match) <= 1, f"Ambiguous existing duplicates for {c['id']}; choose merge target explicitly")
             cid = match[0] if match else canonical_id(submission_id, 'claims', c['id'])
             disposition = 'merged' if match else 'created'
             exact.setdefault((normalized(c['statement']), c['class']), []).append(cid) if not match else None
             if cid not in current_claims:
                 current_claims[cid] = {**copy.deepcopy(c), 'id': cid, 'evidence_ids': [], 'state': 'active'}
+                if 'valid_time' in c:
+                    current_claims[cid]['valid_time'] = mapped_temporal(c)
         else:
             disposition = 'rejected' if action == 'reject' else 'deferred'
         maps['claims'][c['id']] = cid
@@ -116,6 +131,8 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
         rec = current_claims[cid]
         new_eids = [maps['evidence'][v] for v in candidate['evidence_ids']]
         rec['evidence_ids'] = sorted(set(rec['evidence_ids']) | set(new_eids))
+        if 'valid_time' in candidate:
+            rec['valid_time'] = merge_temporal(rec.get('valid_time'), mapped_temporal(candidate))
         # A merge adds evidence, never automatically changes class/uncertainty.
         set_record(f'claims/{cid}.yaml', copy.deepcopy(rec))
         for eid in new_eids:

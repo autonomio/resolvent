@@ -32,13 +32,14 @@ rules; explicit preflight, submit-only, review-only and no-merge limits prevail.
 
 ## Plugin releases and distributions
 
-Version **1.0.0** is the generic package derived from the supplied 1.4.1 workflow.
+Version **1.1.0** adds optional evidence-linked claim valid time while retaining
+legacy 1.0 contributions and the generic workflow derived from the supplied 1.4.1 source.
 Its developer is Autonomio and its website is https://autonom.io. After a reviewed
 main-branch change passes validation, CI publishes versioned GitHub assets and the
 standalone `plugin-release` branch. Public directory setup is a separate first step.
 
-- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.0.0.zip)
-- [Claude plugin ZIP](dist/claude/resolvent-1.0.0.zip)
+- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.1.0.zip)
+- [Claude plugin ZIP](dist/claude/resolvent-1.1.0.zip)
 - [Plugin release and compatibility instructions](docs/PLUGIN_RELEASE.md)
 
 Both ZIPs contain identical code, skills, assets and synchronized host manifests.
