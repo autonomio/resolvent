@@ -35,6 +35,8 @@ def manifest(root: Path, source: str, previous=None):
     if set(config) != {'format_version', 'client_protocol', 'workflow_version', 'entrypoint'}:
         raise ValueError('Unexpected workflow source configuration')
     files = reference_files(root)
+    if files.get('LICENSE.md') != (root / 'LICENSE').read_bytes():
+        raise ValueError('Workflow LICENSE.md must match the approved software LICENSE')
     result = validate_manifest({**config, 'source_commit': source, 'files': {
         path: {'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'git_blob_sha1': blob_sha(data)}
         for path, data in files.items()}})

@@ -16,7 +16,7 @@ class PackagingTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', 'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
+        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', 'LICENSE', 'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
             source, target = ROOT / relative, self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             if source.is_dir():
@@ -39,6 +39,7 @@ class PackagingTests(unittest.TestCase):
             for path in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'skills/resolvent/SKILL.md', 'assets/resolvent.png'):
                 self.assertIn('resolvent/' + path, archive.namelist())
             self.assertEqual(archive.read('resolvent/skills/resolvent/references/submission.schema.json'), (self.root / 'docs/schemas/submission.schema.json').read_bytes())
+            self.assertEqual(archive.read('resolvent/LICENSE'), (self.root/'LICENSE').read_bytes())
             self.assertFalse(any('portal_context' in path for path in archive.namelist()))
 
     def test_reproducibility_ignores_filesystem_timestamp(self):
@@ -80,6 +81,20 @@ class PackagingTests(unittest.TestCase):
     def test_missing_icon_is_rejected(self):
         (self.root / 'assets/resolvent.png').unlink()
         with self.assertRaisesRegex(ValueError, 'icon'):
+            plugin_files(self.root)
+
+    def test_missing_or_symlinked_license_cannot_ship(self):
+        path=self.root/'LICENSE'
+        path.unlink()
+        with self.assertRaisesRegex(ValueError,'LICENSE'):
+            plugin_files(self.root)
+        path.symlink_to(self.root/'plugin.json')
+        with self.assertRaisesRegex(ValueError,'LICENSE'):
+            build(self.root)
+
+    def test_host_license_drift_is_rejected(self):
+        self.mutate_json('.claude-plugin/plugin.json', lambda value:value.update(license='Proprietary'))
+        with self.assertRaisesRegex(ValueError,'Host manifests differ'):
             plugin_files(self.root)
 
 

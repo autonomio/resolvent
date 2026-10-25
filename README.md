@@ -114,5 +114,6 @@ change. Assess whether installed plugin behavior needs updating; ordinary model-
 updates alone do not require a plugin release. Build and check both distributions
 as documented in [plugin releases](docs/PLUGIN_RELEASE.md).
 
-Resolvent is an access-controlled Autonomio project. No public open-source license
-is assigned by this bootstrap. Decide wider redistribution terms before publishing.
+Resolvent software and the plugin use the [MIT License](LICENSE). Organization
+world-model data and third-party source material are excluded and retain their
+rights holders' terms. Forking or updating the software grants no rights to that data.

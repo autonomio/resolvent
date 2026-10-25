@@ -34,7 +34,15 @@
       "publication": {
         "release_notes": "Adds a fixed client with natural-language read/write intent and separately versioned GitHub workflow references. Supports chat research, world-model reads, selected distillation, integrated Reformulate and question-only contributions. No repository migration or hosted service.",
         "countries": []
+      },
+      "review": {
+        "prompts": [
+          "Reformulate this question in three different directions: How could we learn which assumption matters most?",
+          "Use OWNER/REPOSITORY to build context from its world model; do not add anything.",
+          "Distill the selected discussion into OWNER/REPOSITORY, preserving human attribution and uncertainty."
+        ]
       }
     }
-  }
+  },
+  "license": "MIT"
 }

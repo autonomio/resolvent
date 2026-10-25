@@ -4,6 +4,9 @@ Research in your chat. Read your organization's world model when you need it.
 Add selected findings, questions or discussion when you ask.
 Developed by [Autonomio](https://autonom.io).
 
+Software and plugin: [MIT License](LICENSE). Organization world-model data and
+third-party source material are excluded; their rights holders retain control.
+
 ## Use ordinary language
 
 | Ask | What happens |

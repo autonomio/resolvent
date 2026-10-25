@@ -29,11 +29,13 @@ def plugin_files(root: Path = ROOT) -> tuple[str, dict[str, bytes]]:
     version = manifests[0].get('version', '')
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version):
         raise ValueError('Plugin version must be a semantic release version')
-    for key in ('name', 'version', 'description', 'author', 'homepage'):
+    for key in ('name', 'version', 'description', 'author', 'homepage', 'license'):
         if any(manifest.get(key) != manifests[0].get(key) for manifest in manifests[1:]):
             raise ValueError('Host manifests differ: ' + key)
     if manifests[0].get('name') != 'resolvent':
         raise ValueError('Plugin identity must remain resolvent')
+    if manifests[0].get('license') != 'MIT':
+        raise ValueError('The approved software/plugin license must remain MIT')
     interface = manifests[0]['extensions']['com.openai']['interface']
     if interface != manifests[1].get('interface'):
         raise ValueError('OpenAI and compatibility listing metadata differ')
@@ -71,6 +73,7 @@ def plugin_files(root: Path = ROOT) -> tuple[str, dict[str, bytes]]:
         if width != height or width < minimum or width > 4096 or len(data) > 5 * 1024 * 1024:
             raise ValueError('Directory icon size is invalid')
     files['README.md'] = (root / 'docs/PLUGIN_README.md').read_bytes()
+    files['LICENSE'] = skill['LICENSE']
     files['verification/README.md'] = (root / 'verification/README.md').read_bytes()
     for relative, data in files.items():
         if relative.endswith(('.md', '.json', '.yaml', '.py')):

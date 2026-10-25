@@ -240,6 +240,14 @@ https://resend.com/docs/dashboard/emails/idempotency-keys.
 
 ## Public directory setup
 
+The user approved MIT licensing for the software/plugin, with world-model data
+explicitly excluded. Root `LICENSE` is included in both identical host ZIPs and the
+standalone skill. All host manifests declare MIT. The live reference source also
+retains the same notice as `workflows/resolvent/LICENSE.md`; packaging rejects drift.
+Claude's directory requires a license even though local syntax validation passes
+without one. This resolves that concrete initial-listing requirement; it does not
+establish directory approval or license an organization's data.
+
 The publisher is Autonomio; availability is all countries supported by each host.
 OpenAI's `publication.countries: []` records the requested absence of country restrictions.
 The plugin contains no payment tools, custom MCP server or account credentials.
@@ -277,6 +285,14 @@ Automatic MCP server updates do not apply to this package. Importing skills from
 MCP also creates a reviewed package snapshot, not a runtime skill feed. See
 [public publication](https://developers.openai.com/plugins/deploy/submission) and
 [MCP skill imports](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp).
+
+For the initial upload, use the fixed client package (1.2.0 or later), choose the
+skills-only path, and complete the host's identity, scan/review and publication
+steps. No custom MCP connection, MCP demo or reviewer credentials are required.
+After that setup, compatible workflow releases arrive through `workflow-release`
+without another user upload or manual refresh. Only changes to installed package
+components still require host publication. The authorized publisher completes
+legal/policy attestations; package checks do not complete them.
 
 The interaction contract and remaining host/fork acceptance checks are in
 [PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). Client 1.2.0 and workflow 1.0.0 implement the

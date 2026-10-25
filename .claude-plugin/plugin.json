@@ -14,5 +14,6 @@
     "github",
     "evidence"
   ],
-  "icon": "./assets/resolvent.png"
+  "icon": "./assets/resolvent.png",
+  "license": "MIT"
 }
