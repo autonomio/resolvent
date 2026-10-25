@@ -87,6 +87,53 @@ require a compiler-version update. These views are derived and rebuildable; cano
 YAML and merged provenance remain authoritative. No database, provider key, LLM,
 network access or additional dependency is required.
 
+## Change-impact reports
+
+Compare two locally available, admitted revisions without changing either model:
+
+```sh
+python scripts/change_impact.py --before <old-commit-sha> --after <new-commit-sha>
+python scripts/change_impact.py --before <old-commit-sha> --after <new-commit-sha> --format text
+```
+
+`--repo PATH` selects another local repository. JSON is the default stdout format;
+`--format text` provides a review/maintenance summary. The library operation is
+`scripts.change_impact.compare_revisions(repo, before, after)`. Both revisions
+pass the compiled package's structural/closure gate before a report is returned.
+The report pins each full source revision, input-tree hash and compiled-manifest
+hash. It runs offline and ignores uncommitted worktree edits.
+
+Report format **1.0** contains `changes`, `dependency_impacts`, and
+`contextual_impacts`. Changes include full before/after canonical records, their
+IDs, changed fields and `added`, `edited`, `retired` or `removed` operations.
+`support_changed` marks source/evidence changes and changes to evidence links.
+The report compares all canonical fields, including statements, class, uncertainty,
+limitations, sources, lifecycle, connectors and questions. Provenance remains in
+the pinned compiled packages; a provenance-only edit does not invent a claim change.
+
+Dependency impact follows declared source-to-evidence-to-claim links, connector
+evidence, reverse active dependencies and evidence-premise sets. Paths retain the
+whole joint premise set when crossing an evidential premise. Each result names the
+changed record, affected claim, snapshot (`before` or `after`), before/after claim
+state and the exact typed path with evidence/connector IDs. The first claim consumer
+is `direct`; subsequent claim consumers are `transitive`. The changed claim itself
+is listed under changes, rather than as its own consumer.
+
+Each snapshot is traversed separately so removed and added edges cannot create a
+path that never existed. Retired connectors do not propagate in that snapshot;
+their earlier active paths remain inspectable in the before snapshot. For each
+changed record and affected claim, the tool keeps one explanation per snapshot and
+impact type: fewest claim consumers, then fewest steps, then lexical edge order.
+Distinct changed-record causes are retained; all alternative paths are not enumerated.
+An active coupling produces contextual exposure of its adjacent claims, including
+couplings reached through support/dependency paths. Traversal stops at the coupling;
+context never becomes dependency propagation. No links are inferred from text.
+
+Every impact is `potentially_affected`. It is a reassessment prompt, not a finding
+of invalidation. The tool makes no epistemic judgment and writes no canonical
+record, maintenance workset or proposal. Corrections still require the existing
+governed admission/maintenance and independent review.
+
 ## Scheduled maintenance
 
 The weekly Monday workflow and its **Run workflow** button create one workset PR
