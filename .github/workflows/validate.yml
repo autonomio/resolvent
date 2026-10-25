@@ -83,9 +83,10 @@ jobs:
       - name: Validate the actual world with the proposed core (no write token)
         run: python scripts/compiler.py --require-closure
       - name: Verify committed core inventory
+        if: github.repository == 'autonomio/resolvent'
         run: python scripts/core_release.py check
       - name: Require a version bump for core changes
-        if: github.event_name == 'pull_request'
+        if: github.repository == 'autonomio/resolvent' && github.event_name == 'pull_request'
         run: python scripts/core_release.py check --base "$BASE_SHA"
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

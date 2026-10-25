@@ -78,7 +78,10 @@ git add resolvent-core.lock.json
 
 The generator inventories staged regular Git files under explicit core paths,
 excluding data, configuration, the lock itself and all unlisted paths. CI checks
-the committed inventory and requires a version increase for changed core bytes.
+the committed inventory and requires a version increase for changed core bytes in
+the upstream release repository only. Organization repositories retain their
+unmanaged files and unaffected local customizations; their CI validates the model
+without requiring their whole tree to equal the upstream release inventory.
 Existing plugin/workflow version requirements still apply independently. After
 reviewed merge and successful main validation, the upstream-only publisher advances
 `core-release` by an ordinary fast-forward. Data-only commits and retries preserve

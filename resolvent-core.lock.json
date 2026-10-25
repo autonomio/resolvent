@@ -68,10 +68,10 @@
       "sha256": "5555637f1b4fb7113a5f0591709540131cf50d3f1279b3e09592833f38ca2815"
     },
     ".github/workflows/validate.yml": {
-      "bytes": 4135,
-      "git_blob": "2a74fb2ff95a05598d43b38ddb8e2fd809def6be",
+      "bytes": 4236,
+      "git_blob": "5838654b2c76c49b5794df10e78710c1de0211b7",
       "mode": "100644",
-      "sha256": "a70ddc63886710cc8243d148337dc3dc2b914dda4461cd6fe4797916ebf849a2"
+      "sha256": "588c66577b8c4cacdea06e87667cc11e54ef5675065bf4af0981cc60b9c8e85d"
     },
     ".gitignore": {
       "bytes": 93,
@@ -386,10 +386,10 @@
       "sha256": "7893e5e7b5564db6d5fd73f9ea7ec7dda0e49eb269c4e8c959bc64d53933f4e8"
     },
     "docs/CORE_UPDATES.md": {
-      "bytes": 5438,
-      "git_blob": "756cce79f9c4b5ea49dda9e83628b47eaa20ee39",
+      "bytes": 5675,
+      "git_blob": "7d1574460dd4b622380a5e6ca1cb01b0f748da27",
       "mode": "100644",
-      "sha256": "0019322a8d33306497d20fea94fa7ba6783ac978131911dc027a62acf92041b5"
+      "sha256": "dcf21ebb9b0795181ab99fd2415ece86700cde2ddc37415e588c20194bb98641"
     },
     "docs/EXTRACTION.md": {
       "bytes": 2436,
@@ -896,10 +896,10 @@
       "sha256": "2aadcca5857e78007915a7cec71b7bac726bd7504ddc093f074341629d763eac"
     },
     "tests/test_core_update.py": {
-      "bytes": 15820,
-      "git_blob": "633ae539d385166d573f39e0c6772ea5044af783",
+      "bytes": 16223,
+      "git_blob": "6353538615001e41208a72248f9740a3621e2ca9",
       "mode": "100644",
-      "sha256": "bcfee7d425c05a1d4aead5e82aac2ce94a9c4be40fb53451c4b08a67eb09b774"
+      "sha256": "fd2f3e8a0d5680fc9674ae21c674cea97a91ba7007acbd081529c839ea799225"
     },
     "tests/test_knowledge.py": {
       "bytes": 16111,

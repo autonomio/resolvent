@@ -209,6 +209,10 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(validate['permissions'],{'contents':'read'})
         self.assertEqual(validate['steps'][0]['with']['persist-credentials'],'false')
         self.assertIn('python scripts/compiler.py --require-closure',[step.get('run') for step in validate['steps']])
+        inventory=next(step for step in validate['steps'] if step.get('name')=='Verify committed core inventory')
+        version=next(step for step in validate['steps'] if step.get('name')=='Require a version bump for core changes')
+        self.assertEqual(inventory['if'],"github.repository == 'autonomio/resolvent'")
+        self.assertIn("github.repository == 'autonomio/resolvent'",version['if'])
         release=load('.github/workflows/core-release.yml')['jobs']['publish']
         self.assertIn("github.repository == 'autonomio/resolvent'",release['if'])
         self.assertIn("workflow_run.conclusion == 'success'",release['if'])
