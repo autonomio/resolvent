@@ -1,4 +1,4 @@
-# Contribution protocol 1.1 (legacy 1.0 supported)
+# Contribution protocol 1.2 (legacy 1.0/1.1 supported)
 
 Normalized input: `input-artefacts/RUN-<32 lowercase hexadecimal UUID>.json`.
 The authoritative machine schema is `docs/schemas/submission.schema.json` in the
@@ -8,7 +8,7 @@ admission under `ADMISSION.md`, producing the canonical YAML and required
 brief/result/closure artifacts. A proposal-only PR is unfinished authoring work
 when the invoking agent can perform that approved job.
 
-Required fields: schema_version="1.0" or "1.1", id, input_method, created_at (ISO datetime
+Required fields: schema_version="1.0", "1.1" or "1.2", id, input_method, created_at (ISO datetime
 with timezone), researcher, title, scope, origin, parent_run_id (null for first run),
 brief, result, sources, evidence, claims, connectors, questions, handoff,
 method_metadata. `researcher` is an attributed name/handle from known context;
@@ -31,8 +31,9 @@ of candidate claims and the relevant existing model; no fixed edge count is requ
 `questions`: [{id, question, claim_ids}].
 `handoff`: summary, no_claims_reason: string/null, suggested_follow_up: string list.
 `method_metadata`: route-specific fields from ROUTES.md. Keep
-every ordinary route field. Use 1.0 on repositories that have not adopted 1.1;
-the new optional `valid_time` claim field requires approved protocol 1.1. Run the authoritative
+every ordinary route field. Use the selected world's approved protocol: optional
+`valid_time` requires 1.1 or later; optional source `ancestry` requires 1.2.
+Never silently omit a requested extension on an older world. Run the authoritative
 submission and canonical validators before publication. The plugin does not
 install or weaken repository governance.
 
@@ -65,6 +66,21 @@ when merging evidence. Changed temporal scope cannot silently overwrite a claim 
 Existing 1.0 runs and merged provenance remain unchanged; a new temporal contribution
 uses 1.1 after repository governance has adopted it. Old repositories require an
 explicit governance upgrade before this field can be submitted.
+
+## Optional source ancestry (1.2)
+
+`sources[].ancestry` has `status` (original/derived/unknown), `parent_source_ids`
+and nonempty `notes`. It may include `version` and lowercase 64-hex `content_sha256`
+for explicitly identified exact content bytes. Preserve the existing source's
+locator, excerpt and actual inspection/access status. Absence remains unknown.
+Never infer independence from a declaration or matching digest, or guess ancestry.
+
+Originals have no reused parents; derived sources require a known parent. Unknown
+may preserve partially known parents with limitations. Parents can be local source
+IDs or existing canonical S-IDs; admission remaps local IDs and retains canonical
+parents. Every parent must resolve, and self-links/cycles are invalid. This metadata
+does not relax independent inspected evidence requirements or promote uncertainty.
+Use legacy 1.0/1.1 where appropriate; adopt governance before submitting 1.2 fields.
 
 Use the JSON example in `assets/conversation-example.json` for field structure,
 replacing every illustrative value with actual selected material. It is a synthetic
