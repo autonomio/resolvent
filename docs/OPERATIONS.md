@@ -280,8 +280,10 @@ repository contracts through authorized access; contributions retain schema vers
 System changes require assessing plugin compatibility and issuing a new plugin
 release when necessary. Validated main changes publish GitHub release assets and
 the standalone `plugin-release` branch through release CI. Claude directory updates
-can follow that branch automatically after initial setup; ChatGPT skill updates
-still require a publisher upload/review/publish step. See `docs/PLUGIN_RELEASE.md`.
+can follow that branch automatically after initial setup. ChatGPT workspace admins
+can import that GitHub marketplace once and receive automatic syncs; public ChatGPT
+directory skill updates still require upload/review/publication. These are different
+distribution routes. See `docs/PLUGIN_RELEASE.md` for exact setup and limitations.
 
 ## Scope and privacy
 

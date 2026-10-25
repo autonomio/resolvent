@@ -46,8 +46,11 @@ Both ZIPs contain identical code, skills, assets and synchronized host manifests
 Local catalogs are in `.agents/plugins/marketplace.json` and
 `.claude-plugin/marketplace.json`; their source is the generated standalone plugin
 at `dist/plugin/resolvent/`. Claude's public directory can scan the release branch
-and automatically publish passing versions once enabled. ChatGPT skill changes
-require ZIP upload, review and publication. Data-only updates create no plugin release.
+and automatically publish passing versions once enabled. ChatGPT workspace admins
+can import the GitHub marketplace once and automatically sync `plugin-release`;
+[setup instructions](docs/PLUGIN_RELEASE.md#public-directory-setup) explain the scope.
+Public ChatGPT directory skill changes require ZIP upload, review and publication.
+Data-only updates create no plugin release.
 For direct Claude marketplace distribution, the installation line is:
 
 ```text

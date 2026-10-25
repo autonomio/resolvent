@@ -205,10 +205,35 @@ the developer portal. Anthropic controls the applicable publishing setting; a
 reviewer can still hold a release. The directory preserves the last published version
 while an update is held. The branch must exist before submission validation.
 
-For ChatGPT, upload the ChatGPT ZIP to the existing Resolvent listing after the
-initial listing has been created. Bundle updates require a new ZIP, checks, review
-and publisher action. No public CI submission API is documented for this skills-only
-flow. Automatic MCP server updates do not apply to this package.
+For a ChatGPT workspace, an admin can configure GitHub management once:
+
+1. Open **Admin > Plugins > Add > Import marketplace**.
+2. Set **Source** to `https://github.com/autonomio/resolvent`, leave **Path** empty,
+   and set **Branch, tag, or commit** to `plugin-release`.
+3. Import, review the result and configure workspace availability. Each member still
+   needs their own authorized GitHub connection for world-model operations.
+
+New imports have automatic daily sync enabled; **Sync now** requests an earlier
+refresh. The release branch contains both supported catalogs, with the plugin at
+their root-relative `./` source. Use the branch to receive updates, not an immutable
+tag or commit. Invalid updates retain the last working workspace version. This is
+workspace distribution, separate from the universal public directory; it is not a
+documented installation route for every individual account. See
+[OpenAI's GitHub marketplace sync instructions](https://learn.chatgpt.com/docs/enterprise/plugin-management).
+
+For the public ChatGPT directory, upload the ChatGPT ZIP to the existing Resolvent
+listing after the initial listing has been created. Bundle updates require a new
+ZIP, checks, review and publisher action. No public CI submission API or arbitrary
+website/branch polling setting is documented for this skills-only public flow.
+Automatic MCP server updates do not apply to this package. Importing skills from
+MCP also creates a reviewed package snapshot, not a runtime skill feed. See
+[public publication](https://developers.openai.com/plugins/deploy/submission) and
+[MCP skill imports](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp).
+
+The proposed interaction contract, live-reference alternative and safe fork-update
+design are in [PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). They are proposals, not behavior
+already shipped in 1.1.0. This documentation correction changes no packaged file,
+protocol or release bytes, so it does not require a plugin version bump.
 
 Verify Autonomio's publishing identity in each portal, and supply any required
 support/privacy/terms URLs from real publisher pages. Unknown URLs and attestations
