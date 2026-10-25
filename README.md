@@ -2,11 +2,11 @@
 
 **A world-model repository and a generic research plugin by [Autonomio](https://autonom.io).**
 
-Resolvent updates a world model in a GitHub repository you can access, from the chat
-where you invoke it. One plugin serves every compatible repository: supply its
-OWNER/REPOSITORY and your question or selected conversation. The plugin researches,
-prepares claims and evidence, completes canonical admission, handles independent
-review and CI, and performs the authorized guarded merge.
+Resolvent helps you research and refine questions in chat, read your world model
+for context or answers, and explicitly add selected findings, questions or discussion.
+One plugin serves compatible GitHub repositories through your authorized connection.
+Invoking it alone authorizes neither model reads nor writes. Contributions preserve
+evidence and uncertainty through admission, independent review, CI and authorized merge.
 
 A claim's semantic core is a short self-contained statement, categorical uncertainty
 and an evidence record. IDs, class and lifecycle are bookkeeping. This template
@@ -25,21 +25,26 @@ For work already in the chat:
 
 > @resolvent OWNER/REPOSITORY Capture the useful findings from this conversation. Do not do new research.
 
-No organization or repository is configured in the plugin. If the destination is
-missing, Resolvent asks once and retains it for the current task. A full contribution
+Name a repository or organization when model access is needed. Resolvent verifies
+the destination, asks if ambiguous, and retains it in the current chat. An optional
+native project instruction can reuse the selection across chats. Chat-only research
+and reformulation need no destination. [Examples and setup](docs/PLUGIN_README.md).
+A full contribution
 finishes with verified merge under the user's actual authorization and repository
 rules; explicit preflight, submit-only, review-only and no-merge limits prevail.
 
 ## Plugin releases and distributions
 
-Version **1.1.0** adds optional evidence-linked claim valid time while retaining
-legacy 1.0 contributions and the generic workflow derived from the supplied 1.4.1 source.
+Plugin **1.2.0** adds a fixed client and separately versioned live workflow references,
+including explicit read/write intent, distillation and integrated question reformulation.
+The world-model protocol remains 1.1 with legacy 1.0 compatibility.
 Its developer is Autonomio and its website is https://autonom.io. After a reviewed
 main-branch change passes validation, CI publishes versioned GitHub assets and the
 standalone `plugin-release` branch. Public directory setup is a separate first step.
 
-- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.1.0.zip)
-- [Claude plugin ZIP](dist/claude/resolvent-1.1.0.zip)
+- [Latest published packages](https://github.com/autonomio/resolvent/releases/latest)
+- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.2.0.zip)
+- [Claude plugin ZIP](dist/claude/resolvent-1.2.0.zip)
 - [Plugin release and compatibility instructions](docs/PLUGIN_RELEASE.md)
 
 Both ZIPs contain identical code, skills, assets and synchronized host manifests.
@@ -51,6 +56,11 @@ can import the GitHub marketplace once and automatically sync `plugin-release`;
 [setup instructions](docs/PLUGIN_RELEASE.md#public-directory-setup) explain the scope.
 Public ChatGPT directory skill changes require ZIP upload, review and publication.
 Data-only updates create no plugin release.
+The client reads verified operational references from the separate `workflow-release`
+branch. A routine workflow update changes that channel without replacing the installed
+ZIP. Source content is pinned for each operation; fixed permission and destination
+rules remain installed. This is an application design requiring host verification,
+not a claim that the public ChatGPT directory polls arbitrary websites for packages.
 For direct Claude marketplace distribution, the installation line is:
 
 ```text
@@ -80,6 +90,7 @@ stale-approval dismissal, resolved conversations and up-to-date branches. See
 | Path | Purpose |
 |---|---|
 | `skills/resolvent/` | Shared generic researcher-facing workflow and references. |
+| `workflows/resolvent/` | Separately versioned live operational guidance. |
 | `plugin.json`, `.codex-plugin/`, `.claude-plugin/` | Portable and host-compatible plugin metadata. |
 | `dist/chatgpt/`, `dist/claude/`, `dist/plugin/` | Reproducible plugin distributions and local catalog source. |
 | `input-artefacts/RUN-*.json` | Immutable retained research/capture contributions. |

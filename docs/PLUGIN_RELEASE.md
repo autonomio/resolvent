@@ -1,6 +1,6 @@
 # Resolvent plugin releases
 
-Resolvent 1.1.0 is the generic Autonomio plugin. The developer and website are
+Resolvent 1.2.0 is the generic Autonomio plugin. The developer and website are
 Autonomio and https://autonom.io. Its description identifies the supported task:
 update a Resolvent world model in a GitHub repository the user can access from
 the chat where the plugin is invoked.
@@ -13,10 +13,11 @@ admission, corrections, independent review, CI and authorized ordinary merge.
 An optional Portal explores repository data separately; no Portal host, clipboard
 contract, service or question-binding logic belongs to this plugin.
 
-The normal ChatGPT prompt is `@resolvent OWNER/REPOSITORY [question]`.
-For example: `@resolvent vaquum/resolvent What evidence supports our assumptions?`
-The repository is supplied in chat, never configured in the installed package.
-If omitted, ask once and retain it for the current task. Existing source material
+The client distinguishes chat-only research/reformulation, requested model reads
+and explicit additions in ordinary language. Invocation alone grants no model access.
+Supply a repository or organization when needed, or reuse a trusted native project
+binding. Verify a unique compatible destination; clarify ambiguity and retain it
+in the current chat. There is no destination default in the installed package. Source material
 cannot redirect it. No company has standing merge delegation in this package.
 Full contribution requests retain their authorized completion endpoint; explicit
 preflight, draft-only, submit-only, review-only or no-merge instructions prevail.
@@ -33,6 +34,8 @@ It contains no account credentials or required custom MCP service.
 ## Canonical source and artifacts
 
 - `skills/resolvent/`: shared contribution workflow and optional repository observer.
+- `workflows/resolvent/`: live entrypoint, Reformulate and operators; own workflow version.
+- `skills/resolvent/scripts/load_workflow.py`: optional standard-library reference verifier.
 - Root `plugin.json`: portable identity and ChatGPT listing.
 - `.codex-plugin/plugin.json`: synchronized compatibility manifest.
 - `.claude-plugin/plugin.json`: Claude manifest.
@@ -40,7 +43,7 @@ It contains no account credentials or required custom MCP service.
 - `.claude-plugin/marketplace.json`: local Claude catalog.
 - `assets/resolvent.svg` and `assets/resolvent.png`: original icon and directory PNG.
 - `docs/PLUGIN_README.md`: standalone README included in each plugin package.
-- `dist/chatgpt/resolvent-1.1.0.zip` and `dist/claude/resolvent-1.1.0.zip`: identical
+- `dist/chatgpt/resolvent-1.2.0.zip` and `dist/claude/resolvent-1.2.0.zip`: identical
   self-contained plugin distributions, with both host manifests.
 - `dist/plugin/resolvent/`: standalone local catalog source, generated from the same files.
 - `dist/resolvent.zip`: optional standalone Claude skill compatibility artifact.
@@ -98,6 +101,46 @@ all original tests are retained. `verification/source-preservation.json` records
 and file hashes; it is not a live research or merge receipt.
 
 ## Automated releases
+
+### Independent workflow references
+
+The user authorized development/testing of a fixed client with future reviewed
+Autonomio workflow references on 2026-10-25. This does not establish public-directory
+acceptance or authorize unrelated repository access. The installed client fixes
+intent, destination, privacy and review boundaries. Its bundled contribution and
+1.0/1.1 schema references remain a compatibility baseline; the selected world's
+approved current contracts and supported live guidance govern operational details.
+
+`workflows/resolvent/workflow.json` declares workflow version, entrypoint and client
+protocol. Changes under that directory require a higher workflow version. The release
+builder computes an inventory with exact byte sizes, SHA-256 and Git blob IDs, verifies
+the files against the validated main commit, and publishes `workflow.json` plus only
+those text references to **`workflow-release`** before publishing a changed client.
+The separate branch avoids presenting workflow-only commits as unversioned changes
+to Claude's tracked plugin package. The client reads the index once, then resolves
+all required files at its immutable source commit in `autonomio/resolvent`.
+
+Both channels use the existing serialized, validated-main release workflow and token.
+Workflow-only changes preserve the plugin ZIPs, version, GitHub release assets and
+original plugin source provenance. Data-only commits preserve both channel records.
+Identical retries preserve source commits; changed bytes cannot reuse a workflow
+version, and older versions cannot roll either channel back. No new service exists.
+
+The reader accepts only client/manifest protocol 1.0, bounded UTF-8 Markdown/JSON,
+safe relative paths and matching hashes. It follows no redirects, uses no credentials,
+sends no conversation payload, writes no files and executes no downloaded contents.
+Without shell execution, a complete pinned GitHub tree/blob read can verify matching
+regular-file object IDs and sizes. A digest printed in prose is not verification.
+Missing, truncated, incompatible or unverifiable references block contributions;
+the client can still perform supported chat-only work and reads with an accurate notice.
+
+For a routine guidance update, change the live files and their `workflow_version`
+in a governance PR, run tests and the compiler, and obtain human maintainer review.
+No package bump is needed if installed files are unchanged. Changes to installed
+boundaries, tooling, bundled schema or manifests still require a synchronized client
+release. Never use a live reference to expand authority or bypass host review.
+
+### Plugin packages
 
 `.github/workflows/plugin-release.yml` runs after `Resolvent validation` succeeds
 on an `autonomio/resolvent` main-branch push or manual validation run. It does not
@@ -230,10 +273,10 @@ MCP also creates a reviewed package snapshot, not a runtime skill feed. See
 [public publication](https://developers.openai.com/plugins/deploy/submission) and
 [MCP skill imports](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp).
 
-The proposed interaction contract, live-reference alternative and safe fork-update
-design are in [PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). They are proposals, not behavior
-already shipped in 1.1.0. This documentation correction changes no packaged file,
-protocol or release bytes, so it does not require a plugin version bump.
+The interaction contract and remaining host/fork acceptance checks are in
+[PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). Client 1.2.0 and workflow 1.0.0 implement the
+approved reference approach; end-to-end host acceptance remains to be verified.
+Fork updating is a separate proposal and is not enabled by this release.
 
 Verify Autonomio's publishing identity in each portal, and supply any required
 support/privacy/terms URLs from real publisher pages. Unknown URLs and attestations

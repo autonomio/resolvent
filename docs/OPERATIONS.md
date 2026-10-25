@@ -274,8 +274,10 @@ python scripts/package_skill.py --check
 python scripts/package_plugin.py --check
 ```
 
-The generic plugin has no pre-bound distribution or repository setting. Users
-select OWNER/REPOSITORY in the invoking chat. Installed instructions load current
+The generic plugin has no default world repository. Users select a repository or
+organization when model access is requested, optionally via native project instructions.
+Chat research/reformulation alone grants no model access. The fixed client verifies
+separately versioned live references from `workflow-release`; installed instructions load current
 repository contracts through authorized access; contributions retain schema version.
 System changes require assessing plugin compatibility and issuing a new plugin
 release when necessary. Validated main changes publish GitHub release assets and

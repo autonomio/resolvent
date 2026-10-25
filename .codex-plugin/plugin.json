@@ -1,7 +1,7 @@
 {
   "name": "resolvent",
-  "version": "1.1.0",
-  "description": "Update a Resolvent world model in a GitHub repository you can access, from the chat where you invoke Resolvent. Supply OWNER/REPOSITORY and your question; Resolvent handles the contribution workflow.",
+  "version": "1.2.0",
+  "description": "Research and refine questions, read your Resolvent world model, or explicitly add selected findings and discussion through your authorized GitHub connection.",
   "author": {
     "name": "Autonomio",
     "url": "https://autonom.io"
@@ -16,19 +16,23 @@
   "interface": {
     "category": "Productivity",
     "composerIcon": "./assets/resolvent.png",
-    "defaultPrompt": "Use Resolvent with OWNER/REPOSITORY to research [question] and update its world model.",
+    "defaultPrompt": [
+      "Research this question with me; keep the discussion in this chat.",
+      "Use OWNER/REPOSITORY to build context from its world model.",
+      "Distill the selected discussion into OWNER/REPOSITORY."
+    ],
     "developerName": "Autonomio",
     "displayName": "Resolvent",
     "logo": "./assets/resolvent.png",
     "websiteURL": "https://autonom.io",
-    "longDescription": "Update a Resolvent world model in a GitHub repository you can access, from the chat where you invoke Resolvent. Give Resolvent OWNER/REPOSITORY and your question or selected conversation, sources, interview, simulation results, or reasoning. It reads that repository's contracts, conducts the requested work, prepares and admits justified claims with evidence and connections, addresses independent review and CI, and completes the authorized guarded merge. Explicit narrower instructions retain their endpoint. No organization, repository, Portal, or model provider is preconfigured. GitHub access comes from your authorized connection or an already available authenticated CLI. An optional Portal can explore the repository separately.",
-    "shortDescription": "Update your world model"
+    "longDescription": "Research and spar in your chat, reformulate questions in three different directions, read a Resolvent world model for context or answers, and explicitly add selected findings, questions or discussion. Resolvent retrieves versioned workflow guidance from Autonomio’s reviewed GitHub release channel while installed permission, destination and review boundaries remain fixed. The organization’s approved repository contracts govern its world model. Invoking the plugin alone authorizes neither world-model reads nor writes. Select a repository or organization when model access is needed; an optional native project instruction can retain the selection. Contributions preserve evidence, uncertainty and human attribution and follow admission, independent review, current CI and authorized merge. GitHub access comes from your existing authorized connection or an available authenticated CLI. No custom MCP service, account or Portal is required. Live-reference loading and public-directory acceptance must be verified on the intended host.",
+    "shortDescription": "Research with your world model"
   },
   "skills": "./skills",
   "extensions": {
     "com.openai": {
       "publication": {
-        "release_notes": "Adds optional, evidence-linked claim valid time through protocol 1.1 while retaining legacy 1.0 contributions. Preserves unknown and disputed dates, source/admission clock separation and reviewed temporal scope identity.",
+        "release_notes": "Adds a fixed client with natural-language read/write intent and separately versioned GitHub workflow references. Supports chat research, world-model reads, selected distillation, integrated Reformulate and question-only contributions. No repository migration or hosted service.",
         "countries": []
       }
     }

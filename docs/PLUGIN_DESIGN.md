@@ -1,9 +1,9 @@
 # Resolvent plugin: interaction and update proposal
 
-Status: discussion draft, 2026-10-25. This records the requested product behavior
-and a proposed implementation boundary. Installed plugin 1.1.0 does not yet provide
-all of it. No new publication, external trust delegation or fork updater is enabled
-by this document.
+Status: implementation candidate, 2026-10-25. The user authorized development and
+testing of the fixed client with reviewed Autonomio GitHub references. Plugin 1.2.0
+and workflow 1.0.0 implement the interaction/reference design below. Publication and
+end-to-end host acceptance remain separate gates. Fork updating is still a proposal.
 
 ## Interaction contract
 
@@ -104,7 +104,7 @@ Two authorities must remain distinct:
 
 - The organization's selected repository supplies its approved schemas, contracts
   and governance from a pinned base revision. It controls what can enter that model.
-- If explicitly accepted, Autonomio's published release branch supplies generic
+- As explicitly accepted for development/testing, Autonomio's published reference branch supplies generic
   workflow guidance within the installed skill's fixed scope. It cannot select a
   world, expand permission, disable review or override the organization's rules.
 
@@ -129,10 +129,10 @@ those boundaries still need a package update. A new package must disclose its li
 references during review; public acceptance and reliable runtime loading remain
 unverified. Do not describe a fetched reference as a newly installed plugin version.
 
-The consequential decision is whether the portable client may automatically trust
-future reviewed generic workflow references from Autonomio's release branch.
-The selected organization's reviewed contracts remain authoritative either way.
-No decision on that additional delegation is assumed here.
+The user accepted this future-reference authority for development/testing. The
+implemented channel is `workflow-release`, separate from the host-tracked
+`plugin-release` package branch. Workflow-only releases preserve installed ZIP bytes
+and original plugin provenance. The selected organization's contracts remain authoritative.
 
 ## Forks and existing world models
 
@@ -185,8 +185,8 @@ released, directory published, installed and currently loaded versions in diagno
 
 ## Implementation boundary
 
-First agree the live-reference authority decision, then change the shared skill and
-all host metadata together in a separate versioned plugin PR. Keep fork updating in
-a separate core PR. Publish only through authorized host routes. This draft and the
-workspace-sync documentation do not modify packaged instructions, schemas or ZIPs;
-no plugin version bump or new publication is required for this documentation PR.
+The approved reference design is implemented with synchronized plugin 1.2.0 host
+metadata, a fixed skill and optional standard-library reader, independently versioned
+workflow sources and the validated-main publisher. Keep fork updating in a separate
+core PR. Publish only through authorized host routes; local testing does not establish
+public-directory acceptance, installation or live model behavior.
