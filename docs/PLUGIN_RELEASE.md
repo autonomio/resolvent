@@ -164,6 +164,11 @@ schemas, the submission protocol, contribution/admission behavior or packaged fi
 The existing plugin continues to use repository contracts and canonical records;
 no plugin update or release is required for this repository-only build command.
 
+The change-impact command (`scripts/change_impact.py`) consumes those compiled
+projections and emits an advisory report. It changes no canonical schema,
+contribution/admission rule, installed plugin behavior or packaged byte. The
+existing plugin remains compatible; this read-only command needs no plugin release.
+
 References: https://resend.com/docs/api-reference/emails/send-email and
 https://resend.com/docs/dashboard/emails/idempotency-keys.
 
