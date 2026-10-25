@@ -158,6 +158,12 @@ Compatibility assessment: the email script and release workflow run outside the
 installed plugin. They do not change bundled instructions, protocol, manifests or
 ZIP bytes, so notification-only changes do not require another plugin version.
 
+The compiled knowledge command (`scripts/build_knowledge.py`) also runs outside
+the installed plugin. Its versioned, derived read format does not change canonical
+schemas, the submission protocol, contribution/admission behavior or packaged files.
+The existing plugin continues to use repository contracts and canonical records;
+no plugin update or release is required for this repository-only build command.
+
 References: https://resend.com/docs/api-reference/emails/send-email and
 https://resend.com/docs/dashboard/emails/idempotency-keys.
 
