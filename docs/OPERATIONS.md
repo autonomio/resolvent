@@ -293,6 +293,63 @@ source URLs, and does not mutate canonical claims. Empty model = no-op. Complete
 close an existing maintenance PR before the next one is created. Review summaries
 and deferrals remain in immutable maintenance records.
 
+## Change-signal maintenance
+
+After adopting this governance, a repository owner can enable the native trigger
+once by setting the Actions repository variable `RESOLVENT_CHANGE_SIGNALS` to
+`true`. No per-contribution action is needed. A successful `Resolvent validation`
+main **push** run triggers one bounded pending workset after newly admitted
+`input-artefacts/RUN-*.json` material appears. The template skips itself. Governance
+and maintenance-only merges do not loop back into maintenance.
+
+The workflow checks out the exact validated main revision, shares the existing
+`resolvent-maintenance` concurrency group/branch prefix and uses the existing token
+permissions. It never executes PR code, reads event artifacts or fetches source
+URLs. It checks current remote main before publishing; a newer head is explicitly
+deferred. It reuses change-impact analysis across the commit's first parent and
+selected revision, then opens a ready PR containing only `maintenance/M-*.yaml`.
+Existing agents must process that pending workset; structural validation blocks
+merge until completion and independent review remains required.
+
+For an explicit local signal, use a JSON object matching
+`docs/schemas/change-signal.schema.json`:
+
+```sh
+python scripts/change_signals.py --signal .resolvent/signal.json
+python scripts/change_signals.py --signal .resolvent/signal.json --apply
+```
+
+The first command reports a plan. `--apply` atomically creates only its pending
+maintenance record on the selected checkout; commit that record on a PR branch
+through the usual path. Source/agent/manual signals need known affected IDs; an
+unknown or unavailable source is recorded without pretending it was inspected.
+There are no external watchers or account grants. Do not include secrets, unrelated
+chat history or private reasoning in a signal. Its metadata becomes PR provenance.
+
+The default is 40 claims (maximum 200), one pending workset across weekly/event
+maintenance, and an hour between processed event worksets. `--limit` and
+`--debounce-seconds` bound explicit local runs. Ranking favors declared/changed
+claims, declared dependency impact, then recorded question/follow-up gaps within
+the affected set; source ancestry expands advisory source discovery. Contextual
+exposure stays distinct from dependency. No heuristic creates a justified link,
+uncertainty upgrade or accepted claim. Overflow and unknown IDs are explicit
+deferrals. Unrelated gaps do not authorize expanding the affected set.
+
+Replays deduplicate against recorded trigger identities. A changed upstream version
+has a distinct identity but cannot bypass the pending-workset or debounce checks.
+The native publisher also remembers existing/closed workset PRs and resumes its
+exact original branch after a failed PR creation without overwriting it. A failed
+validation dispatch can be retried without creating another PR. Unfamiliar branches
+stop publication. Deferred signals are logged, not queued in a new service; the
+unchanged weekly rotating maintenance remains the backstop. Disable the variable
+to stop event preparation without disabling weekly/manual maintenance.
+
+Compiler 1.3.0 fingerprints the signal validator and maintenance profile 1.1.
+This changes repository maintenance only: submission protocol 1.2, canonical
+records, installed plugin authority and workflow reference protocol are unchanged.
+The installed plugin reads the selected world's approved contracts; no plugin
+package or live-workflow update is required for this change.
+
 ## Skill releases
 
 `skills/resolvent/` is the canonical shared workflow. Root `plugin.json`,

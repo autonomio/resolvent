@@ -1,6 +1,6 @@
 [project]
 name = "autonomio-resolvent"
-version = "1.2.0"
+version = "1.3.0"
 description = "An empty, governed world-model template by Autonomio"
 requires-python = ">=3.11"
 authors = [{name = "Autonomio"}]

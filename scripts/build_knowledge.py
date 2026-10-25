@@ -23,7 +23,7 @@ from scripts.temporal import point
 
 ROOT = Path(__file__).resolve().parent.parent
 FORMAT_VERSION = '1.0'
-COMPILER_VERSION = '1.2.0'
+COMPILER_VERSION = '1.3.0'
 
 
 def json_bytes(value: object) -> bytes:
@@ -154,7 +154,7 @@ def compile_revision(repo: Path, revision: str, *, known_at: str | None = None) 
         state = load_state(root)
         counts = validate_state(state, ROOT, require_closure=True)
     knowledge = json_bytes(projection(state))
-    policy_paths = ['scripts/model.py', 'scripts/temporal.py', 'scripts/build_knowledge.py', 'requirements.txt']
+    policy_paths = ['scripts/model.py', 'scripts/temporal.py', 'scripts/signal_contract.py', 'scripts/build_knowledge.py', 'requirements.txt']
     policy_paths += sorted(path.relative_to(ROOT).as_posix()
                            for path in (ROOT / 'docs/schemas').glob('*.schema.json'))
     manifest = {
