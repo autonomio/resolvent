@@ -352,6 +352,9 @@ package or live-workflow update is required for this change.
 
 ## Skill releases
 
+For automatic, data-preserving core update PRs in opted-in forks/template copies,
+see [CORE_UPDATES.md](CORE_UPDATES.md). This is separate from plugin distribution.
+
 `skills/resolvent/` is the canonical shared workflow. Root `plugin.json`,
 `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` describe the same generic
 Autonomio plugin. The ChatGPT and Claude distributions contain identical source.
