@@ -1060,6 +1060,24 @@ class ProviderAndDataTests(unittest.TestCase):
             c.main()
         github.assert_not_called()
 
+    def test_bundled_protocol_supports_optional_1_2_source_ancestry(self):
+        skill = Path(__file__).resolve().parents[3]
+        schema = json.loads((skill / 'references/submission.schema.json').read_text())
+        example = json.loads((skill / 'assets/conversation-example.json').read_text())
+        example['schema_version'] = '1.2'
+        example['sources'][0]['ancestry'] = {
+            'status': 'unknown', 'parent_source_ids': [],
+            'notes': ['Synthetic ancestry is not established.'],
+        }
+        validate(example, schema)
+        example['schema_version'] = '1.1'
+        with self.assertRaises(Invalid):
+            validate(example, schema)
+        example['schema_version'] = '1.2'
+        example['sources'][0]['ancestry']['content_sha256'] = 'not-a-digest'
+        with self.assertRaises(Invalid):
+            validate(example, schema)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -48,7 +48,8 @@ def proposal():
             'status':status, 'parent_source_ids':parents, 'notes':['Synthetic declared lineage only.']}
     p['sources'][0]['ancestry'].update(content_sha256=digest, version='Synthetic version 1')
     p['sources'][1]['ancestry']['content_sha256'] = digest
-    p['evidence'][4]['premise_claim_ids'] = ['c1']
+    p['evidence'][1]['premise_claim_ids'] = ['c1']
+    p['evidence'][4]['premise_claim_ids'] = ['c1','c2']
     p['connectors'] = [{'id':'r1','from':'c4','to':'c1','type':'dependency',
         'spec':'structural:weak:inward', 'reason':'Synthetic premise relation.',
         'uncertainty':'high','evidence_ids':['e5']}]
@@ -113,8 +114,8 @@ class LineageTests(unittest.TestCase):
         report = self.query.lineage(ident('evidence','e5'))
         evidence = report['evidence'][ident('evidence','e5')]
         self.assertEqual(evidence['record']['claim_ids'],[])
-        self.assertEqual(evidence['record']['premise_claim_ids'],[ident('claims','c1')])
-        self.assertEqual(evidence['upstream_evidence_ids'],[ident('evidence','e1')])
+        self.assertEqual(evidence['record']['premise_claim_ids'],[ident('claims','c1'),ident('claims','c2')])
+        self.assertEqual(evidence['upstream_evidence_ids'],sorted([ident('evidence','e1'),ident('evidence','e2')]))
         self.assertIn(ident('sources','s1'),evidence['source_ancestry_ids'])
         self.assertEqual(evidence['connector_ids'],[ident('graph','r1')])
         self.assertIn(ident('graph','r1'),report['connectors'])
@@ -156,6 +157,10 @@ class LineageTests(unittest.TestCase):
 
 
 class AncestryValidationTests(unittest.TestCase):
+    def test_canonical_and_submission_ancestry_definitions_match(self):
+        canonical=json.loads((ROOT/'docs/schemas/sources.schema.json').read_text())
+        submission=json.loads((ROOT/'docs/schemas/submission.schema.json').read_text())
+        self.assertEqual(canonical['$defs']['source_ancestry'],submission['$defs']['source_ancestry'])
     def test_schema_extension_preserves_legacy_protocols_and_rejects_early_ancestry(self):
         for version in ('1.0','1.1'):
             p=proposal();p['schema_version']=version
