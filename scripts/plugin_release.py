@@ -14,10 +14,11 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.package_plugin import plugin_files
 from scripts.package_skill import ROOT, archive_bytes, build
+from scripts.workflow_release import check_version as check_workflow_version, manifest as workflow_manifest, previous_manifest, verify_committed_source
 
 RELEASE_BRANCH = 'plugin-release'
 PACKAGED_PATHS = (
-    'plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json',
+    'plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'LICENSE',
     'skills/resolvent', 'assets', 'docs/PLUGIN_README.md', 'verification/README.md',
     'scripts/package_plugin.py', 'scripts/package_skill.py',
     '.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json',
@@ -35,6 +36,7 @@ def version_tuple(version: str) -> tuple[int, ...]:
 
 
 def check_version(root: Path, base: str) -> None:
+    check_workflow_version(root, base)
     version, _ = plugin_files(root)
     version_tuple(version)
     # The template predates the portable plugin. Its first plugin release is 1.0.0.
@@ -81,12 +83,16 @@ def release_record(version: str, plugin: bytes, source: str, previous: dict | No
     return {'version': version, 'source_commit': source, 'plugin_sha256': digest}, True
 
 
-def prepare(root: Path, output: Path, previous: dict | None) -> dict[str, str]:
+def prepare(root: Path, output: Path, previous: dict | None, previous_workflow: dict | None = None) -> dict[str, str]:
     if output.exists():
         raise ValueError('Publication output must be a new directory')
     version, files = plugin_files(root)
     plugin = archive_bytes({'resolvent/' + path: data for path, data in files.items()})
-    record, changed = release_record(version, plugin, git(root, 'rev-parse', 'HEAD'), previous)
+    source = git(root, 'rev-parse', 'HEAD')
+    record, changed = release_record(version, plugin, source, previous)
+    workflow, references, workflow_changed = workflow_manifest(
+        root, source, previous_workflow if previous_workflow is not None else previous_manifest(root))
+    verify_committed_source(root, source, references)
     folder = output / 'plugin'
     for relative, contents in files.items():
         destination = folder / relative
@@ -101,6 +107,13 @@ def prepare(root: Path, output: Path, previous: dict | None) -> dict[str, str]:
         destination.write_text(json.dumps(catalog, indent=2) + '\n')
     serialized = json.dumps(record, indent=2) + '\n'
     (folder / 'release.json').write_text(serialized)
+    workflow_folder = output / 'workflow'
+    workflow_folder.mkdir()
+    (workflow_folder / 'workflow.json').write_text(json.dumps(workflow, indent=2) + '\n')
+    for relative, contents in references.items():
+        destination = workflow_folder / 'workflows/resolvent' / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(contents)
     assets = output / 'assets'
     assets.mkdir()
     archives = {
@@ -119,13 +132,17 @@ def prepare(root: Path, output: Path, previous: dict | None) -> dict[str, str]:
     (output / 'notes.md').write_text(
         f'Resolvent {version} by [Autonomio](https://autonom.io).\n\n{notes}\n\n'
         f'Source: `{record["source_commit"]}`. Both host ZIPs contain identical plugin bytes.\n\n'
-        'Claude directory updates follow the validated `plugin-release` branch and '
-        'its publishing settings. The ChatGPT ZIP is ready for upload to the existing '
-        'listing; bundled skill updates still require review and publication. '
+        'Claude directory updates and ChatGPT workspace sync can follow the validated '
+        '`plugin-release` branch. The fixed client reads separately versioned references '
+        'from `workflow-release`. The ChatGPT ZIP is ready for public submission; '
+        'changes to installed skills still require review and publication. '
         'This GitHub release is not evidence of directory approval.\n'
     )
     return {'version': version, 'tag': 'resolvent-v' + version,
-            'source_commit': record['source_commit'], 'changed': str(changed).lower()}
+            'source_commit': record['source_commit'], 'changed': str(changed).lower(),
+            'workflow_changed': str(workflow_changed).lower(),
+            'workflow_version': workflow['workflow_version'],
+            'workflow_source': workflow['source_commit']}
 
 
 def main() -> int:

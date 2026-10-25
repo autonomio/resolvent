@@ -18,8 +18,8 @@ class ReleaseTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / 'source'
         self.root.mkdir()
-        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', '.agents',
-                         'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification',
+        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', '.agents', 'LICENSE',
+                         'assets', 'skills', 'workflows', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification',
                          'scripts/package_plugin.py', 'scripts/package_skill.py'):
             source, destination = ROOT / relative, self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)

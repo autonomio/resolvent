@@ -1,4 +1,4 @@
 interface:
   display_name: "Resolvent"
-  short_description: "Update your world model"
-  default_prompt: "Use $resolvent with OWNER/REPOSITORY to research [question] and update its world model."
+  short_description: "Research with your world model"
+  default_prompt: "Use $resolvent to research this question with me; add to the world model only when I ask."

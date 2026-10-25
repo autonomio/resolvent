@@ -12,6 +12,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def skill_files(root: Path = ROOT) -> dict[str, bytes]:
     source = root / 'skills/resolvent'
+    license_path = root / 'LICENSE'
+    if license_path.is_symlink() or not license_path.is_file() or not license_path.read_bytes().strip():
+        raise ValueError('A regular nonempty software LICENSE is required')
     text = (source / 'SKILL.md').read_text()
     if not text.startswith('---\n'):
         raise ValueError('Missing SKILL.md frontmatter')
@@ -26,6 +29,10 @@ def skill_files(root: Path = ROOT) -> dict[str, bytes]:
             raise ValueError('Skill source must not contain symlinks')
         if path.is_file():
             files[path.relative_to(source).as_posix()] = path.read_bytes()
+    license_bytes = license_path.read_bytes()
+    if 'LICENSE' in files and files['LICENSE'] != license_bytes:
+        raise ValueError('Bundled LICENSE differs from the approved software LICENSE')
+    files['LICENSE'] = license_bytes
     if files['references/submission.schema.json'] != (root / 'docs/schemas/submission.schema.json').read_bytes():
         raise ValueError('Bundled submission schema differs from the repository protocol')
     return files

@@ -237,6 +237,39 @@ dates, merged provenance and run IDs. The shared plugin 1.1.0 understands both
 protocols and must use legacy 1.0 on a repository that has not adopted 1.1.
 See `docs/Ontology.md` for reviewed interval semantics and identity rules.
 
+## Source lineage reports
+
+From an existing verified compiled package, inspect all recorded source/evidence
+lineage or focus on a canonical evidence item:
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge lineage
+python scripts/query_knowledge.py --package .resolvent/knowledge lineage --evidence E-<uuid>
+```
+
+`Knowledge.lineage(evidence_id=None)` returns a deterministic read-only report pinned
+to the package's build/revision. It retains source/evidence records and anchors,
+declared source ancestors, unknown/unretrieved nodes, upstream evidence through
+joint claim premises, associated claims and connector-only evidence. A focused
+report includes related evidence sharing an origin plus the required upstream nodes.
+Unfiltered reports preserve unused source records too. L2 retrieval and keyword
+discovery include declared source ancestors without changing relevance into confidence.
+
+Flags distinguish `deterministic_metadata` (same declared source/ancestor or identical
+declared SHA-256) from `heuristic` (same normalized HTTP(S) URI or repeated substantial
+excerpt). Hash equality is a declaration about exact content, not proof of truth or
+inspection. Source URIs are never fetched. Excerpt comparison normalizes case and
+whitespace and requires 80 characters/12 words; common boilerplate can match.
+Flags include source/evidence IDs, claim associations, access and an unresolved
+independence assessment. No flag or missing flag changes canonical independence,
+uncertainty, lifecycle or admission. Missing ancestry remains usable and unresolved.
+
+The format remains derived wrapper 1.0; native optional source ancestry is retained.
+Compiler 1.2.0 fingerprints the updated schema/policy. New contributions use protocol
+1.2 only after that world's reviewed governance upgrade; no old record rewrite is
+required. See `docs/Ontology.md` for field semantics and `docs/PLUGIN_RELEASE.md` for
+client/workflow compatibility. Reports and rebuilt indexes never write model data.
+
 ## Scheduled maintenance
 
 The weekly Monday workflow and its **Run workflow** button create one workset PR
@@ -274,14 +307,18 @@ python scripts/package_skill.py --check
 python scripts/package_plugin.py --check
 ```
 
-The generic plugin has no pre-bound distribution or repository setting. Users
-select OWNER/REPOSITORY in the invoking chat. Installed instructions load current
+The generic plugin has no default world repository. Users select a repository or
+organization when model access is requested, optionally via native project instructions.
+Chat research/reformulation alone grants no model access. The fixed client verifies
+separately versioned live references from `workflow-release`; installed instructions load current
 repository contracts through authorized access; contributions retain schema version.
 System changes require assessing plugin compatibility and issuing a new plugin
 release when necessary. Validated main changes publish GitHub release assets and
 the standalone `plugin-release` branch through release CI. Claude directory updates
-can follow that branch automatically after initial setup; ChatGPT skill updates
-still require a publisher upload/review/publish step. See `docs/PLUGIN_RELEASE.md`.
+can follow that branch automatically after initial setup. ChatGPT workspace admins
+can import that GitHub marketplace once and receive automatic syncs; public ChatGPT
+directory skill updates still require upload/review/publication. These are different
+distribution routes. See `docs/PLUGIN_RELEASE.md` for exact setup and limitations.
 
 ## Scope and privacy
 

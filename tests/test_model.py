@@ -68,6 +68,15 @@ class ModelTests(unittest.TestCase):
  def test_concurrent_ids(self):self.assertNotEqual(canonical_id('RUN-'+'1'*32,'claims','c1'),canonical_id('RUN-'+'2'*32,'claims','c1'))
  def test_zero_claims(self):
   p=contribution();p['claims']=[];p['handoff']['no_claims_reason']='Inconclusive test.';self.assertNotIn('claims',validate_state(admitted(p),ROOT,True))
+ def test_selected_reformulated_question_does_not_require_an_invented_claim(self):
+  p=contribution('conversation');p['claims']=[]
+  p['questions']=[{'id':'q1','question':'Which synthetic condition would reverse the choice?','claim_ids':[]}]
+  p['result']['summary']='Human original: What should we choose? Selected reformulation: Which synthetic condition would reverse the choice?'
+  p['handoff']['no_claims_reason']='The user selected a question, not an assertion.'
+  s=admitted(p);counts=validate_state(s,ROOT,True)
+  self.assertEqual(counts['questions'],1);self.assertNotIn('claims',counts)
+  self.assertEqual(s[f"input-artefacts/{p['id']}.json"]['result']['summary'],p['result']['summary'])
+  self.assertEqual(next(v for k,v in s.items() if k.startswith('questions/'))['claim_ids'],[])
  def test_zero_claims_require_reason(self):
   p=contribution();p['claims']=[]
   with self.assertRaisesRegex(Invalid,'zero-claim'):validate_state(state_for(p),ROOT)

@@ -23,7 +23,7 @@ from scripts.temporal import point
 
 ROOT = Path(__file__).resolve().parent.parent
 FORMAT_VERSION = '1.0'
-COMPILER_VERSION = '1.1.0'
+COMPILER_VERSION = '1.2.0'
 
 
 def json_bytes(value: object) -> bytes:

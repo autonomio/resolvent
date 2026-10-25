@@ -33,8 +33,8 @@ jobs:
     steps:
       - name: Set publication paths
         run: |
-          printf 'RELEASE_ROOT=%s/resolvent-publication\nRELEASE_CHECKOUT=%s/resolvent-release-branch\n' \
-            "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'RELEASE_ROOT=%s/resolvent-publication\nRELEASE_CHECKOUT=%s/resolvent-release-branch\nWORKFLOW_CHECKOUT=%s/resolvent-workflow-branch\n' \
+            "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Check out the validated main commit
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -53,6 +53,27 @@ jobs:
       - name: Prepare the release or preserve the existing version
         id: release
         run: python scripts/plugin_release.py prepare --output "$RELEASE_ROOT" --github-output "$GITHUB_OUTPUT"
+      - name: Publish the independent live-reference channel
+        if: steps.release.outputs.workflow_changed == 'true'
+        run: |
+          gh auth setup-git --hostname github.com
+          git init "$WORKFLOW_CHECKOUT"
+          git -C "$WORKFLOW_CHECKOUT" remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          if git show-ref --verify --quiet refs/remotes/origin/workflow-release; then
+            git -C "$WORKFLOW_CHECKOUT" fetch origin refs/heads/workflow-release
+            git -C "$WORKFLOW_CHECKOUT" checkout -b workflow-release FETCH_HEAD
+          else
+            git -C "$WORKFLOW_CHECKOUT" checkout --orphan workflow-release
+          fi
+          rsync -a --delete --exclude=.git "$RELEASE_ROOT/workflow/" "$WORKFLOW_CHECKOUT/"
+          git -C "$WORKFLOW_CHECKOUT" config user.name 'github-actions[bot]'
+          git -C "$WORKFLOW_CHECKOUT" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$WORKFLOW_CHECKOUT" add --all
+          git -C "$WORKFLOW_CHECKOUT" commit -m "Release Resolvent workflow $WORKFLOW_VERSION from $WORKFLOW_SOURCE"
+          git -C "$WORKFLOW_CHECKOUT" push origin HEAD:refs/heads/workflow-release
+        env:
+          WORKFLOW_VERSION: ${{ steps.release.outputs.workflow_version }}
+          WORKFLOW_SOURCE: ${{ steps.release.outputs.workflow_source }}
       - name: Update the directory's tracked plugin branch
         if: steps.release.outputs.changed == 'true'
         run: |
