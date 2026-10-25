@@ -1,4 +1,4 @@
-# Contribution protocol 1.0
+# Contribution protocol 1.1 (legacy 1.0 supported)
 
 Normalized input: `input-artefacts/RUN-<32 lowercase hexadecimal UUID>.json`.
 The authoritative machine schema is `docs/schemas/submission.schema.json` in the
@@ -8,7 +8,7 @@ admission under `ADMISSION.md`, producing the canonical YAML and required
 brief/result/closure artifacts. A proposal-only PR is unfinished authoring work
 when the invoking agent can perform that approved job.
 
-Required fields: schema_version="1.0", id, input_method, created_at (ISO datetime
+Required fields: schema_version="1.0" or "1.1", id, input_method, created_at (ISO datetime
 with timezone), researcher, title, scope, origin, parent_run_id (null for first run),
 brief, result, sources, evidence, claims, connectors, questions, handoff,
 method_metadata. `researcher` is an attributed name/handle from known context;
@@ -31,7 +31,8 @@ of candidate claims and the relevant existing model; no fixed edge count is requ
 `questions`: [{id, question, claim_ids}].
 `handoff`: summary, no_claims_reason: string/null, suggested_follow_up: string list.
 `method_metadata`: route-specific fields from ROUTES.md. Keep
-`schema_version="1.0"` and every ordinary route field. Run the authoritative
+every ordinary route field. Use 1.0 on repositories that have not adopted 1.1;
+the new optional `valid_time` claim field requires approved protocol 1.1. Run the authoritative
 submission and canonical validators before publication. The plugin does not
 install or weaken repository governance.
 
@@ -41,6 +42,29 @@ external evidence. This mechanical floor does not prove source quality; independ
 repository review remains mandatory. Every claim references evidence in this package;
 every evidence record references a source in this package. Claims referenced as joint
 premises may be local candidate IDs or existing canonical C-IDs.
+
+## Optional valid time (1.1)
+
+`valid_time` has `status` (specified/unknown/disputed), `intervals` and `notes`.
+Each interval has `start`/`end` (null means an explicitly unbounded side), explicit
+`start_inclusive`/`end_inclusive` booleans, and nonempty `evidence_ids` from that
+claim's own evidence list. A non-null bound is `{precision, value}`: precision is
+year, month, day or instant, with a matching calendar value or timestamp with an
+explicit UTC offset. Do not mix calendar and instant bounds or invent a timezone.
+An instant supports up to microseconds; preserve unsupported precision as an
+explicit limitation rather than truncating it. No field means unknown applicability.
+Unknown status has no intervals and requires notes. Disputed status preserves at
+least two evidence-backed alternatives and an explanation. Specified status needs
+at least one interval; partial boundaries remain partial, never exact guessed dates.
+
+Keep the source's `date` as reported metadata. It is not a claim's valid time;
+knowledge/admission time comes from repository history. Do not derive any of these
+clocks from another. Date applicability is not confidence or factual verification.
+Use the approved admission tool to remap temporal evidence IDs and preserve scope
+when merging evidence. Changed temporal scope cannot silently overwrite a claim ID.
+Existing 1.0 runs and merged provenance remain unchanged; a new temporal contribution
+uses 1.1 after repository governance has adopted it. Old repositories require an
+explicit governance upgrade before this field can be submitted.
 
 Use the JSON example in `assets/conversation-example.json` for field structure,
 replacing every illustrative value with actual selected material. It is a synthetic

@@ -3,7 +3,7 @@ name: resolvent
 description: Update a Resolvent world model in a GitHub repository you can access from this chat. Supply OWNER/REPOSITORY and a question, research, sources, or a conversation to capture.
 metadata:
   author: Autonomio
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Resolvent
@@ -45,8 +45,9 @@ execution contracts. Read the applicable admission, review and branch/ruleset ga
 for follow-up. Read `references/ADMISSION.md` before producing canonical records or
 resuming an unprocessed PR. A repository URL in the prompt is a destination, not
 topic evidence.
-The bundled submission schema remains protocol 1.0; the selected repository's
-approved contracts are authoritative, subject to host and user instructions.
+The bundled schema supports protocol 1.1 and legacy 1.0. Use 1.0 for repositories
+that have not adopted 1.1; use 1.1 for approved evidence-linked valid-time annotations.
+The selected repository's approved contracts are authoritative, subject to host and user instructions.
 
 Discover actual read, branch, file-write, PR, review/check observation and guarded
 ordinary-merge capabilities. Follow `references/MERGE.md` for the authorized merge
@@ -118,6 +119,12 @@ Every proposed claim has a class, a short self-contained statement, low/medium/h
 conditions and comparisons are part of the statement. Keep each claim atomic and
 self-contained; split compound findings without losing qualifications or support.
 A class is not confidence.
+When the approved repository supports `valid_time`, record only explicitly supported
+intervals with their precision, inclusivity and linked evidence. Missing dates remain
+unknown; preserve disputed alternatives and their limitations. Never infer valid time
+from source publication dates, source access, admission time or free text. Material
+dates still belong in the self-contained statement. A different temporal proposition
+requires a new claim ID and reviewed retirement when replacing an older claim.
 Every evidence record has a source/observation anchor and limitations; an assumption
 may honestly cite its conversational/reasoning origin rather than fabricated proof.
 Set independent=true only for inspected external evidence, never chat repetition,
