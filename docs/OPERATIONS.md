@@ -134,6 +134,70 @@ of invalidation. The tool makes no epistemic judgment and writes no canonical
 record, maintenance workset or proposal. Corrections still require the existing
 governed admission/maintenance and independent review.
 
+## Revision-pinned retrieval
+
+Query a compiled package locally:
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge lookup C-<id> --level 2
+python scripts/query_knowledge.py --package .resolvent/knowledge search "signal" --state active --limit 10
+python scripts/query_knowledge.py --package .resolvent/knowledge traverse C-<id> --depth 2
+python scripts/query_knowledge.py --package .resolvent/knowledge dependents C-<id> --depth 3
+```
+
+Use `--manifest-sha256 <digest>` before the subcommand to require an exact build,
+using the digest printed by the build command. Every JSON response identifies the
+source revision, manifest digest and input-tree digest under `build`. The loader
+verifies artifact bytes, input-tree manifest consistency and format/schema 1.0;
+it revalidates canonical records and closed provenance with the installed policy,
+then checks the compiled reverse links against those records. Select a trusted
+admitted build and retain its manifest pin: a self-declared hash or revision is
+not independent evidence of authenticity or semantic approval.
+
+The host-independent Python surface is `Knowledge(package, manifest_sha256=None)`
+in `scripts/query_knowledge.py`, with `lookup`, `search`, `traverse`, `dependents`
+and `rebuild_index` methods. It performs no provider, database or hosted API calls.
+Queries and index rebuilds leave canonical records and package files untouched.
+
+Claim disclosure levels (`--level 0`, `1`, or `2`) are progressive:
+
+- **L0:** the full claim record: ID, scoped statement, class, uncertainty, lifecycle
+  and evidence IDs. Lookup also accepts evidence, source, connector and question
+  IDs, returning their native records.
+- **L1:** related claim metadata, connector records, evidence summaries/limitations,
+  source IDs, linked questions and recorded closure/maintenance gaps.
+- **L2:** full evidence premise sets, source URIs/dates/locators/excerpts and explicit
+  `inspected`/`not_retrieved` status, plus original contributions, closures, research
+  archives, relevant maintenance and declared parent-run provenance.
+
+Search returns claims only. It indexes their statements, linked evidence summaries
+and limitations, and linked source title/URI/date/locator/excerpt text. It requires
+all query words, ranks by whole-word occurrence count, and breaks ties by claim ID.
+`relevance` means keyword retrieval relevance only. Rebuilding the in-memory index
+preserves IDs, records, provenance and deterministic results. An empty query provides
+filtered discovery; `--class`, `--uncertainty`, and `--state` restrict claims. Both
+active and retired claims are included unless explicitly filtered. Rejected/deferred
+candidate text and open proposals are never indexed as admitted claims. Missing
+records or search matches do not establish that a proposition is false.
+
+Traversal follows declared connectors using `--direction incoming|outgoing|both`
+and optional `--connector-type dependency|coupling`. Direction refers to canonical
+connector endpoints: a dependency goes from dependent to premise. `dependents`
+instead walks reverse dependencies and evidential premise sets, including premises
+of evidence supporting dependency connectors without a direct claim backlink.
+Paths preserve joint premises and the supporting evidence/connector IDs; coupling
+is excluded. Active connectors are used
+by default. `--include-retired` adds retired connectors and exposes their state in
+each step. Claim lifecycle and uncertainty remain visible at every level.
+
+Search and graph queries return at most `--limit` items (default 20, maximum 100).
+Search supports `--offset`; graph depth is explicit (default 1, maximum 10), and
+`truncated` signals a result limit. Each related/provenance collection has its own
+`total` and `next_offset`: `--related-limit` defaults to 50 (maximum 1000), and lookup
+supports `--related-offset` to fetch later pages. Direct record lookup remains
+available for every linked canonical ID. The query format is version 1.0 and all
+returned data belongs to the selected build, independently of later repository edits.
+
 ## Scheduled maintenance
 
 The weekly Monday workflow and its **Run workflow** button create one workset PR
