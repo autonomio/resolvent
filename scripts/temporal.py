@@ -59,7 +59,12 @@ def validate_temporal(value: dict, evidence_ids: list[str]) -> None:
         if start and end:
             if start[0] != end[0]:
                 raise ValueError('Do not mix calendar and instant bounds without an explicit conversion')
-            if start[1] > end[2] or (start[1] == end[2] and not
+            if start[0] == 'calendar':
+                first_day = start[1] + (not interval['start_inclusive'])
+                last_day = end[2] - (not interval['end_inclusive'])
+                if first_day > last_day:
+                    raise ValueError('Temporal interval contains no possible calendar day')
+            elif start[1] > end[2] or (start[1] == end[2] and not
                     (interval['start_inclusive'] and interval['end_inclusive'])):
                 raise ValueError('Temporal interval is reversed or necessarily empty')
 

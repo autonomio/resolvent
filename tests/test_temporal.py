@@ -50,6 +50,16 @@ class TemporalTests(unittest.TestCase):
         self.assertEqual(self.status(valid(start_inclusive=False), '2026-01-01'), 'outside')
         self.assertEqual(self.status(valid(end_inclusive=True), '2026-02-01'), 'matches')
 
+    def test_open_adjacent_day_bounds_cannot_admit_an_empty_calendar_scope(self):
+        empty = valid('2026-01-01', '2026-01-02', start_inclusive=False, end_inclusive=False)
+        with self.assertRaisesRegex(ValueError, 'no possible calendar day'):
+            validate_temporal(empty, ['e1'])
+        with self.assertRaisesRegex(Invalid, 'no possible calendar day'):
+            admitted(proposal(value=empty))
+        self.assertEqual(self.status(valid('2026-01-01', '2026-01-02'), '2026-01-01'), 'matches')
+        self.assertEqual(self.status(valid('2026-01-01', '2026-01-02', start_inclusive=False,
+                                          end_inclusive=True), '2026-01-02'), 'matches')
+
     def test_open_intervals_are_explicit_and_not_unknown_dates(self):
         self.assertEqual(self.status(valid(start=None), '0001-01-01'), 'matches')
         self.assertEqual(self.status(valid(end=None), '9999-12-31'), 'matches')
