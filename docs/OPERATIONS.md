@@ -29,6 +29,64 @@ A workflow/code/schema change goes in its own governance PR. After approval, the
 new policy applies to future contributions. Structural green status is not semantic
 approval. External review agents need their own proper review identity/permissions.
 
+## Compiled knowledge packages
+
+Build a disposable, offline read view from a locally available admitted Git commit:
+
+```sh
+python scripts/build_knowledge.py --revision <full-commit-sha> --output .resolvent/knowledge
+```
+
+`--repo PATH` selects another local repository. A ref such as `main` is resolved
+once to a full commit. The command reads committed Git objects, ignoring working
+tree edits, and never executes code from the selected revision. It uses the
+installed compiler's schemas and existing `validate_state(..., require_closure=True)`
+gate. Pending admission, pending maintenance, invalid references, missing provenance
+and stale closures fail before package output is written. Selecting a revision
+with independent semantic approval remains the caller's responsibility; structural
+closure cannot prove that a commit was reviewed or merged.
+
+The output must be a new directory under the ignored `.resolvent/` directory, or
+outside the repository. The command stages the complete package before exposing
+the output directory. It never writes canonical records or updates an existing
+package. The Python API is `scripts.build_knowledge.compile_revision(repo, revision)`
+for package bytes, or `build(repo, revision, output)` for the same files on disk.
+
+Format/schema **1.0** consists of two UTF-8 JSON files, with sorted object keys,
+two-space indentation and a final newline:
+
+- `knowledge.json`: `derived: true`, `format_version`, and `records` maps keyed by
+  canonical ID under `claims`, `evidence`, `sources`, `graph`, and `questions`.
+  All canonical fields, list order, uncertainty, limitations, inspection status,
+  premise sets and lifecycle states are preserved. `record_paths` maps each
+  canonical ID to its repository path. `provenance` contains the original
+  contributions, closures, research archives and completed maintenance records,
+  keyed by repository path; their candidate claims are not accepted claim records.
+  `reverse_links` provides sorted, unique source-to-evidence, evidence-to-claim,
+  evidence-to-connector, premise-to-evidence, claim-to-incoming/outgoing-connector,
+  and claim-to-question IDs. Reverse links include retired records: consumers
+  must inspect the referenced lifecycle and connector type. No inferred links
+  are added, and contextual coupling remains distinct from dependency.
+- `manifest.json`: artifact-format/schema/compiler versions, `derived: true`, the
+  full `source_revision`, `input_files` SHA-256 hashes, `input_tree_sha256`,
+  structural validation results, installed validation-policy file hashes and
+  dependency versions, plus each artifact's byte length and SHA-256. Source data
+  files include canonical records and provenance; ignored placeholders and data
+  READMEs are excluded. `input_tree_sha256` is SHA-256 of the `input_files` object
+  encoded as UTF-8 JSON with sorted keys, separators `(',', ':')`, no ASCII escaping
+  and no trailing newline. Policy hashes identify the installed compiler, schemas
+  and requirements; schemas from a historical data revision do not replace them.
+
+Verify artifact hashes against their exact file bytes and input hashes against
+`git show <source_revision>:<path>`. The command also prints the manifest's SHA-256
+for consumers that pin a whole build. The manifest does not contain its own hash.
+The same revision and compiler/policy/dependency bytes produce identical packages
+across output paths; no build timestamps or local paths are added. Incompatible
+output-contract changes require a new format/schema version. Transformation changes
+require a compiler-version update. These views are derived and rebuildable; canonical
+YAML and merged provenance remain authoritative. No database, provider key, LLM,
+network access or additional dependency is required.
+
 ## Scheduled maintenance
 
 The weekly Monday workflow and its **Run workflow** button create one workset PR
