@@ -1,8 +1,8 @@
 # Resolvent plugin: interaction and update proposal
 
 Status: implementation candidate, 2026-10-25. The user authorized development and
-testing of the fixed client with reviewed Autonomio GitHub references. Plugin 1.2.0
-and workflow 1.0.0 implement the interaction/reference design below. Publication and
+testing of the fixed client with reviewed Autonomio GitHub references. Plugin 1.3.0
+and workflow 1.0.1 implement the interaction/reference design below. Publication and
 end-to-end host acceptance remain separate gates. Fork updating is still a proposal.
 
 ## Interaction contract
@@ -193,7 +193,7 @@ released, directory published, installed and currently loaded versions in diagno
 
 ## Implementation boundary
 
-The approved reference design is implemented with synchronized plugin 1.2.0 host
+The approved reference design is implemented with synchronized plugin 1.3.0 host
 metadata, a fixed skill and optional standard-library reader, independently versioned
 workflow sources and the validated-main publisher. Keep fork updating in a separate
 core PR. Publish only through authorized host routes; local testing does not establish

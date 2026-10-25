@@ -304,10 +304,12 @@ and maintenance-only merges do not loop back into maintenance.
 
 The workflow checks out the exact validated main revision, shares the existing
 `resolvent-maintenance` concurrency group/branch prefix and uses the existing token
-permissions. It never executes PR code, reads event artifacts or fetches source
-URLs. It checks current remote main before publishing; a newer head is explicitly
-deferred. It reuses change-impact analysis across the commit's first parent and
-selected revision, then opens a ready PR containing only `maintenance/M-*.yaml`.
+permissions. It reads only the bounded push-range metadata emitted by that exact
+successful validation run, checks repository/head identity, and never executes PR
+code or fetches source URLs. It checks current remote main before publishing; a newer head is explicitly
+deferred. It reuses change-impact analysis across the full before/after range of
+the push, including rebased multi-commit contributions,
+then opens a ready PR containing only `maintenance/M-*.yaml`.
 Existing agents must process that pending workset; structural validation blocks
 merge until completion and independent review remains required.
 
@@ -334,6 +336,8 @@ the affected set; source ancestry expands advisory source discovery. Contextual
 exposure stays distinct from dependency. No heuristic creates a justified link,
 uncertainty upgrade or accepted claim. Overflow and unknown IDs are explicit
 deferrals. Unrelated gaps do not authorize expanding the affected set.
+Completed targeted worksets count as reviewed coverage but do not advance the
+weekly rotation cursor; only completed weekly/manual worksets advance that cursor.
 
 Replays deduplicate against recorded trigger identities. A changed upstream version
 has a distinct identity but cannot bypass the pending-workset or debounce checks.

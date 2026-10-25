@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts.change_signals import apply, plan
+from scripts.gap_finder import workset as weekly_workset
 from scripts.model import Invalid, load_state, validate_state
 from scripts.signal_contract import signal_id, validate_signal
 from test_model import ROOT, write_state
@@ -195,6 +196,28 @@ class SignalTests(unittest.TestCase):
         state=load_state(self.root);state['maintenance/'+record['id']+'.yaml']=record
         with self.assertRaises(Invalid):
             validate_state(state,ROOT,False)
+
+    def test_targeted_completions_do_not_advance_or_starve_weekly_rotation(self):
+        # Fully reviewed claims isolate the rotating half from never-reviewed priority.
+        active=['C-'+format(number,'032x') for number in range(1,81)]
+        claims={cid:{'id':cid,'state':'active'} for cid in active}
+        records={cid:{'status':'completed','reviewed_claim_ids':[cid]} for cid in active}
+        state={}
+        with patch('scripts.gap_finder.load_state',return_value=state), \
+                patch('scripts.gap_finder.indexes',return_value={'claims':claims,'maintenance':records}):
+            first=weekly_workset(self.root)['claim_ids']
+            for number in range(3):
+                records['signal-'+str(number)]={'status':'completed','reviewed_claim_ids':[active[0]],
+                                              'trigger':{'signal_id':'synthetic'}}
+            self.assertEqual(weekly_workset(self.root)['claim_ids'],first)
+            covered=set(first)
+            for number in range(3):
+                records['weekly-'+str(number)]={'status':'completed','reviewed_claim_ids':[]}
+                covered.update(weekly_workset(self.root)['claim_ids'])
+                for signal in range(3):
+                    records['signal-'+str(number)+'-'+str(signal)]={
+                        'status':'completed','reviewed_claim_ids':[active[0]],'trigger':{'signal_id':'synthetic'}}
+            self.assertEqual(covered,set(active))
 
 
 if __name__=='__main__':

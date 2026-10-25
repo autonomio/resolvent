@@ -31,14 +31,13 @@ def github(*args, payload=None):
     return json.loads(result.stdout) if result.stdout.strip() else None
 
 
-def model_signal(root: Path, repository: str):
+def model_signal(root: Path, repository: str, *, before: str):
     if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repository):
         raise ValueError('Expected an explicit GitHub owner/repository')
     revision = head(root)
-    try:
-        before = git(root,'rev-parse','--verify','HEAD^').decode().strip()
-    except subprocess.CalledProcessError:
-        return None
+    if not re.fullmatch(r'[0-9a-f]{40}',before):
+        raise Invalid('The push range requires a full prior Git revision')
+    git(root,'merge-base','--is-ancestor',before,revision)
     added = git(root,'diff','--name-only','--diff-filter=A','-z',before,revision,'--','input-artefacts/').split(b'\0')
     runs = sorted(path.decode() for path in added if re.fullmatch(rb'input-artefacts/RUN-[0-9a-f]{32}\.json',path))
     if not runs:
@@ -60,8 +59,20 @@ def remote_head(root, branch):
     return lines[0].split()[0]
 
 
-def publish(root: Path, repository: str, *, api=github, now=None):
-    event = model_signal(root,repository)
+def push_before(path,repository,revision):
+    if path.stat().st_size>1024:
+        raise Invalid('Push metadata exceeds its bound')
+    record=read_data(path)
+    if (set(record)!={'format_version','repository','before','after'} or
+            record['format_version']!='1.0' or record['repository']!=repository or
+            record['after']!=revision or not isinstance(record['before'],str) or
+            not re.fullmatch(r'[0-9a-f]{40}',record['before'])):
+        raise Invalid('Push metadata does not match the validated repository and head')
+    return record['before']
+
+
+def publish(root: Path, repository: str, *, before: str, api=github, now=None):
+    event = model_signal(root,repository,before=before)
     if event is None:
         return {'status':'skipped_no_new_contribution'}
     metadata = api('api','repos/'+repository)
@@ -143,9 +154,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root',type=Path,default=Path('.'))
     parser.add_argument('--repository',required=True)
+    parser.add_argument('--push-range',type=Path,required=True)
     args=parser.parse_args()
     try:
-        result=publish(args.root,args.repository)
+        before=push_before(args.push_range,args.repository,head(args.root))
+        result=publish(args.root,args.repository,before=before)
         sys.stdout.buffer.write(json_bytes(result))
         summary=os.environ.get('GITHUB_STEP_SUMMARY')
         if summary:
