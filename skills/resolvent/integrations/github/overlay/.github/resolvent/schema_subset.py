@@ -1,4 +1,4 @@
-"""Fail-closed JSON Schema subset used by Resolvent protocol 1.0.
+"""Fail-closed JSON Schema subset used by Resolvent protocols 1.0/1.1.
 
 No dependencies and no remote reference loading. Unsupported schema keywords
 raise UnsupportedSchema; they never silently relax the authoritative schema.

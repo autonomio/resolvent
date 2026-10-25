@@ -198,6 +198,45 @@ supports `--related-offset` to fetch later pages. Direct record lookup remains
 available for every linked canonical ID. The query format is version 1.0 and all
 returned data belongs to the selected build, independently of later repository edits.
 
+## Historical knowledge and world-valid time
+
+Use separate operations for the two questions:
+
+```sh
+python scripts/build_knowledge.py --revision <admitted-tip> --known-at 2026-04-01T12:00:00Z --output .resolvent/historical
+python scripts/query_knowledge.py --package .resolvent/historical search
+python scripts/query_knowledge.py --package .resolvent/current valid-at 2026-01-15 --level 2
+```
+
+`--known-at` selects the nearest ancestor on the pinned tip's first-parent chain
+whose recorded Git committer timestamp is at or before the supplied instant. It
+requires a timezone-qualified timestamp. It reads local history without fetching;
+unavailable history or no eligible commit fails explicitly. Record the returned
+full revision for reproducibility. Git clock skew can affect time selection: the
+timestamp is recorded admission-history metadata, not an independently verified
+clock. Exact revision selection remains the unambiguous historical interface.
+The API is `knowledge_revision(repo, revision, known_at)`, or the optional
+`known_at=` argument to `compile_revision`/`build`. Building by time produces the
+same bytes as building the exact selected revision, without adding a build timestamp.
+
+`Knowledge.valid_at(at, ...)` / `valid-at` asks about the world time described by
+the selected package's evidence, even when that world time predates discovery,
+source publication and admission. It accepts a full calendar day or an explicit
+offset-qualified instant. It returns separately paged `matches` and `unresolved`
+collections, with temporal reasons and an `outside_recorded_intervals` count.
+All claim classes, uncertainty and lifecycle remain visible. The usual disclosure,
+limit/offset and related-record controls apply to each collection. Dates with
+insufficient precision, incompatible calendar/instant domains, absent annotations
+and declared disputes are unresolved; no query retires or promotes a claim.
+
+For migration, adopt this governance and optional claim schema on each existing
+repository through its own reviewed PR. Existing 1.0 runs and unannotated canonical
+records need no rewrite; they remain usable, with unknown applicability shown
+separately. New temporal contributions use protocol 1.1. Preserve original source
+dates, merged provenance and run IDs. The shared plugin 1.1.0 understands both
+protocols and must use legacy 1.0 on a repository that has not adopted 1.1.
+See `docs/Ontology.md` for reviewed interval semantics and identity rules.
+
 ## Scheduled maintenance
 
 The weekly Monday workflow and its **Run workflow** button create one workset PR

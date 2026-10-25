@@ -21,6 +21,11 @@ GitHub access comes from your authorized connection or an authenticated CLI in
 the invoking chat. Installing the plugin does not grant repository permissions.
 No organization, destination repository or Portal service is preconfigured.
 
+Where repository governance supports protocol 1.1, the plugin can preserve optional
+evidence-linked claim valid time, including partial/unknown/disputed dates. Source
+dates and admission history remain separate. Legacy protocol 1.0 repositories and
+contributions remain supported; plugin installation does not migrate their schemas.
+
 ## Updates
 
 Install from the host's directory to receive its published releases. Directory

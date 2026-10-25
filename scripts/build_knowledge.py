@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from datetime import datetime, timezone
 from importlib.metadata import version
 import json
 import os
@@ -18,10 +19,11 @@ from scripts.model import (
     CANONICAL_ROOTS, DATA_ROOTS, MAX_FILE_BYTES, Invalid, digest, family,
     indexes, load_state, safe_relative, validate_state,
 )
+from scripts.temporal import point
 
 ROOT = Path(__file__).resolve().parent.parent
 FORMAT_VERSION = '1.0'
-COMPILER_VERSION = '1.0.0'
+COMPILER_VERSION = '1.1.0'
 
 
 def json_bytes(value: object) -> bytes:
@@ -44,6 +46,22 @@ def git(repo: Path, *args: str) -> bytes:
     if result.returncode:
         raise Invalid(result.stderr.decode('utf-8', errors='replace').strip())
     return result.stdout
+
+
+def knowledge_revision(repo: Path, revision: str, known_at: str) -> str:
+    """Select first-parent history by recorded Git committer time, never source date."""
+    kind, at = point(known_at)
+    if kind != 'instant':
+        raise Invalid('Knowledge time requires a full timestamp with timezone')
+    elapsed = at - datetime(1970, 1, 1, tzinfo=timezone.utc)
+    cutoff = elapsed.days * 86400 + elapsed.seconds
+    commit = git(repo, 'rev-parse', '--verify', '--end-of-options', revision + '^{commit}').decode().strip()
+    history = git(repo, 'log', '--first-parent', '--format=%H %ct', commit).decode().splitlines()
+    for line in history:
+        candidate, recorded_time = line.split()
+        if int(recorded_time) <= cutoff:
+            return candidate
+    raise Invalid('No local first-parent revision is recorded by the requested knowledge time')
 
 
 def snapshot(repo: Path, revision: str, destination: Path) -> tuple[str, dict[str, str]]:
@@ -121,20 +139,22 @@ def projection(state: dict[str, dict]) -> dict:
     }
 
 
-def compile_revision(repo: Path, revision: str) -> dict[str, bytes]:
+def compile_revision(repo: Path, revision: str, *, known_at: str | None = None) -> dict[str, bytes]:
     """Return versioned package bytes after the existing closure gate passes.
 
     Validation uses this installed compiler and its schemas, not code in the
     selected revision. The manifest fingerprints both data and validation policy.
     Structural closure does not establish independent semantic approval.
     """
+    if known_at is not None:
+        revision = knowledge_revision(repo, revision, known_at)
     with tempfile.TemporaryDirectory(prefix='resolvent-snapshot-') as temporary:
         root = Path(temporary)
         commit, input_files = snapshot(repo, revision, root)
         state = load_state(root)
         counts = validate_state(state, ROOT, require_closure=True)
     knowledge = json_bytes(projection(state))
-    policy_paths = ['scripts/model.py', 'scripts/build_knowledge.py', 'requirements.txt']
+    policy_paths = ['scripts/model.py', 'scripts/temporal.py', 'scripts/build_knowledge.py', 'requirements.txt']
     policy_paths += sorted(path.relative_to(ROOT).as_posix()
                            for path in (ROOT / 'docs/schemas').glob('*.schema.json'))
     manifest = {
@@ -161,7 +181,7 @@ def compile_revision(repo: Path, revision: str) -> dict[str, bytes]:
     return {'knowledge.json': knowledge, 'manifest.json': json_bytes(manifest)}
 
 
-def build(repo: Path, revision: str, output: Path) -> dict:
+def build(repo: Path, revision: str, output: Path, *, known_at: str | None = None) -> dict:
     """Write a new package directory; refuse canonical or tracked output locations."""
     if output.exists() or output.is_symlink():
         raise Invalid('Build output must be a new directory')
@@ -171,7 +191,7 @@ def build(repo: Path, revision: str, output: Path) -> dict:
         relative = output.relative_to(repository)
         if not relative.parts or relative.parts[0] != '.resolvent':
             raise Invalid('Build output inside the repository must be under .resolvent/')
-    package = compile_revision(repository, revision)
+    package = compile_revision(repository, revision, known_at=known_at)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.knowledge-', dir=output.parent) as temporary:
         staged = Path(temporary) / 'package'
@@ -186,10 +206,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=Path, default=Path('.'))
     parser.add_argument('--revision', required=True, help='Local Git commit/ref, resolved once')
+    parser.add_argument('--known-at', help='Select first-parent revision by recorded Git committer timestamp')
     parser.add_argument('--output', type=Path, required=True, help='New directory under .resolvent/ or outside the repository')
     args = parser.parse_args()
     try:
-        manifest = build(args.repo, args.revision, args.output)
+        manifest = build(args.repo, args.revision, args.output, known_at=args.known_at)
     except (Invalid, OSError, ValueError, TypeError, KeyError) as exc:
         parser.exit(1, f'FAIL: {exc}\n')
     print(json.dumps({'source_revision': manifest['source_revision'],

@@ -1033,6 +1033,27 @@ class ProviderAndDataTests(unittest.TestCase):
             with self.subTest(bad=bad), self.assertRaises(Invalid):
                 validate(bad, schema)
 
+    def test_bundled_protocol_supports_legacy_and_optional_1_1_temporal_shape(self):
+        skill = Path(__file__).resolve().parents[3]
+        schema = json.loads((skill / 'references/submission.schema.json').read_text())
+        example = json.loads((skill / 'assets/conversation-example.json').read_text())
+        validate(example, schema)
+        example['schema_version'] = '1.1'
+        example['claims'][0]['valid_time'] = {
+            'status': 'specified', 'notes': ['Synthetic temporal test.'], 'intervals': [{
+                'start': {'precision': 'day', 'value': '2026-01-01'}, 'end': None,
+                'start_inclusive': True, 'end_inclusive': False, 'evidence_ids': ['e1'],
+            }],
+        }
+        validate(example, schema)
+        example['schema_version'] = '1.0'
+        with self.assertRaises(Invalid):
+            validate(example, schema)
+        example['schema_version'] = '1.1'
+        example['claims'][0]['valid_time']['intervals'][0]['evidence_ids'] = []
+        with self.assertRaises(Invalid):
+            validate(example, schema)
+
     def test_disabled_configuration_does_no_network_work(self):
         with patch.object(sys, "argv", ["controller.py", "discover"]), patch.object(c, "GitHub") as github, \
              patch.object(c, "outputs"), patch("builtins.print"):

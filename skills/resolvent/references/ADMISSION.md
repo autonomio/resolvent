@@ -114,9 +114,12 @@ contract. It is working data, not a canonical artifact or an independent approva
   of `linked`, `no_justified_connection` or `deferred`, with the actual rationale.
   Put deferred connection discovery in `follow_up_gaps` too.
 - Resolve ambiguous duplicate matches explicitly. The approved tool can merge exact
-  same-class duplicates; adding evidence must not automatically lower uncertainty
-  or change class. Meaning-changing replacement requires a new claim ID and the
-  repository's reviewed retirement/maintenance pathway for the old assertion.
+  same-class, same-scope duplicates, including temporal scope when supplied. Adding
+  evidence must not automatically lower uncertainty or change class. Temporal
+  evidence stays linked to that claim after canonical ID mapping. A meaning-changing
+  temporal replacement requires a new ID and reviewed retirement of the old assertion.
+  Never infer applicability from source/admission dates. Preserve unknown/disputed
+  dates; handle metadata-only date annotations through reviewed maintenance.
 - For a legitimate zero-claim result, use empty decision/connection maps and retain
   the contribution's `no_claims_reason`. Do not manufacture claims to fill a template.
 

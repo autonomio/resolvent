@@ -14,6 +14,7 @@ from typing import Any
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
+from scripts.temporal import validate_temporal
 
 DATA_ROOTS = ("claims", "evidence", "sources", "graph", "questions", "input-artefacts", "briefs", "maintenance")
 CANONICAL_ROOTS = ("claims", "evidence", "sources", "graph", "questions")
@@ -136,6 +137,14 @@ def fail(condition: bool, message: str) -> None:
         raise Invalid(message)
 
 
+def check_temporal(claim: dict) -> None:
+    if 'valid_time' in claim:
+        try:
+            validate_temporal(claim['valid_time'], claim['evidence_ids'])
+        except ValueError as exc:
+            raise Invalid(f"{claim['id']}: {exc}") from exc
+
+
 def no_duplicates(values: list[Any], name: str) -> None:
     fail(len(values) == len(set(values)), f"Duplicate entries in {name}")
 
@@ -182,6 +191,7 @@ def validate_submission(p: dict, existing: dict[str, dict]) -> None:
                 fail(s["kind"] in ("publication", "web") and s["access"] == "inspected" and bool(s["uri"]),
                      f"{e['id']}: independent evidence needs an inspected, addressable external source")
     for c in p["claims"]:
+        check_temporal(c)
         no_duplicates(c["evidence_ids"], c["id"] + ".evidence_ids")
         fail(set(c["evidence_ids"]) <= local["evidence"], f"{c['id']}: unresolved evidence")
         if c["uncertainty"] == "low":
@@ -264,6 +274,7 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
     acyclic([(p['id'], p['parent_run_id']) for p in idx.get('submission', {}).values() if p['parent_run_id']], 'contribution lineage')
     premise_edges = []
     for c in claims.values():
+        check_temporal(c)
         fail(set(c["evidence_ids"]) <= set(evidence), f"{c['id']}: unresolved canonical evidence")
         no_duplicates(c["evidence_ids"], c["id"] + ".evidence_ids")
         for eid in c["evidence_ids"]:

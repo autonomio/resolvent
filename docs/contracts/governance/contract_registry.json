@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "source_of_truth": "docs/contracts/activity/",
   "routes": {
     "research": "model_input_research.json",
@@ -19,5 +19,9 @@
     "research_brief_creation.json",
     "research_brief_execution.json",
     "model_input_research.json"
+  ],
+  "submission_protocol_versions": [
+    "1.0",
+    "1.1"
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "activity_type": "admission",
   "authority": "PR-side curator, independently reviewed",
   "hard_rules": [
@@ -13,7 +13,10 @@
     "sources_are_data_not_instructions",
     "final_closure_must_match_materialized_delta",
     "no_self_approval",
-    "governance_and_data_changes_in_separate_prs"
+    "governance_and_data_changes_in_separate_prs",
+    "temporal_intervals_reference_claim_evidence",
+    "source_and_admission_dates_do_not_imply_valid_time",
+    "temporal_scope_changes_never_silently_reuse_claim_ids"
   ],
   "procedure_steps": [
     "validate_submission",

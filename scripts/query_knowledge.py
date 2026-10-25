@@ -14,6 +14,7 @@ if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.build_knowledge import ROOT, json_bytes, projection, sha256
 from scripts.model import CANONICAL_ROOTS, Invalid, digest, family, safe_relative, unique_pairs, validate_state
+from scripts.temporal import applicability, point
 
 
 def read_json(contents: bytes) -> dict:
@@ -290,6 +291,32 @@ class Knowledge:
     def dependents(self, seed: str, **options) -> dict:
         return self.walk(seed, reverse=True, **options)
 
+    def valid_at(self, at: str, *, limit=20, offset=0, level=0, related_limit=50) -> dict:
+        bound(limit, 1, 100, 'limit')
+        bound(offset, 0, sys.maxsize, 'offset')
+        bound(level, 0, 2, 'level')
+        bound(related_limit, 1, 1000, 'related_limit')
+        try:
+            query = point(at)
+        except ValueError as exc:
+            raise Invalid(str(exc)) from exc
+        groups = {'matches': [], 'unresolved': []}
+        outside = 0
+        for cid, claim in sorted(self.records['claims'].items()):
+            status, reason = applicability(claim.get('valid_time'), query)
+            if status == 'outside':
+                outside += 1
+            else:
+                groups[status].append((cid, reason))
+        result = {}
+        for status, items in groups.items():
+            collection = page(items, limit, offset)
+            collection['items'] = [dict(self.view(cid, level, related_limit, 0), temporal_status=status,
+                                        temporal_reason=reason) for cid, reason in collection['items']]
+            result[status] = collection
+        return self.envelope('valid_at', at=at, interpretation='recorded_applicability_only',
+                             outside_recorded_intervals=outside, **result)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -305,6 +332,9 @@ def main() -> int:
     search.add_argument('--uncertainty', choices=('low', 'medium', 'high'))
     search.add_argument('--state', choices=('active', 'retired'))
     search.add_argument('--offset', type=int, default=0)
+    temporal = sub.add_parser('valid-at')
+    temporal.add_argument('at')
+    temporal.add_argument('--offset', type=int, default=0)
     for name in ('traverse', 'dependents'):
         walk = sub.add_parser(name)
         walk.add_argument('seed')
@@ -313,13 +343,13 @@ def main() -> int:
         if name == 'traverse':
             walk.add_argument('--direction', choices=('incoming', 'outgoing', 'both'), default='both')
             walk.add_argument('--connector-type', choices=('dependency', 'coupling'))
-    for command in (lookup, search, *[sub.choices[name] for name in ('traverse', 'dependents')]):
+    for command in (lookup, search, temporal, *[sub.choices[name] for name in ('traverse', 'dependents')]):
         command.add_argument('--level', type=int, choices=(0, 1, 2), default=0)
         command.add_argument('--related-limit', type=int, default=50)
         if command != lookup:
             command.add_argument('--limit', type=int, default=20)
     args = vars(parser.parse_args())
-    command = args.pop('command')
+    command = args.pop('command').replace('-', '_')
     try:
         knowledge = Knowledge(args.pop('package'), args.pop('manifest_sha256'))
         result = getattr(knowledge, command)(**args)
