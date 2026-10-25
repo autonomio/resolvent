@@ -114,6 +114,10 @@ class WorkflowReleaseTests(unittest.TestCase):
         self.root = self.fixture.root
         self.git = self.fixture.git
         self.directory = Path(self.fixture.temp.name)
+        config = json.loads((self.root/'workflows/resolvent/workflow.json').read_text())
+        major, minor, patch = map(int, config['workflow_version'].split('.'))
+        self.next_version = f'{major}.{minor}.{patch+1}'
+        self.future_version = f'{major+1}.0.0'
 
     def publish(self, name, previous=None, previous_workflow=None):
         output = self.directory / name
@@ -127,7 +131,7 @@ class WorkflowReleaseTests(unittest.TestCase):
         if bump:
             path = self.root/'workflows/resolvent/workflow.json'
             config = json.loads(path.read_text())
-            config['workflow_version'] = '1.0.1'
+            config['workflow_version'] = self.next_version
             path.write_text(json.dumps(config))
 
     def test_install_once_then_update_references_without_changing_the_plugin_zip(self):
@@ -140,7 +144,7 @@ class WorkflowReleaseTests(unittest.TestCase):
         self.assertEqual(result['changed'], 'false')
         self.assertEqual(result['workflow_changed'], 'true')
         self.assertEqual(same_plugin, plugin)
-        self.assertEqual(current['workflow_version'], '1.0.1')
+        self.assertEqual(current['workflow_version'], self.next_version)
         self.assertEqual(current['source_commit'], self.git('rev-parse','HEAD'))
         for path in (old/'assets').iterdir():
             self.assertEqual(path.read_bytes(), (new/'assets'/path.name).read_bytes(), path.name)
@@ -175,7 +179,7 @@ class WorkflowReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'pinned source'):
             self.publish('dirty', plugin, workflow)
         future = copy.deepcopy(workflow)
-        future['workflow_version'] = '2.0.0'
+        future['workflow_version'] = self.future_version
         with self.assertRaisesRegex(ValueError, 'back'):
             manifest(self.root, self.git('rev-parse','HEAD'), future)
 
