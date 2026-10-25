@@ -54,8 +54,14 @@ def readonly_candidate_workflows(root,source,files):
             immediate.add('push')
         if not immediate:
             continue  # Other workflow definitions activate only after reviewed main merge.
-        if re.search(r'\$\{\{(?:(?!\}\}).)*\bsecrets\b',raw,re.I|re.S):
-            raise ValueError('Candidate PR/dispatch workflow cannot request secrets')
+        pending=[workflow];seen=set()
+        while pending:
+            value=pending.pop()
+            if isinstance(value,str):
+                if '${{' in value and re.search(r'\bsecrets\b',value,re.I):
+                    raise ValueError('Candidate PR/dispatch workflow cannot request secrets')
+            elif isinstance(value,(dict,list)) and id(value) not in seen:
+                seen.add(id(value));pending.extend(value.values() if isinstance(value,dict) else value)
         top=workflow.get('permissions')
         if not isinstance(top,dict) or any(value not in ('read','none') for value in top.values()):
             raise ValueError('Candidate workflow requires explicit read-only permissions')

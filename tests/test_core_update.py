@@ -244,7 +244,7 @@ class CoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'read-only'):
             core_update.plan(self.world,source,index)
         workflow.write_text('on: workflow_dispatch\npermissions:\n  contents: read\n'
-                            'jobs:\n  test:\n    env:\n      TOKEN: ${{ toJSON(secrets) }}\n')
+                            'jobs:\n  test:\n    env:\n      TOKEN: ${{ format(\'}}{0}\', toJSON(secrets)) }}\n')
         self.lock(self.upstream,'1.3.0');self.commit(self.upstream,'Unsafe synthetic candidate secret access')
         source=core_release.git(self.upstream,'rev-parse','HEAD').decode().strip()
         index=core_release.release_index(self.upstream)

@@ -638,10 +638,10 @@
       "sha256": "9ffe45909e8ad070be1fab7dbdb793c22bb37b3d1dce3f5ef075dab0d76e2e10"
     },
     "scripts/core_update.py": {
-      "bytes": 12704,
-      "git_blob": "b813f3e8d1af2be1fe23dc66f76223603408fc87",
+      "bytes": 13025,
+      "git_blob": "957cd8f49426f02dc30514b541124841f5176c1f",
       "mode": "100644",
-      "sha256": "0eba4ef6db11e43c48f225c2dadc848148d4567dc33a319a82c16149a8867d0c"
+      "sha256": "d9fb2f5c72d5ee61ffcfd5453cc6ae353760fbd27f19d697e9876459d2454e9e"
     },
     "scripts/gap_finder.py": {
       "bytes": 2724,
@@ -896,10 +896,10 @@
       "sha256": "2aadcca5857e78007915a7cec71b7bac726bd7504ddc093f074341629d763eac"
     },
     "tests/test_core_update.py": {
-      "bytes": 15801,
-      "git_blob": "ca2b4fe29cfc866d2229f3c87abc73368627b160",
+      "bytes": 15820,
+      "git_blob": "633ae539d385166d573f39e0c6772ea5044af783",
       "mode": "100644",
-      "sha256": "5e7248941e5ceca72e85dd2c3405fb836c9da0ae96108de96c5170638e77fd50"
+      "sha256": "bcfee7d425c05a1d4aead5e82aac2ce94a9c4be40fb53451c4b08a67eb09b774"
     },
     "tests/test_knowledge.py": {
       "bytes": 16111,
