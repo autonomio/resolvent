@@ -134,6 +134,11 @@ regular-file object IDs and sizes. A digest printed in prose is not verification
 Missing, truncated, incompatible or unverifiable references block contributions;
 the client can still perform supported chat-only work and reads with an accurate notice.
 
+The fixed boundaries are model instructions, not an executable sandbox. Actual
+access is enforced by host permissions, GitHub authorization and repository gates.
+Transport/package tests do not prove model compliance with intent or adversarial
+text; live host behavior remains an explicit acceptance check.
+
 For a routine guidance update, change the live files and their `workflow_version`
 in a governance PR, run tests and the compiler, and obtain human maintainer review.
 No package bump is needed if installed files are unchanged. Changes to installed

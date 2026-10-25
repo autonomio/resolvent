@@ -129,6 +129,10 @@ those boundaries still need a package update. A new package must disclose its li
 references during review; public acceptance and reliable runtime loading remain
 unverified. Do not describe a fetched reference as a newly installed plugin version.
 
+Fixed boundaries are model instructions, not a separate executable sandbox. Host
+permissions, GitHub authorization and repository gates enforce actual access;
+transport tests cannot substitute for live checks of model behavior.
+
 The user accepted this future-reference authority for development/testing. The
 implemented channel is `workflow-release`, separate from the host-tracked
 `plugin-release` package branch. Workflow-only releases preserve installed ZIP bytes
