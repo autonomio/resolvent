@@ -145,11 +145,11 @@ does not receive later upstream changes, and a normal fork sync is not a guarant
 that data stays unchanged. A live plugin must inspect the world's actual supported
 protocol instead of assuming that the newest plugin implies the newest repository.
 
-Proposed minimum: an opt-in job in the organization's repository opens a governance
+Implemented minimum: an opt-in job in the organization's repository opens a governance
 PR from an upstream core release pinned to commit and content hashes. A manifest
 explicitly lists managed core files and a lock records the installed version/hashes. Preserve byte-for-byte
 all canonical/provenance roots, `resolvent.yaml`, and unmanaged organization files.
-Stop on locally modified managed files, unsafe paths, missing provenance or incompatible
+Stop on locally modified affected managed files, unsafe paths, missing provenance or incompatible
 data. Validate the actual populated world with the proposed core; never migrate data
 inside that update. Any migration is a separate reviewed contribution.
 
@@ -159,6 +159,8 @@ Candidate validation runs without secrets/write privileges. A normal reviewed me
 activates the update. Core releases need their own version/channel because core-only
 changes can leave plugin bytes unchanged. Do not force-sync, overwrite local core
 customizations or claim that an update PR already upgraded the world.
+See [CORE_UPDATES.md](CORE_UPDATES.md) for one-time adoption, credential scope,
+the fixed `core-release` index, hash/mode preservation and release procedure.
 
 ## Evidence needed before rollout
 
@@ -180,8 +182,10 @@ exercise either host's import or runtime behavior.
    incompatible manifests, injection attempts and unavailable verification tools.
 5. Prove question-only admission, conversation attribution/partial coverage and
    legacy/current repository compatibility without invented evidence or lost fields.
-6. Test fork updates against populated fixtures: unchanged data hashes, local edits,
-   added organization files, incompatible core, malicious paths and interrupted retries.
+6. Run the guarded updater on an opted-in real organization repository after the
+   initial channel is published. Local populated fixtures exercise unchanged data
+   blobs/modes, local edits, organization files, unsafe paths and interrupted retries;
+   they do not establish live GitHub permissions or a completed rollout.
 
 These are acceptance checks, not claimed test results. GitHub/package checks cannot
 substitute for host publication or live-chat verification. Distinguish built, GitHub
