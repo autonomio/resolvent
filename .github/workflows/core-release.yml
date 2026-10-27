@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: resolvent-core-publication
@@ -33,4 +34,6 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check -r requirements.txt
       - name: Publish immutable core source reference
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/core_release.py publish --repository "$GITHUB_REPOSITORY"
