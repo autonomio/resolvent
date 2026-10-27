@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "resolvent-workflows": {
+      "type": "http",
+      "url": "https://resolvent.autonom.io/mcp"
+    }
+  }
+}
