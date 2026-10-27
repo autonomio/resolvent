@@ -42,17 +42,23 @@ def approved_upstream(provider,source):
         latest={r['user']['login']:r for r in sorted(reviews,key=lambda r:r['id'])
                 if r.get('user',{}).get('login') and
                 r.get('state') in ('APPROVED','CHANGES_REQUESTED','DISMISSED')}
-        if any(r.get('state')=='CHANGES_REQUESTED' and r.get('author_association') in
-               ('OWNER','MEMBER','COLLABORATOR') for r in latest.values()):
+        maintainers={}
+        for login,review in latest.items():
+            if review['user'].get('type')!='User' or review['state']=='DISMISSED':
+                continue
+            permission=provider('api',prefix+'/collaborators/'+login+'/permission')
+            if (permission.get('permission') in ('write','maintain','admin') and
+                permission.get('user',{}).get('login','').casefold()==login.casefold()):
+                maintainers[login]=review
+        if any(r['state']=='CHANGES_REQUESTED' for r in maintainers.values()):
             continue
         source_review=review_state(provider,'autonomio/resolvent',pr['number'])
         threads=source_review['reviewThreads']
         if (source_review.get('headRefOid')!=pr['head']['sha'] or threads['pageInfo']['hasNextPage'] or
             any(not t['isResolved'] for t in threads['nodes'])):
             continue
-        for login,review in latest.items():
+        for login,review in maintainers.items():
             if (review.get('state')=='APPROVED' and review.get('commit_id')==pr['head']['sha'] and
-                login!=pr.get('user',{}).get('login') and review['user'].get('type')=='User' and
-                review.get('author_association') in ('OWNER','MEMBER','COLLABORATOR')):
+                login!=pr.get('user',{}).get('login')):
                 return {'pull_request':pr['html_url'],'reviewer':login,'reviewed_head':pr['head']['sha']}
     raise ValueError('The fixed upstream release lacks an independent maintainer approval on its final PR head')

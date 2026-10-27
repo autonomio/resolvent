@@ -21,6 +21,8 @@ The owner then configures:
 
 1. Its existing `RESOLVENT_AUTOMATION_TOKEN` Actions secret, scoped to this repository,
    with contents, pull requests, Actions dispatch and **Workflows** write permission.
+   It also needs **Checks** and **Commit statuses** read permission to verify CI
+   on private repositories; these permissions are separate from Actions access.
    A repository-approved app/user credential owns execution; there is no central
    Autonomio account or service. GitHub's built-in token cannot be assigned the
    separate workflow-file update permission. See [GitHub's app permissions](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/choosing-permissions-for-a-github-app#choosing-permissions-for-git-access).
@@ -81,7 +83,9 @@ separate explicitly scoped, reviewed change. A green check does not establish tr
 
 Before publishing a new upstream release index, the publisher verifies the merged
 main PR, a non-author maintainer approval on its final head and resolved upstream
-threads. This happens once in the upstream repository, using its own read permission.
+threads. Repository write, maintain or admin permission establishes maintainer
+authority; organization membership alone does not. This happens once upstream,
+using its own read permission.
 Forks verify the resulting fixed-origin release and its exact Git objects; their
 credentials need no additional upstream API permission. The updater requires all
 latest destination checks/statuses to succeed, both
@@ -96,7 +100,10 @@ After GitHub updates eligibility, the trusted job resumes automatically and uses
 an enabled ordinary merge method with the exact expected head. Protections still
 apply. Main is never force-pushed or written directly. A merge is reported only
 after its actual merged PR and commit are read back; an uncertain response is not
-blindly retried. Policy, permission, conflict and compatibility exceptions remain
+blindly retried or reported as leaving main unchanged. Pending PRs finish against
+their original published release, even when a newer release becomes available;
+the next scheduled run then prepares that newer release. Policy, permission,
+conflict and compatibility exceptions remain
 explicit pending/blocked outcomes.
 
 The initial public channel still needs an authorized upstream publication. Built,

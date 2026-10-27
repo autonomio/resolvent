@@ -12,6 +12,7 @@ from types import SimpleNamespace
 class Provider:
     def __init__(self,fixture,head):
         self.fixture=fixture;self.calls=[];self.approvals=[];self.fail_merge=None;self.fail_approval=False
+        self.fail_receipt=False;self.source_permissions={}
         self.endpoint='repos/example/world/pulls/1'
         self.meta={'state':'open','draft':False,'merged':False,'mergeable':True,'mergeable_state':'clean',
                    'head':{'sha':head,'ref':'resolvent/core/1.1.0','repo':{'full_name':'example/world'}},
@@ -38,7 +39,17 @@ class Provider:
     def __call__(self,*args,payload=None):
         self.calls.append((args,payload))
         if args==('api',self.endpoint):
+            if self.fail_receipt and self.meta.get('merged'):
+                raise subprocess.CalledProcessError(1,['simulated-receipt-failure'])
             return copy.deepcopy(self.meta)
+        if args==('api','repos/example/world'):
+            return {'is_template':False,'default_branch':'main','allow_merge_commit':True}
+        if args[:2]==('pr','list'):
+            if '--head' in args:
+                branch=args[args.index('--head')+1]
+                return ([{'state':self.meta['state'].upper(),'url':'https://github.com/example/world/pull/1'}]
+                        if branch==self.meta['head']['ref'] else [])
+            return [{'headRefName':self.meta['head']['ref']}] if self.meta['state']=='open' else []
         if args==('api','graphql','--input','-'):
             record=self.source_review if payload['variables']['owner']=='autonomio' else self.review
             return {'data':{'repository':{'pullRequest':copy.deepcopy(record)}}}
@@ -50,6 +61,9 @@ class Provider:
             return [copy.deepcopy(self.source_pr)]
         if args==('api','repos/autonomio/resolvent/pulls/5/reviews?per_page=100'):
             return copy.deepcopy(self.source_reviews)
+        if args[0]=='api' and args[1].startswith('repos/autonomio/resolvent/collaborators/'):
+            login=args[1].split('/')[-2]
+            return {'permission':self.source_permissions.get(login,'write'),'user':{'login':login}}
         if args[:2]==('workflow','run'):
             return None
         if args==('api','--method','PUT',self.endpoint+'/merge','--input','-'):
@@ -225,6 +239,39 @@ class AutoMergeTests(unittest.TestCase):
         self.assertEqual(self.continue_update()['status'],'merge_not_confirmed')
         self.assertEqual(len(self.writes()),1)
 
+    def test_receipt_failure_reports_uncertainty_after_main_actually_changes(self):
+        self.provider.fail_receipt=True
+        result=self.continue_update()
+        self.assertEqual(result['status'],'merge_outcome_unknown')
+        self.assertEqual(len(self.writes()),1)
+        self.assertNotEqual(core_release.git(self.fixture.world,'ls-remote','origin','refs/heads/main').decode().split()[0],
+                            self.fixture.base)
+
+    def test_a_newer_release_does_not_strand_an_existing_update(self):
+        (self.fixture.upstream/'docs/guide.md').write_text('Synthetic newer release.\n')
+        self.fixture.lock(self.fixture.upstream,'1.2.0')
+        self.fixture.commit(self.fixture.upstream,'Synthetic newer core source')
+        core_release.git(self.fixture.upstream,'push','origin','HEAD:main')
+        core_release.publish_channel(self.fixture.upstream,'autonomio/resolvent',reviewer=lambda *_:None)
+        with patch.object(core_update,'git',side_effect=self.fixture.local_fetch):
+            result=core_update.publish(self.fixture.world,'example/world',provider=self.provider,auto_merge=True)
+        self.assertEqual(result['status'],'merged')
+        self.assertEqual(result['core_version'],'1.1.0')
+        core_release.git(self.fixture.world,'fetch','origin','refs/heads/main')
+        core_release.git(self.fixture.world,'checkout','-B','main','FETCH_HEAD')
+        with patch.object(core_update,'git',side_effect=self.fixture.local_fetch):
+            next_result=core_update.publish(self.fixture.world,'example/world',provider=fixtures.Provider(),auto_merge=True)
+        self.assertEqual(next_result['status'],'pr_created')
+        self.assertEqual(next_result['core_version'],'1.2.0')
+        self.assertFalse(self.fixture.marker.exists())
+
+    def test_a_pending_version_must_exist_in_the_fixed_release_history(self):
+        self.provider.meta['head']['ref']='resolvent/core/9.0.0'
+        with patch.object(core_update,'git',side_effect=self.fixture.local_fetch):
+            with self.assertRaisesRegex(ValueError,'fixed-origin release history'):
+                core_update.publish(self.fixture.world,'example/world',provider=self.provider,auto_merge=True)
+        self.assertFalse(self.writes())
+
 
 class PublisherReviewTests(unittest.TestCase):
     def setUp(self):
@@ -244,7 +291,7 @@ class PublisherReviewTests(unittest.TestCase):
         self.assertFalse(self.writes())
 
     def test_upstream_approval_must_be_independent_current_and_a_maintainer(self):
-        for mutation in ({'commit_id':'0'*40},{'state':'COMMENTED'},{'author_association':'NONE'},
+        for mutation in ({'commit_id':'0'*40},{'state':'COMMENTED'},
                          {'user':{'login':'upstream-author','type':'User'}},
                          {'user':{'login':'some-bot','type':'Bot'}}):
             with self.subTest(mutation=mutation):
@@ -252,6 +299,16 @@ class PublisherReviewTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'lacks an independent'):
                     self.verify_source(provider)
                 self.assertFalse(self.writes(provider))
+
+    def test_organization_membership_without_repository_write_access_cannot_approve(self):
+        for permission in ('read','triage','none'):
+            with self.subTest(permission=permission):
+                self.provider.source_permissions['maintainer']=permission
+                with self.assertRaisesRegex(ValueError,'lacks an independent'):
+                    self.verify_source()
+        self.provider.source_permissions['maintainer']='write'
+        self.provider.source_reviews[0]['author_association']='NONE'
+        self.assertEqual(self.verify_source()['reviewer'],'maintainer')
 
 
     def test_upstream_objections_and_open_threads_block_the_copy(self):

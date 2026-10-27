@@ -16,6 +16,7 @@ if __package__ in (None, ''):
     sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from scripts.core_release import (CHANNEL, LOCK, UPSTREAM, checked_lock, core_path, decode, git,
                                   json_bytes, validate_index, validate_lock, version)
+from scripts.model import Invalid
 
 
 def tree_entries(root,revision):
@@ -192,7 +193,20 @@ def publish(root,repository,*,provider=api,auto_merge=False,reviewer=None):
         return {'status':'deferred_pending_core_pr'}
     # Fetch Git objects only from the fixed public source. No downloaded scripts run here.
     git(root,'-c','protocol.file.allow=never','fetch','--no-tags',UPSTREAM,'refs/heads/'+CHANNEL)
+    channel=git(root,'rev-parse','FETCH_HEAD').decode().strip()
     index=validate_index(decode(git(root,'show','FETCH_HEAD:core.json')))
+    if auto_merge:
+        active=[pr['headRefName'] for pr in pending if pr['headRefName'].startswith('resolvent/core/')]
+        if len(active)>1:
+            return {'status':'deferred_pending_core_pr'}
+        if active and active[0]!='resolvent/core/'+index['core_version']:
+            for revision in git(root,'rev-list','--first-parent',channel).decode().split():
+                previous=validate_index(decode(git(root,'show',revision+':core.json')))
+                if active[0]=='resolvent/core/'+previous['core_version']:
+                    index=previous
+                    break
+            else:
+                raise ValueError('Pending core PR has no matching fixed-origin release history')
     git(root,'-c','protocol.file.allow=never','fetch','--no-tags',UPSTREAM,index['source_commit'])
     result=plan(root,index['source_commit'],index)
     if result['status']!='planned':
@@ -256,8 +270,8 @@ def main():
         if os.environ.get('GITHUB_STEP_SUMMARY'):
             with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as stream:
                 stream.write('Core update: '+result['status']+'\n')
-    except (ValueError,OSError,subprocess.CalledProcessError,KeyError,yaml.YAMLError,TypeError):
-        parser.exit(1,'Core update stopped; data and main were not changed. Inspect the locked core and retry.\n')
+    except (ValueError,OSError,subprocess.CalledProcessError,KeyError,yaml.YAMLError,TypeError,Invalid):
+        parser.exit(1,'Core update stopped. Inspect the actual repository and PR state before retrying; a mutation may already have completed.\n')
 
 
 if __name__=='__main__':

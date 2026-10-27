@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from scripts.core_update import git, plan, planned_tree
 from scripts.core_review import review_state
+from scripts.model import Invalid
 
 CHECKS={'World model integrity','Tests and skill package'}
 REVIEW_MARKER='Automated core-release verification:'
@@ -117,7 +118,12 @@ def continue_update(root,repository,branch,url,head,result,index,*,provider,merg
         # A lost response is not permission to repeat a mutation. Read its
         # actual outcome; a later run must re-establish every gate.
         pass
-    receipt=provider('api',endpoint)
+    try:
+        receipt=provider('api',endpoint)
+    except (OSError,subprocess.CalledProcessError,ValueError,Invalid):
+        return {'status':'merge_outcome_unknown','pull_request':url,'head':head}
+    if not isinstance(receipt,dict):
+        return {'status':'merge_outcome_unknown','pull_request':url,'head':head}
     if receipt.get('merged') is True and re.fullmatch(r'[0-9a-f]{40}',receipt.get('merge_commit_sha','')):
         return {'status':'merged','pull_request':url,'merge_commit':receipt['merge_commit_sha'],
                 'core_version':result['to_version']}
