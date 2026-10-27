@@ -272,5 +272,13 @@ class PublisherReviewTests(unittest.TestCase):
             self.verify_source()
         self.assertFalse(self.writes())
 
+    def test_later_comments_preserve_approval_but_a_dismissal_removes_it(self):
+        self.provider.source_reviews.append(dict(self.provider.source_reviews[0],id=2,state='COMMENTED'))
+        self.assertEqual(self.verify_source()['reviewer'],'maintainer')
+        self.provider.source_reviews[0]['state']='DISMISSED'
+        with self.assertRaisesRegex(ValueError,'lacks an independent'):
+            self.verify_source()
+        self.assertFalse(self.writes())
+
 
 if __name__=='__main__':unittest.main()

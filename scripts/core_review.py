@@ -40,7 +40,8 @@ def approved_upstream(provider,source):
         if any(type(r.get('id')) is not int for r in reviews):
             raise ValueError('Upstream review identities are incomplete')
         latest={r['user']['login']:r for r in sorted(reviews,key=lambda r:r['id'])
-                if r.get('user',{}).get('login')}
+                if r.get('user',{}).get('login') and
+                r.get('state') in ('APPROVED','CHANGES_REQUESTED','DISMISSED')}
         if any(r.get('state')=='CHANGES_REQUESTED' and r.get('author_association') in
                ('OWNER','MEMBER','COLLABORATOR') for r in latest.values()):
             continue
