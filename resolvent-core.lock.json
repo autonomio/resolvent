@@ -452,10 +452,10 @@
       "sha256": "1451b0a9bfbe43e0df97a0cb58789466d101cb48e12d28e97d791591d2ff09cf"
     },
     "docs/PLUGIN_RELEASE.md": {
-      "bytes": 23995,
-      "git_blob": "a13f77e5fe5c6e6ee369e5e0577c16bc1ac0c438",
+      "bytes": 24356,
+      "git_blob": "dc971b647ebaee91af68d968151fc098d5b1eb75",
       "mode": "100644",
-      "sha256": "3d3ba19fab65f3c30e942e38611b16056022b642e917075e58ff771e37ad9a27"
+      "sha256": "3327c8334ca839dff8b8308f7d6004c6a9c92ec1c7b9e13e07b13f2da9f9a7dc"
     },
     "docs/SMOKE_TEST.md": {
       "bytes": 1343,

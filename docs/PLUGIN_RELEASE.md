@@ -303,18 +303,22 @@ documented installation route for every individual account. See
 For the public ChatGPT directory, upload the ChatGPT ZIP to the existing Resolvent
 listing after the initial listing has been created. Bundle updates require a new
 ZIP, checks, review and publisher action. No public CI submission API or arbitrary
-website/branch polling setting is documented for this skills-only public flow.
-Automatic MCP server updates do not apply to this package. Importing skills from
-MCP also creates a reviewed package snapshot, not a runtime skill feed. See
+website/branch polling setting is documented for installed skill packages.
+After initial publication, eligible MCP server changes use OpenAI's automatic
+scan/update path; metadata and bundled skill changes still require a ZIP. Importing
+skills from MCP also creates a reviewed package snapshot, not a runtime skill feed. See
 [public publication](https://developers.openai.com/plugins/deploy/submission) and
 [MCP skill imports](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp).
 
-The existing 1.3.0 skills-only draft is unpublished. On 2026-10-27 the live portal
+The original 1.3.0 skills-only draft was unpublished. On 2026-10-27 the live portal
 rejected further skills-only submissions, including after an unchanged reupload.
 The owner authorized a useful service on Cloudflare Free. Client 1.4.0 includes the
-public workflow MCP, so its initial upload uses **With MCP**. OpenAI currently does
-not support adding an MCP server to an existing skills-only plugin: retain that
-unpublished draft and create the MCP-enabled submission. Complete identity, domain
+public workflow MCP in its initial ZIP. Use the unified **Upload new or existing
+plugin** action and select the verified Autonomio business identity. OpenAI does
+not support adding an MCP server to an existing skills-only plugin. The original
+draft's archive and metadata were preserved, and its replacement was explicitly
+authorized by the owner so the new MCP entry retains the `resolvent` package name.
+Complete identity, domain
 verification, tool/skill scans, the five positive and three negative cases, an actual
 host demo, review and publication. No reviewer credentials are needed for this
 unauthenticated public service. Never invent a demo or submission receipt.
@@ -324,9 +328,10 @@ components still require host publication. The authorized publisher completes
 legal/policy attestations; package checks do not complete them.
 
 The interaction contract and remaining host/fork acceptance checks are in
-[PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). Client 1.3.0 and workflow 1.0.1 implement the
+[PLUGIN_DESIGN.md](PLUGIN_DESIGN.md). Client 1.4.0 and workflow 1.0.1 implement the
 approved reference approach; end-to-end host acceptance remains to be verified.
-Fork updating is a separate proposal and is not enabled by this release.
+Data-preserving fork update PRs are a separate core feature configured through
+[CORE_UPDATES.md](CORE_UPDATES.md); installing the plugin does not enable them.
 
 Verify Autonomio's publishing identity in each portal, and supply any required
 support/privacy/terms URLs from real publisher pages. Unknown URLs and attestations
