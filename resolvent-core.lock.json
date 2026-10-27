@@ -14,16 +14,28 @@
       "sha256": "197a740ef27afdcb27302c6649f611975d030a32eb2343880a23a21ce09ee7b4"
     },
     ".claude-plugin/plugin.json": {
-      "bytes": 773,
-      "git_blob": "8fd5254544b3fba19d7d09919a68675aafae054e",
+      "bytes": 793,
+      "git_blob": "f0405f5e3346886d9ef9425f1c808d2ffbbcd998",
       "mode": "100644",
-      "sha256": "8e567dcdaa62dd9c49bc08d3a08ca310e714e7c4fcf864f0c632f94a4a335ec9"
+      "sha256": "79b9c1f2d4ef0226b33ed12eeb3d735e9b52f8d855abb7dc16c58259d73fc518"
+    },
+    ".codex-plugin/legacy-mcp.json": {
+      "bytes": 131,
+      "git_blob": "89e36518092967ed9654aa82a932041c38578a14",
+      "mode": "100644",
+      "sha256": "a4a4b9ebd13d296dcf835ad0257640dd9bb6898eda6a5ff9119827a49023a8aa"
+    },
+    ".codex-plugin/mcp.json": {
+      "bytes": 338,
+      "git_blob": "b141c882d7815efa7e4635143d276115e4fdf31e",
+      "mode": "100644",
+      "sha256": "4ff865e4eb6812814233c32d837544af9191a37f9ae5645465963bd6ca63aa2d"
     },
     ".codex-plugin/plugin.json": {
-      "bytes": 7422,
-      "git_blob": "216f5220c083dbe03628f21a4236ff8ef1d7fe6d",
+      "bytes": 7442,
+      "git_blob": "0fabbeba55f556eddac61ab113455cdaeef33899",
       "mode": "100644",
-      "sha256": "ac4ca5994c0c987ec76653dce08ac2c91f86dbd9e674c9b31f99553d6e0195ba"
+      "sha256": "defad25f30af69695ba1c37fca407625fefe12f53c1b6db0906ef29996567700"
     },
     ".github/copilot-instructions.md": {
       "bytes": 329,
@@ -78,12 +90,6 @@
       "git_blob": "350771946829df611d33130791ab7a6657c4dc53",
       "mode": "100644",
       "sha256": "f8c88eb72a3d3f8542c59e732f45fa295504d8053116864f48a0690fa6c93600"
-    },
-    ".mcp.json": {
-      "bytes": 131,
-      "git_blob": "89e36518092967ed9654aa82a932041c38578a14",
-      "mode": "100644",
-      "sha256": "a4a4b9ebd13d296dcf835ad0257640dd9bb6898eda6a5ff9119827a49023a8aa"
     },
     "AGENTS.md": {
       "bytes": 3717,
@@ -452,10 +458,10 @@
       "sha256": "1451b0a9bfbe43e0df97a0cb58789466d101cb48e12d28e97d791591d2ff09cf"
     },
     "docs/PLUGIN_RELEASE.md": {
-      "bytes": 24356,
-      "git_blob": "dc971b647ebaee91af68d968151fc098d5b1eb75",
+      "bytes": 24672,
+      "git_blob": "512bc35d60feb25caf3a7cda54aeb91b7e19e132",
       "mode": "100644",
-      "sha256": "3327c8334ca839dff8b8308f7d6004c6a9c92ec1c7b9e13e07b13f2da9f9a7dc"
+      "sha256": "7fa5bf1c4725dc7ec7172b581280458b34f4d5289ebcd3210433518e823bea72"
     },
     "docs/SMOKE_TEST.md": {
       "bytes": 1343,
@@ -613,12 +619,6 @@
       "mode": "100644",
       "sha256": "9433c4866cc13f8971b9e136d41396f4dac8ac511e25ffe12a18078791a85bcc"
     },
-    "mcp.json": {
-      "bytes": 338,
-      "git_blob": "b141c882d7815efa7e4635143d276115e4fdf31e",
-      "mode": "100644",
-      "sha256": "4ff865e4eb6812814233c32d837544af9191a37f9ae5645465963bd6ca63aa2d"
-    },
     "plugin.json": {
       "bytes": 7514,
       "git_blob": "17aafdb99e6424ded14ef24d051ba0495cfe5e0b",
@@ -668,10 +668,10 @@
       "sha256": "ee0060cb82a0834b63f5238d8d3e7a1edad69d37d738cd4551abfad18998594d"
     },
     "scripts/core_release.py": {
-      "bytes": 10058,
-      "git_blob": "75adc8d6c881d7cf61589b9b590c641c6c669a94",
+      "bytes": 10035,
+      "git_blob": "b8a3279b96246ab95f4ee6663f92a4119f3581c3",
       "mode": "100644",
-      "sha256": "73f4ea04f275cfc0165c710d4c978d047ed762e56c4f05d053e398d179761674"
+      "sha256": "9ffe45909e8ad070be1fab7dbdb793c22bb37b3d1dce3f5ef075dab0d76e2e10"
     },
     "scripts/core_update.py": {
       "bytes": 13239,
@@ -698,10 +698,10 @@
       "sha256": "5ed7f6a500ebc83ab004958991c9261ca41fe515e7d131ae0cfc0860dff7dfee"
     },
     "scripts/package_plugin.py": {
-      "bytes": 7464,
-      "git_blob": "e699ed07273401065365119b4378ee723b6ac222",
+      "bytes": 7941,
+      "git_blob": "dadbae78fd2756a6a27fbefa5d4f15686416b6f9",
       "mode": "100644",
-      "sha256": "6dd0750b4236a29bb0b8d49cd8c749d32dc33217080516a3d0bd7d873c890dbc"
+      "sha256": "6113ef849ec32183bd6ea2ab8f15854ae70f311fba5e399e905bc39de949955c"
     },
     "scripts/package_skill.py": {
       "bytes": 3319,
@@ -710,10 +710,10 @@
       "sha256": "cf4a60e22626321ba96d42f287aaa5e32e58305923985881194efa8bf7020ce6"
     },
     "scripts/plugin_release.py": {
-      "bytes": 8395,
-      "git_blob": "baf4732e06ad9a40d478e4e468370664bf5fa011",
+      "bytes": 8358,
+      "git_blob": "d24cd9b21058ae48a2feacfc8ae5577df4352d84",
       "mode": "100644",
-      "sha256": "d10fe9543fd8a380eca3f21b8082e89747fa4729e847e7cbbd6bb7f5c794225e"
+      "sha256": "b521a67b205666d8c73482da4227d3eaeb51a2ba31ec656d5321e16c5c363dbf"
     },
     "scripts/query_knowledge.py": {
       "bytes": 20102,
@@ -1028,10 +1028,10 @@
       "sha256": "2aadcca5857e78007915a7cec71b7bac726bd7504ddc093f074341629d763eac"
     },
     "tests/test_core_update.py": {
-      "bytes": 18892,
-      "git_blob": "75747bdd68b67f36cc6b5f0ef4096bacccb03369",
+      "bytes": 19800,
+      "git_blob": "cac68f7caec3002fd3e802401091e0e0c7737b3e",
       "mode": "100644",
-      "sha256": "e219217b88e58c397109481df0f68bba5fbcea674df5a028bc5af77a013a1972"
+      "sha256": "837ccd4c61066c3a129ffb2d782720f0d5da4da35aa88cb5e3c422f420b1ae8d"
     },
     "tests/test_knowledge.py": {
       "bytes": 16111,
@@ -1046,16 +1046,16 @@
       "sha256": "a6f4092eba8307db74b9ec587a5646ccb8dc3597b6b73bbe101194da17f3783a"
     },
     "tests/test_packaging.py": {
-      "bytes": 4896,
-      "git_blob": "f93a1e6351d4fe1ceb5830c0c88054bc4911b1a1",
+      "bytes": 4871,
+      "git_blob": "6fea9c992fa8c57df257c2e236595b12629dd771",
       "mode": "100644",
-      "sha256": "69c278bf3a8af34604047139844bdff53a334a94f4c35f5726510427c2687588"
+      "sha256": "6ab006fb4cdf2d4dac2e9cdd17f48160f27981621eb7252ef00a736064cd57cd"
     },
     "tests/test_plugin_release.py": {
-      "bytes": 9244,
-      "git_blob": "4a07384a0b54a82c5cab0067320cea41bad81f0e",
+      "bytes": 9287,
+      "git_blob": "1f4e357fabbf84742cd6ba6c2eaf0059e69cf785",
       "mode": "100644",
-      "sha256": "9661ef723e45884cf881ce1ed373c1df5d69b9edbb3b591ae07637554d5c126c"
+      "sha256": "c71d23fdb90d65acf1e2f9f86a02801fe06c2b56a88db1d739ec8259ccda0bb7"
     },
     "tests/test_query_knowledge.py": {
       "bytes": 20125,

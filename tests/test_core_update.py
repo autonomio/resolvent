@@ -119,6 +119,20 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(self.marker.exists())
         validate_state(load_state(self.world),ROOT,True)
 
+    def test_release_inventory_stays_inside_the_v1_updater_namespace(self):
+        # Frozen path policy shipped with core 1.0.0. A release must remain
+        # readable before its new updater can itself be installed.
+        roots={'.gitignore','AGENTS.md','CLAUDE.md','LICENSE','README.md',
+               'plugin.json','pyproject.toml','requirements.txt'}
+        prefixes={'.github','.agents','.claude-plugin','.codex-plugin','scripts',
+                  'tests','docs','skills','workflows','assets','dist','verification'}
+        lock=json.loads((ROOT/core_release.LOCK).read_text())
+        for path in lock['files']:
+            with self.subTest(path=path):
+                self.assertTrue(path in roots or ('/' in path and path.split('/')[0] in prefixes))
+        self.assertIn('dist/plugin/resolvent/mcp.json',lock['files'])
+        self.assertIn('dist/plugin/resolvent/.mcp.json',lock['files'])
+
     def test_only_affected_local_core_edits_block_and_unaffected_edits_survive(self):
         retained=self.world/'scripts/retained.py';retained.write_text('# Local organization customization.\n')
         self.commit(self.world,'Local retained customization')

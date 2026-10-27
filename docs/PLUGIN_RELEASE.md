@@ -39,7 +39,11 @@ repository operations remain in the invoking host or local session.
 - `workflows/resolvent/`: live entrypoint, Reformulate and operators; own workflow version.
 - `skills/resolvent/scripts/load_workflow.py`: optional standard-library reference verifier.
 - Root `plugin.json`: portable identity and ChatGPT listing.
-- `mcp.json` and `.mcp.json`: matching public workflow MCP declarations.
+- `.codex-plugin/mcp.json` and `.codex-plugin/legacy-mcp.json`: matching public
+  workflow MCP declarations. Packaging places them at `mcp.json` and `.mcp.json`
+  in the installable distributions. Both marketplaces install the built
+  `dist/plugin/resolvent` tree. Keeping source declarations in the existing
+  managed namespace preserves compatibility with installed core 1.0.0 updaters.
 - `scripts/workflow_mcp/`: stateless service, public listing pages and tests.
 - `.codex-plugin/plugin.json`: synchronized compatibility manifest.
 - `.claude-plugin/plugin.json`: Claude manifest.

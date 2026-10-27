@@ -16,7 +16,7 @@
   ],
   "icon": "./assets/resolvent.png",
   "license": "MIT",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": "./.codex-plugin/legacy-mcp.json",
   "documentationUrl": "https://resolvent.autonom.io",
   "supportUrl": "https://resolvent.autonom.io/support",
   "privacyPolicyUrl": "https://resolvent.autonom.io/privacy",

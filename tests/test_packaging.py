@@ -16,7 +16,7 @@ class PackagingTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for relative in ('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin', '.claude-plugin', 'LICENSE', 'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
+        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', 'LICENSE', 'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
             source, target = ROOT / relative, self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             if source.is_dir():

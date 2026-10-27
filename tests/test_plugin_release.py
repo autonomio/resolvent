@@ -19,7 +19,7 @@ class ReleaseTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / 'source'
         self.root.mkdir()
-        for relative in ('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin', '.claude-plugin', '.agents', 'LICENSE',
+        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', '.agents', 'LICENSE',
                          'assets', 'skills', 'workflows', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification',
                          'scripts/package_plugin.py', 'scripts/package_skill.py'):
             source, destination = ROOT / relative, self.root / relative
@@ -46,7 +46,7 @@ class ReleaseTests(unittest.TestCase):
             check_version(self.root, self.base)
 
     def test_packagers_and_catalogs_require_a_version_bump(self):
-        for relative in ('scripts/package_plugin.py', 'scripts/package_skill.py', 'mcp.json', '.mcp.json',
+        for relative in ('scripts/package_plugin.py', 'scripts/package_skill.py', '.codex-plugin/mcp.json', '.codex-plugin/legacy-mcp.json',
                          '.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json'):
             with self.subTest(path=relative):
                 path = self.root / relative
@@ -57,7 +57,7 @@ class ReleaseTests(unittest.TestCase):
                 path.write_bytes(original)
 
     def test_public_mcp_cannot_introduce_credentials_or_another_destination(self):
-        path = self.root / 'mcp.json'
+        path = self.root / '.codex-plugin/mcp.json'
         original = path.read_text()
         for change in ('headers', 'url', 'auth'):
             config = json.loads(original)
@@ -76,7 +76,7 @@ class ReleaseTests(unittest.TestCase):
             plugin_files(self.root)
 
     def test_both_host_mcp_declarations_must_match(self):
-        path = self.root / '.mcp.json'
+        path = self.root / '.codex-plugin/legacy-mcp.json'
         config = json.loads(path.read_text())
         config['mcpServers']['resolvent-workflows']['url'] = 'https://example.invalid/mcp'
         path.write_text(json.dumps(config))

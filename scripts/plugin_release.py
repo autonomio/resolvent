@@ -18,7 +18,7 @@ from scripts.workflow_release import check_version as check_workflow_version, ma
 
 RELEASE_BRANCH = 'plugin-release'
 PACKAGED_PATHS = (
-    'plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'LICENSE',
+    'plugin.json', '.codex-plugin', '.claude-plugin/plugin.json', 'LICENSE',
     'skills/resolvent', 'assets', 'docs/PLUGIN_README.md', 'verification/README.md',
     'scripts/package_plugin.py', 'scripts/package_skill.py',
     '.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json',
