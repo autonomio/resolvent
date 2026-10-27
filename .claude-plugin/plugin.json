@@ -1,7 +1,7 @@
 {
   "name": "resolvent",
   "displayName": "Resolvent",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Research and refine questions, read your Resolvent world model, or explicitly add selected findings and discussion through your authorized GitHub connection.",
   "author": {
     "name": "Autonomio",
@@ -15,5 +15,10 @@
     "evidence"
   ],
   "icon": "./assets/resolvent.png",
-  "license": "MIT"
+  "license": "MIT",
+  "mcpServers": "./.codex-plugin/legacy-mcp.json",
+  "documentationUrl": "https://resolvent.autonom.io",
+  "supportUrl": "https://resolvent.autonom.io/support",
+  "privacyPolicyUrl": "https://resolvent.autonom.io/privacy",
+  "termsOfServiceUrl": "https://resolvent.autonom.io/terms"
 }

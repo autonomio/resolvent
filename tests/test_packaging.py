@@ -36,7 +36,7 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(len(set(artifacts.values())), 1)
         with zipfile.ZipFile(io.BytesIO(next(iter(artifacts.values())))) as archive:
             self.assertIsNone(archive.testzip())
-            for path in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'skills/resolvent/SKILL.md', 'assets/resolvent.png'):
+            for path in ('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'skills/resolvent/SKILL.md', 'assets/resolvent.png'):
                 self.assertIn('resolvent/' + path, archive.namelist())
             self.assertEqual(archive.read('resolvent/skills/resolvent/references/submission.schema.json'), (self.root / 'docs/schemas/submission.schema.json').read_bytes())
             self.assertEqual(archive.read('resolvent/LICENSE'), (self.root/'LICENSE').read_bytes())

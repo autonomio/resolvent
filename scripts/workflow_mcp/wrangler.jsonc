@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "resolvent-workflows",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "routes": [{ "pattern": "resolvent.autonom.io", "custom_domain": true }],
+  "vars": {
+    "PUBLIC_HOSTNAME": "resolvent.autonom.io",
+    "WORKERS_DEV_HOSTNAME": "resolvent-workflows.mailme-758.workers.dev"
+  },
+  "rules": [{ "type": "Text", "globs": ["**/*.html"], "fallthrough": true }],
+  "observability": { "enabled": false }
+}

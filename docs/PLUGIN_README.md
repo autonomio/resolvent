@@ -4,6 +4,12 @@ Research in your chat. Read your organization's world model when you need it.
 Add selected findings, questions or discussion when you ask.
 Developed by [Autonomio](https://autonom.io).
 
+In Claude Code, install from the GitHub marketplace:
+
+```text
+/plugin install resolvent --marketplace autonomio/resolvent
+```
+
 Software and plugin: [MIT License](LICENSE). Organization world-model data and
 third-party source material are excluded; their rights holders retain control.
 
@@ -40,13 +46,19 @@ For reuse across chats in a project, add this to that host's project instruction
 > Use OWNER/REPOSITORY for Resolvent here; read or write it only when I ask.
 
 This is an optional host setting, not a portable installation-time preference.
-Chat-only research and reformulation require no repository. No Autonomio account,
-custom MCP service, Portal or local software installation is required.
+Chat-only research and reformulation require no repository. The plugin includes
+Autonomio's public, read-only workflow MCP endpoint. No Autonomio account,
+organization-hosted service, Portal or local software installation is required.
+The service accepts only protocol versions and normal MCP connection metadata;
+it receives no chat text, questions, repository names, world records or credentials.
+It cannot read or change your model. See [privacy](https://resolvent.autonom.io/privacy),
+[terms](https://resolvent.autonom.io/terms) and [support](https://resolvent.autonom.io/support).
 
 ## Updates
 
-The fixed plugin loads versioned workflow guidance from Autonomio's reviewed GitHub
-`workflow-release` branch. It pins and verifies the selected references for each
+The bundled `get_resolvent_workflow` tool retrieves versioned guidance from
+Autonomio's reviewed GitHub `workflow-release` branch. The service pins and verifies
+the selected references' exact sizes, SHA-256 and Git blob identities for each
 operation. They cannot expand permissions, change your destination or bypass your
 organization's approved repository rules. Fetching them sends no chat content to
 Autonomio. Retrieval/compatibility failures are reported; an unverified workflow
@@ -60,7 +72,8 @@ syncs. Claude directory updates follow the tracked plugin branch and its publish
 settings. Public ChatGPT package updates require review/publication; routine live
 workflow updates do not replace the installed package.
 
-The optional bundled Python reader can verify references where the host already has
-execution. GitHub's pinned tree/blob reads provide a no-shell verification route.
-If a host cannot supply either, Resolvent explains the limit and can still help in
+The bundled compatibility tool compares protocol versions without repository access
+or migration. If the MCP service is unavailable, the optional bundled Python reader
+can verify references where the host already has execution; GitHub's pinned tree/blob
+reads provide another verification route. If none is available, Resolvent explains the limit and can still help in
 chat; installing this package alone does not prove host runtime compatibility.

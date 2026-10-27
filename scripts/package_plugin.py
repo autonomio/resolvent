@@ -14,8 +14,17 @@ if __package__ in (None, ''):
 from scripts.package_skill import ROOT, archive_bytes, skill_files
 
 
+def _unique_members(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('Duplicate package metadata member: ' + key)
+        result[key] = value
+    return result
+
+
 def _manifest(root: Path, relative: str) -> dict:
-    result = json.loads((root / relative).read_text())
+    result = json.loads((root / relative).read_text(), object_pairs_hook=_unique_members)
     if not isinstance(result, dict):
         raise ValueError('Manifest must be an object: ' + relative)
     if result.get('apps') is not None or result.get('extensions', {}).get('com.openai', {}).get('apps') is not None:
@@ -54,6 +63,24 @@ def plugin_files(root: Path = ROOT) -> tuple[str, dict[str, bytes]]:
     if metadata.get('metadata', {}).get('version') != version:
         raise ValueError('Skill and plugin release versions differ')
     files = {name: (root / name).read_bytes() for name in names}
+    endpoint = 'https://resolvent.autonom.io/mcp'
+    portable = _manifest(root, '.codex-plugin/mcp.json')
+    compatibility = _manifest(root, '.codex-plugin/legacy-mcp.json')
+    if portable != {'$schema': 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json',
+                    'mcpServers': {'resolvent-workflows': {'type': 'streamable-http', 'url': endpoint,
+                                   'extensions': {'com.openai': {'auth': {'type': 'none'}}}}}}:
+        raise ValueError('Unexpected public workflow MCP configuration')
+    if compatibility != {'mcpServers': {'resolvent-workflows': {'type': 'http', 'url': endpoint}}}:
+        raise ValueError('Host MCP configurations differ')
+    if any(m.get('mcpServers') != './.codex-plugin/legacy-mcp.json' for m in manifests[1:]):
+        raise ValueError('Compatibility hosts must include the public workflow MCP')
+    # Source configs stay inside the existing managed namespace. Older updaters
+    # can deliver them without expanding their trusted root-file allowlist.
+    files['mcp.json'] = (root / '.codex-plugin/mcp.json').read_bytes()
+    files['.mcp.json'] = (root / '.codex-plugin/legacy-mcp.json').read_bytes()
+    for name, manifest in zip(names[1:], manifests[1:]):
+        packaged = dict(manifest, mcpServers='./.mcp.json')
+        files[name] = (json.dumps(packaged, ensure_ascii=False, indent=2) + '\n').encode()
     files.update({'skills/resolvent/' + path: data for path, data in skill.items()})
     for path in sorted((root / 'assets').rglob('*')):
         if path.is_symlink():

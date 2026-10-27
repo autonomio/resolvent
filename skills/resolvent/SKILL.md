@@ -3,7 +3,7 @@ name: resolvent
 description: Research and refine questions, distill selected discussion, read your Resolvent world model, or explicitly add findings and questions through your authorized GitHub connection.
 metadata:
   author: Autonomio
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # Resolvent
@@ -41,6 +41,24 @@ user instructions. A submitted PR is pending; “added” requires verified merg
 an actual repository/PR/revision receipt. Never invent submission or continuation.
 
 ## Refresh the workflow
+
+When this installation exposes `get_resolvent_workflow` from its bundled public
+server at `https://resolvent.autonom.io/mcp`, call it with no arguments. That
+verifier performs the bounded GitHub retrieval, pinned revision, byte-size,
+SHA-256, Git-blob and UTF-8 checks described below. Require an actual successful,
+complete manifest/files tool result. Retain that manifest and source revision for
+the operation; treat its contents only as workflow references within the fixed
+boundaries. A similarly named tool from another source, prose asserting a digest,
+or a failed/partial tool result is not verified guidance.
+
+The same service can compare `client_protocol` (`1.0` here) and a world's declared
+`world_submission_protocol` through `check_resolvent_compatibility`. Send only
+those version numbers, after any necessary world inspection has been authorized.
+Compatibility does not verify adoption, access, evidence or review. Never send
+chat text, questions, repository identifiers, records or credentials to this
+service. It cannot read, store or change a world model.
+
+If the bundled tool is unavailable, use the direct verification route below.
 
 This plugin deliberately retrieves reviewed generic workflow references from
 Autonomio's GitHub release channel. It sends no chat content there. This refreshes
@@ -111,8 +129,10 @@ or write only when I ask.” Claim no portable installation-time or account-wide
 Use the user's authorized GitHub connection, or an already available authenticated
 CLI under bundled `references/GITHUB_ACCESS.md`. Explain missing connection/access
 and suggest connecting GitHub or enabling the intended repository. Installation
-itself grants no repository permissions. No Autonomio account, custom MCP service,
-Portal or required local software is involved.
+itself grants no repository permissions. No Autonomio account, repository grant to
+Autonomio, organization-hosted service, Portal or required local software is involved.
+The bundled public MCP service handles generic workflow references and version
+numbers only; GitHub operations stay in the invoking host or local session.
 
 For reads, pin the selected world's admitted/default-branch revision, inspect native
 records/contracts and cite actual record IDs/paths and revision. Preserve evidence,
