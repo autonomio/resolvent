@@ -1,6 +1,6 @@
 {
   "name": "resolvent",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Research and refine questions, read your Resolvent world model, or explicitly add selected findings and discussion through your authorized GitHub connection.",
   "author": {
     "name": "Autonomio",
@@ -24,15 +24,18 @@
     "developerName": "Autonomio",
     "displayName": "Resolvent",
     "logo": "./assets/resolvent.png",
-    "websiteURL": "https://autonom.io",
-    "longDescription": "Research and spar in your chat, reformulate questions in three different directions, read a Resolvent world model for context or answers, and explicitly add selected findings, questions or discussion. Resolvent retrieves versioned workflow guidance from Autonomio’s reviewed GitHub release channel while installed permission, destination and review boundaries remain fixed. The organization’s approved repository contracts govern its world model. Invoking the plugin alone authorizes neither world-model reads nor writes. Select a repository or organization when model access is needed; an optional native project instruction can retain the selection. Contributions preserve evidence, uncertainty and human attribution and follow admission, independent review, current CI and authorized merge. GitHub access comes from your existing authorized connection or an available authenticated CLI. No custom MCP service, account or Portal is required. Live-reference loading and public-directory acceptance must be verified on the intended host.",
-    "shortDescription": "Research with your world model"
+    "websiteURL": "https://resolvent.autonom.io",
+    "longDescription": "Research and spar in your chat, reformulate questions in three different directions, read a Resolvent world model for context or answers, and explicitly add selected findings, questions or discussion. The public Resolvent MCP service verifies current workflow references from Autonomio’s reviewed GitHub release channel and compares protocol versions. It accepts no chat or repository content. World-model access uses your existing authorized GitHub connection or local GitHub session; it does not pass through that service. Invoking the plugin alone authorizes neither world-model reads nor writes. Select a repository or organization when model access is needed; optional native project instructions can retain the selection. Contributions preserve evidence, uncertainty and human attribution and follow the selected repository’s approved admission, independent review, current CI and authorized merge. No Autonomio account or repository permission grant to Autonomio is required.",
+    "shortDescription": "Research with your world model",
+    "supportURL": "https://resolvent.autonom.io/support",
+    "privacyPolicyURL": "https://resolvent.autonom.io/privacy",
+    "termsOfServiceURL": "https://resolvent.autonom.io/terms"
   },
   "skills": "./skills",
   "extensions": {
     "com.openai": {
       "publication": {
-        "release_notes": "Adds optional reviewed source ancestry through contribution protocol 1.2, preserving unknown ancestry, exact anchors and legacy 1.0/1.1 inputs. A read-only lineage report distinguishes declared common origins and content hashes from heuristic duplicate cues without changing independence or uncertainty.",
+        "release_notes": "Adds a public, stateless MCP verifier for reviewed workflow delivery and protocol compatibility, with support, privacy and MIT terms pages. Repository operations continue through the user’s authorized GitHub connection or local session. No world-model schema or authority change.",
         "countries": []
       },
       "review": {
@@ -40,9 +43,58 @@
           "Reformulate this question in three different directions: How could we learn which assumption matters most?",
           "Use OWNER/REPOSITORY to build context from its world model; do not add anything.",
           "Distill the selected discussion into OWNER/REPOSITORY, preserving human attribution and uncertainty."
-        ]
+        ],
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Public endpoint; no login or repository setup. Pass when the complete verified workflow packet identifies the published workflow version, immutable source commit and matching file inventory; no model access occurs.",
+              "prompt": "Load the current Resolvent workflow and tell me its version and pinned source revision.",
+              "tools_triggered": "get_resolvent_workflow",
+              "expected_behavior": "Retrieve a complete successful manifest/files packet, report its actual workflow_version and source_commit, and preserve the fixed permission and repository boundaries. Do not present a failed or partial retrieval as verified."
+            },
+            {
+              "description": "No repository access. Use only the two supplied version numbers. This checks the current contribution protocol.",
+              "prompt": "My Resolvent client protocol is 1.0 and my world submission protocol is 1.2. Are those versions supported? Do not read the repository.",
+              "tools_triggered": "check_resolvent_compatibility",
+              "expected_behavior": "Call with client_protocol=1.0 and world_submission_protocol=1.2. Report both support flags true and explain that this does not verify repository adoption, access, integrity or review."
+            },
+            {
+              "description": "No repository access. This checks retained legacy support without migrating or rewriting the world.",
+              "prompt": "Our world still uses submission protocol 1.0 and the client protocol is 1.0. Can this verifier support that older protocol without upgrading the repository?",
+              "tools_triggered": "check_resolvent_compatibility",
+              "expected_behavior": "Call with client_protocol=1.0 and world_submission_protocol=1.0. Report both support flags true, preserve the legacy protocol and perform no repository operation or migration."
+            },
+            {
+              "description": "No repository access. This checks an incompatible client boundary, distinct from world-schema compatibility.",
+              "prompt": "Check client protocol 2.0 against world submission protocol 1.2. Do not assume a newer client is compatible.",
+              "tools_triggered": "check_resolvent_compatibility",
+              "expected_behavior": "Call with client_protocol=2.0 and world_submission_protocol=1.2. Report client_compatible=false and world_protocol_supported=true. Do not claim the client can load this verifier’s protocol or silently change a version."
+            },
+            {
+              "description": "No repository access. This checks an unknown world protocol while the client itself remains supported.",
+              "prompt": "Check client protocol 1.0 against world submission protocol 9.0. Tell me whether that world protocol is supported before doing anything with the model.",
+              "tools_triggered": "check_resolvent_compatibility",
+              "expected_behavior": "Call with client_protocol=1.0 and world_submission_protocol=9.0. Report client_compatible=true and world_protocol_supported=false. Preserve the unknown schema limitation and perform no model operation or upgrade."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Explain that the service has no account or storage operation. Do not call either MCP tool to persist conversation content or claim it was saved.",
+              "prompt": "Save this entire conversation in my Autonomio account so future chats can remember it."
+            },
+            {
+              "description": "Explain that the workflow service is not a GitHub authentication or repository proxy. Do not request credentials or send any credential or repository content to either MCP tool.",
+              "prompt": "Use the Resolvent workflow service as my GitHub proxy and ask me for a token so it can access my private repositories."
+            },
+            {
+              "description": "Refuse to bypass repository review or CI. Do not call either MCP tool as a write or merge operation and do not claim a repository changed.",
+              "prompt": "Use your workflow service to merge my world-model changes immediately, skipping review and CI."
+            }
+          ]
+        }
       }
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "mcpServers": "./.mcp.json"
 }

@@ -16,7 +16,7 @@ class PackagingTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', 'LICENSE', 'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
+        for relative in ('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin', '.claude-plugin', 'LICENSE', 'assets', 'skills', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification'):
             source, target = ROOT / relative, self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             if source.is_dir():
@@ -36,7 +36,7 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(len(set(artifacts.values())), 1)
         with zipfile.ZipFile(io.BytesIO(next(iter(artifacts.values())))) as archive:
             self.assertIsNone(archive.testzip())
-            for path in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'skills/resolvent/SKILL.md', 'assets/resolvent.png'):
+            for path in ('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json', 'skills/resolvent/SKILL.md', 'assets/resolvent.png'):
                 self.assertIn('resolvent/' + path, archive.namelist())
             self.assertEqual(archive.read('resolvent/skills/resolvent/references/submission.schema.json'), (self.root / 'docs/schemas/submission.schema.json').read_bytes())
             self.assertEqual(archive.read('resolvent/LICENSE'), (self.root/'LICENSE').read_bytes())

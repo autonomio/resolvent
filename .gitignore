@@ -7,3 +7,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+scripts/workflow_mcp/node_modules/
+scripts/workflow_mcp/.wrangler/
+scripts/workflow_mcp/build/

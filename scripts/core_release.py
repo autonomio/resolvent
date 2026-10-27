@@ -20,7 +20,7 @@ from scripts.model import Invalid, unique_pairs
 LOCK='resolvent-core.lock.json'
 UPSTREAM='https://github.com/autonomio/resolvent.git'
 CHANNEL='core-release'
-ROOT_FILES={'.gitignore','AGENTS.md','CLAUDE.md','LICENSE','README.md','plugin.json','pyproject.toml','requirements.txt'}
+ROOT_FILES={'.gitignore','AGENTS.md','CLAUDE.md','LICENSE','README.md','plugin.json','mcp.json','.mcp.json','pyproject.toml','requirements.txt'}
 PREFIXES={'.github','.agents','.claude-plugin','.codex-plugin','scripts','tests','docs','skills',
           'workflows','assets','dist','verification'}
 MAX_FILES=1000

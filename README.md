@@ -35,18 +35,19 @@ rules; explicit preflight, submit-only, review-only and no-merge limits prevail.
 
 ## Plugin releases and distributions
 
-Plugin **1.3.0** extends the fixed client and separately versioned live workflow references,
+Plugin **1.4.0** adds a public MCP verifier for current workflow delivery and protocol
+compatibility to the fixed client and separately versioned live workflow references,
 including explicit read/write intent, distillation and integrated question reformulation.
 World-model protocol 1.2 adds optional reviewed source ancestry, retaining legacy
 1.0/1.1 inputs. Read-only lineage reports expose possible common origins without
 promoting independence or uncertainty.
-Its developer is Autonomio and its website is https://autonom.io. After a reviewed
+Its developer is Autonomio and its plugin website is https://resolvent.autonom.io. After a reviewed
 main-branch change passes validation, CI publishes versioned GitHub assets and the
 standalone `plugin-release` branch. Public directory setup is a separate first step.
 
 - [Latest published packages](https://github.com/autonomio/resolvent/releases/latest)
-- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.3.0.zip)
-- [Claude plugin ZIP](dist/claude/resolvent-1.3.0.zip)
+- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.4.0.zip)
+- [Claude plugin ZIP](dist/claude/resolvent-1.4.0.zip)
 - [Plugin release and compatibility instructions](docs/PLUGIN_RELEASE.md)
 
 Both ZIPs contain identical code, skills, assets and synchronized host manifests.
@@ -79,8 +80,9 @@ incomplete receipt; installation alone is not evidence of research, admission or
 Existing repository agents read [AGENTS.md](AGENTS.md) and
 [their job instructions](docs/AGENT_JOBS.md). Give independent review agents access.
 The originating chat owns its selected contribution's authoring and corrections;
-external review remains independent. No agent provider, model key or new service
-is required by the plugin.
+external review remains independent. No agent provider, model key or
+organization-hosted service is required by the plugin. The public workflow verifier
+has no repository access; model operations use the host's existing GitHub authority.
 
 Template copies do not inherit branch protections or app grants. Enable Actions,
 require `World model integrity` and `Tests and skill package`, independent review,

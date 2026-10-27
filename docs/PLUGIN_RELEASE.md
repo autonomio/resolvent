@@ -1,6 +1,6 @@
 # Resolvent plugin releases
 
-Resolvent 1.3.0 is the generic Autonomio plugin. The developer and website are
+Resolvent 1.4.0 is the generic Autonomio plugin. The developer and website are
 Autonomio and https://autonom.io. Its description identifies the supported task:
 update a Resolvent world model in a GitHub repository the user can access from
 the chat where the plugin is invoked.
@@ -29,7 +29,9 @@ presentation is host-specific; the selected repository and task are the same.
 
 The plugin uses the invoking chat's authorized GitHub connection or an already
 available authenticated CLI. Installation cannot grant repository permissions.
-It contains no account credentials or required custom MCP service.
+It contains no account credentials or organization-hosted service. Its bundled
+public MCP endpoint supplies generic workflow references and version checks only;
+repository operations remain in the invoking host or local session.
 
 ## Canonical source and artifacts
 
@@ -37,13 +39,15 @@ It contains no account credentials or required custom MCP service.
 - `workflows/resolvent/`: live entrypoint, Reformulate and operators; own workflow version.
 - `skills/resolvent/scripts/load_workflow.py`: optional standard-library reference verifier.
 - Root `plugin.json`: portable identity and ChatGPT listing.
+- `mcp.json` and `.mcp.json`: matching public workflow MCP declarations.
+- `scripts/workflow_mcp/`: stateless service, public listing pages and tests.
 - `.codex-plugin/plugin.json`: synchronized compatibility manifest.
 - `.claude-plugin/plugin.json`: Claude manifest.
 - `.agents/plugins/marketplace.json`: local ChatGPT/Codex catalog.
 - `.claude-plugin/marketplace.json`: local Claude catalog.
 - `assets/resolvent.svg` and `assets/resolvent.png`: original icon and directory PNG.
 - `docs/PLUGIN_README.md`: standalone README included in each plugin package.
-- `dist/chatgpt/resolvent-1.3.0.zip` and `dist/claude/resolvent-1.3.0.zip`: identical
+- `dist/chatgpt/resolvent-1.4.0.zip` and `dist/claude/resolvent-1.4.0.zip`: identical
   self-contained plugin distributions, with both host manifests.
 - `dist/plugin/resolvent/`: standalone local catalog source, generated from the same files.
 - `dist/resolvent.zip`: optional standalone Claude skill compatibility artifact.
@@ -268,7 +272,8 @@ establish directory approval or license an organization's data.
 
 The publisher is Autonomio; availability is all countries supported by each host.
 OpenAI's `publication.countries: []` records the requested absence of country restrictions.
-The plugin contains no payment tools, custom MCP server or account credentials.
+The plugin contains no payment tools, GitHub proxy or account credentials.
+Its MCP service accepts no chat or repository content and cannot change a world.
 Package tests do not establish hosted installation, GitHub authorization,
 live research/admission/review/merge, or directory approval.
 
@@ -304,9 +309,15 @@ MCP also creates a reviewed package snapshot, not a runtime skill feed. See
 [public publication](https://developers.openai.com/plugins/deploy/submission) and
 [MCP skill imports](https://developers.openai.com/plugins/build/skills#import-a-skill-from-mcp).
 
-For the initial upload, use the fixed client package (1.2.0 or later), choose the
-skills-only path, and complete the host's identity, scan/review and publication
-steps. No custom MCP connection, MCP demo or reviewer credentials are required.
+The existing 1.3.0 skills-only draft is unpublished. On 2026-10-27 the live portal
+rejected further skills-only submissions, including after an unchanged reupload.
+The owner authorized a useful service on Cloudflare Free. Client 1.4.0 includes the
+public workflow MCP, so its initial upload uses **With MCP**. OpenAI currently does
+not support adding an MCP server to an existing skills-only plugin: retain that
+unpublished draft and create the MCP-enabled submission. Complete identity, domain
+verification, tool/skill scans, the five positive and three negative cases, an actual
+host demo, review and publication. No reviewer credentials are needed for this
+unauthenticated public service. Never invent a demo or submission receipt.
 After that setup, compatible workflow releases arrive through `workflow-release`
 without another user upload or manual refresh. Only changes to installed package
 components still require host publication. The authorized publisher completes
@@ -320,7 +331,8 @@ Fork updating is a separate proposal and is not enabled by this release.
 Verify Autonomio's publishing identity in each portal, and supply any required
 support/privacy/terms URLs from real publisher pages. Unknown URLs and attestations
 are not invented. The authorized developer completes legal/policy attestations.
-Skills-only plugins need no MCP review cases, demo or reviewer credentials.
+The 1.4.0 remote MCP submission requires its declared review cases and a real
+demo recording. Do not apply the older skills-only exemptions to this package.
 Users receive published versions according to each host's refresh timing; an active
 chat can retain its already loaded instructions. CI does not force a chat to reload.
 
@@ -333,3 +345,35 @@ Format references:
 - https://code.claude.com/docs/en/plugins-reference
 - https://code.claude.com/docs/en/plugin-marketplaces
 - https://support.claude.com/en/articles/14328846-browse-skills-connectors-and-plugins-in-one-directory
+
+## Public workflow MCP compatibility (1.4.0)
+
+Client 1.4.0 adds a fixed, credential-free MCP endpoint at
+`https://resolvent.autonom.io/mcp`. It performs the same bounded public GitHub
+manifest/revision/size/SHA-256/Git-blob/UTF-8 checks as the direct reader. The
+installed skill accepts only a complete successful result from that bundled
+verifier; lookalike tools and prose hashes do not establish verification. The
+direct Python or authorized GitHub-object route remains available. Every operation
+retains its selected manifest, revision, repository and original user authority.
+
+The second tool compares client/world submission-protocol version numbers. A
+supported version is not evidence of repository adoption, access, integrity or
+review. The service has no world-model or credential fields, database, AI inference,
+repository mutation or user account. It cannot upgrade a world. Submission protocol
+1.2, the bundled schema, workflow 1.0.1 and fixed client protocol 1.0 are unchanged.
+All host versions, public MCP declarations, listing URLs and identical ZIPs must
+stay synchronized. MCP source changes do not themselves require a client release
+unless its installed contract or package changes.
+
+The public homepage, support, privacy and MIT terms pages live with the service.
+The owner confirmed a one-year private-contact retention period; workflow HTTP
+requests have no persistent application storage or application logs. Cloudflare's
+infrastructure metadata processing is disclosed separately. The account was
+verified as Workers Free before deployment. No paid add-on or plan change was made.
+The service shares free account limits; unavailable service is an explicit failure,
+not permission to bypass verification. See `scripts/workflow_mcp/README.md`.
+
+The owner authorized public OpenAI submission and free Cloudflare hosting on
+2026-10-27. Platform legal/policy attestations still belong to the authorized human
+publisher. Local and raw MCP transport tests do not establish live host behavior,
+public-directory approval or publication.

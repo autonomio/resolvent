@@ -60,7 +60,7 @@ An explicit current request overrides that preference. No repository is needed f
 chat-only sparring or reformulation. Do not promise a portable installation-time
 organization setting: OpenAI does not run Claude's `userConfig` prompts. Without a
 host-native persistent preference, ask when the repository is first needed in a new
-chat. No Autonomio account, credential store or hosted MCP service is required.
+chat. No Autonomio account, credential store or organization-hosted MCP service is required.
 [OpenAI's configuration guidance](https://developers.openai.com/plugins/guides/submit-claude-plugin#replace-claude-userconfig)
 establishes that portability limit.
 
@@ -193,8 +193,19 @@ released, directory published, installed and currently loaded versions in diagno
 
 ## Implementation boundary
 
-The approved reference design is implemented with synchronized plugin 1.3.0 host
+The approved reference design is implemented with synchronized plugin 1.4.0 host
 metadata, a fixed skill and optional standard-library reader, independently versioned
 workflow sources and the validated-main publisher. Keep fork updating in a separate
 core PR. Publish only through authorized host routes; local testing does not establish
 public-directory acceptance, installation or live model behavior.
+
+On 2026-10-27 the owner authorized a service on Cloudflare Free after the live
+OpenAI portal blocked further skills-only submissions. The 1.4.0 client bundles
+Autonomio's public workflow verifier and protocol-version comparison tool. These
+accept no world-model or conversation fields, require no credentials, and leave
+repository access in the invoking host/local GitHub session. The service performs
+the same bounded pinned-file checks as the direct reader; direct verification
+remains available if it cannot be used. The owner confirmed one-year private
+contact retention. See `scripts/workflow_mcp/README.md` and the 1.4.0 compatibility
+assessment in `PLUGIN_RELEASE.md`. Public submission now uses the remote MCP route
+and its actual scan, case, demo, review and human-attestation requirements.

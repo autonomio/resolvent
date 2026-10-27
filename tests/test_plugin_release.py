@@ -9,6 +9,7 @@ import unittest
 import zipfile
 
 from scripts.package_skill import ROOT
+from scripts.package_plugin import plugin_files
 from scripts.plugin_release import check_version, prepare, release_record
 
 
@@ -18,7 +19,7 @@ class ReleaseTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / 'source'
         self.root.mkdir()
-        for relative in ('plugin.json', '.codex-plugin', '.claude-plugin', '.agents', 'LICENSE',
+        for relative in ('plugin.json', 'mcp.json', '.mcp.json', '.codex-plugin', '.claude-plugin', '.agents', 'LICENSE',
                          'assets', 'skills', 'workflows', 'docs/schemas', 'docs/PLUGIN_README.md', 'verification',
                          'scripts/package_plugin.py', 'scripts/package_skill.py'):
             source, destination = ROOT / relative, self.root / relative
@@ -45,7 +46,7 @@ class ReleaseTests(unittest.TestCase):
             check_version(self.root, self.base)
 
     def test_packagers_and_catalogs_require_a_version_bump(self):
-        for relative in ('scripts/package_plugin.py', 'scripts/package_skill.py',
+        for relative in ('scripts/package_plugin.py', 'scripts/package_skill.py', 'mcp.json', '.mcp.json',
                          '.agents/plugins/marketplace.json', '.claude-plugin/marketplace.json'):
             with self.subTest(path=relative):
                 path = self.root / relative
@@ -54,6 +55,33 @@ class ReleaseTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'bump'):
                     check_version(self.root, self.base)
                 path.write_bytes(original)
+
+    def test_public_mcp_cannot_introduce_credentials_or_another_destination(self):
+        path = self.root / 'mcp.json'
+        original = path.read_text()
+        for change in ('headers', 'url', 'auth'):
+            config = json.loads(original)
+            server = config['mcpServers']['resolvent-workflows']
+            if change == 'headers':
+                server['headers'] = {'Authorization': 'synthetic-test-only'}
+            elif change == 'url':
+                server['url'] = 'https://example.invalid/mcp'
+            else:
+                server['extensions']['com.openai']['auth'] = {'type': 'oauth'}
+            path.write_text(json.dumps(config))
+            with self.assertRaises(ValueError):
+                plugin_files(self.root)
+        path.write_text(original.replace('"type": "none"', '"type": "oauth", "type": "none"'))
+        with self.assertRaisesRegex(ValueError, 'Duplicate'):
+            plugin_files(self.root)
+
+    def test_both_host_mcp_declarations_must_match(self):
+        path = self.root / '.mcp.json'
+        config = json.loads(path.read_text())
+        config['mcpServers']['resolvent-workflows']['url'] = 'https://example.invalid/mcp'
+        path.write_text(json.dumps(config))
+        with self.assertRaisesRegex(ValueError, 'differ'):
+            plugin_files(self.root)
 
     def test_world_model_data_does_not_require_a_plugin_release(self):
         (self.root / 'claims').mkdir()
