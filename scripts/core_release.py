@@ -16,6 +16,7 @@ if __package__ in (None, ''):
     sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from scripts.build_knowledge import json_bytes
 from scripts.model import Invalid, unique_pairs
+from scripts.core_review import approved_upstream, read_api
 
 LOCK='resolvent-core.lock.json'
 UPSTREAM='https://github.com/autonomio/resolvent.git'
@@ -148,7 +149,7 @@ def check_version(root,base):
         raise Invalid('Changed core files require a higher core version')
 
 
-def publish_channel(root,repository):
+def publish_channel(root,repository,*,reviewer=approved_upstream):
     if repository!='autonomio/resolvent':
         raise Invalid('Only the upstream repository publishes the core channel')
     remote=git(root,'ls-remote','origin','refs/heads/'+CHANNEL).decode().split()
@@ -160,6 +161,7 @@ def publish_channel(root,repository):
     index=release_index(root,previous)
     if index==previous:
         return {'status':'current','core_version':index['core_version']}
+    reviewer(read_api,index['source_commit'])
     blob=git(root,'hash-object','-w','--stdin',input=json_bytes(index)).decode().strip()
     with tempfile.TemporaryDirectory() as temporary:
         env={'GIT_INDEX_FILE':str(Path(temporary)/'index')}

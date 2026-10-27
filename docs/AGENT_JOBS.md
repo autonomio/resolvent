@@ -111,3 +111,12 @@ skill and both host distributions after plugin changes. Update the bundled
 protocol/version when changing the contribution schema.
 Coordinate deployment to existing world models explicitly; GitHub templates do not
 push future changes to repositories created from them.
+
+Owner-enrolled core copies follow `docs/CORE_UPDATES.md`. The upstream
+publisher verifies an independent maintainer approval on the release's
+final PR head. The installed updater verifies exact published source bytes,
+unchanged destination data, current CI and ordinary repository protections.
+A GitHub Actions approval may attest to that
+mechanical copy check; never describe it as another human review. This narrow
+path does not authorize new corrections or model-data changes without their
+normal independent review.

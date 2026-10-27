@@ -82,7 +82,7 @@ class CoreTests(unittest.TestCase):
         self.candidate=core_release.checked_lock(self.upstream)
         self.index=core_release.release_index(self.upstream)
         core_release.git(self.upstream,'push','origin','HEAD:main')
-        core_release.publish_channel(self.upstream,'autonomio/resolvent')
+        core_release.publish_channel(self.upstream,'autonomio/resolvent',reviewer=lambda *_:None)
         core_release.git(self.world,'fetch',str(self.upstream),self.v2)
 
     def commit(self,repo,message):
@@ -190,6 +190,23 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(core_release.publish_channel(self.upstream,'autonomio/resolvent')['status'],'current')
         self.assertEqual(core_release.git(self.upstream,'ls-remote','origin','refs/heads/core-release'),before)
 
+    def test_a_new_core_channel_cannot_advance_before_upstream_review_verification(self):
+        before=core_release.git(self.upstream,'ls-remote','origin','refs/heads/'+core_release.CHANNEL)
+        (self.upstream/'docs/guide.md').write_text('Synthetic next release.\n')
+        self.lock(self.upstream,'1.2.0');self.commit(self.upstream,'Synthetic next source')
+        source=core_release.git(self.upstream,'rev-parse','HEAD').decode().strip()
+        observed=[]
+        def pending(provider,revision):
+            observed.append(revision)
+            raise ValueError('Synthetic upstream review is pending')
+        with self.assertRaisesRegex(ValueError,'review is pending'):
+            core_release.publish_channel(self.upstream,'autonomio/resolvent',reviewer=pending)
+        self.assertEqual(observed,[source])
+        self.assertEqual(core_release.git(self.upstream,'ls-remote','origin','refs/heads/'+core_release.CHANNEL),before)
+        result=core_release.publish_channel(self.upstream,'autonomio/resolvent',reviewer=lambda _,sha:observed.append(sha))
+        self.assertEqual(result['status'],'published')
+        self.assertEqual(result['source_commit'],source)
+
     def test_failed_pr_creation_reuses_branch_and_dispatch_retry_is_idempotent(self):
         provider=Provider();provider.fail='create'
         with patch.object(core_update,'git',side_effect=self.local_fetch):
@@ -219,7 +236,7 @@ class CoreTests(unittest.TestCase):
         load=lambda path:yaml.load((ROOT/path).read_text(),Loader=yaml.BaseLoader)
         workflow=load('.github/workflows/core-update.yml')
         self.assertIn("vars.RESOLVENT_CORE_UPDATES == 'true'",workflow['jobs']['prepare']['if'])
-        self.assertEqual(set(workflow['on']),{'schedule','workflow_dispatch'})
+        self.assertEqual(set(workflow['on']),{'schedule','workflow_dispatch','workflow_run'})
         validate=load('.github/workflows/validate.yml')['jobs']['tests']
         self.assertEqual(validate['permissions'],{'contents':'read'})
         self.assertEqual(validate['steps'][0]['with']['persist-credentials'],'false')

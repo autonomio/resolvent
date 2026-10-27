@@ -12,7 +12,10 @@ app grants, secrets or repository permissions. The owner must make sure the exis
 PR-triggered agents and researchers' GitHub connections have access to the new repo.
 Require `World model integrity`, independent review, stale-approval dismissal,
 conversation resolution and an up-to-date branch before merge. Disable force pushes
-and branch deletion. Restrict governance changes to human maintainer review.
+and branch deletion. Restrict new governance changes to human maintainer review.
+Owner-enrolled exact upstream core copies use the upstream approval and automated
+destination verification described in `docs/CORE_UPDATES.md`; they do not add a
+per-fork human review requirement or bypass repository protections.
 
 The bootstrap owner may initialize an empty repository with the template files.
 Subsequent research and maintenance changes use PRs. No sample research is merged.
@@ -356,7 +359,7 @@ package or live-workflow update is required for this change.
 
 ## Skill releases
 
-For automatic, data-preserving core update PRs in opted-in forks/template copies,
+For automatic, data-preserving core updates in opted-in forks/template copies,
 see [CORE_UPDATES.md](CORE_UPDATES.md). This is separate from plugin distribution.
 
 `skills/resolvent/` is the canonical shared workflow. Root `plugin.json`,
