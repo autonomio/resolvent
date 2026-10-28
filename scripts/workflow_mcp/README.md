@@ -35,7 +35,7 @@ npm run build
 npm run dev
 ```
 
-`build` is a dry run. Production deployment uses the operator's existing authorized
+`build` is a dry run. A local operator can deploy with their existing authorized
 Cloudflare session: `npx wrangler deploy --keep-vars`. Do not copy that session or
 GitHub credentials into this service or a CI secret. No paid resource or plan
 upgrade is needed. Autonomio's account was verified as Workers Free on 2026-10-27;
@@ -58,3 +58,28 @@ Compatible workflow releases arrive through the existing reviewed GitHub channel
 they require no service redeployment or user action. Server code/protocol changes
 still require source review, tests and an authorized deployment. Public-directory
 approval and eligible host updates remain OpenAI's decisions.
+
+## Automatic deployment
+
+In `autonomio/resolvent`, `.github/workflows/mcp-deploy.yml` deploys after a
+successful main-push validation run. It checks out that exact validated revision
+and skips it if main has advanced. Pull requests and forks do not deploy this
+service. Dependency installation has no deployment credential.
+
+One-time setup requires an account-owned Cloudflare API token with **Individual
+Workers Editor** access restricted to the existing `resolvent-workflows` Worker.
+Store it as the encrypted repository Actions secret
+`RESOLVENT_CLOUDFLARE_DEPLOY_TOKEN`; set the account ID as repository variable
+`RESOLVENT_CLOUDFLARE_ACCOUNT_ID`. This credential must not grant access to other
+Workers, DNS or storage. Do not reuse a personal login token or another project's
+credential. Missing configuration fails the deployment without changing the Worker.
+
+The job uploads a version tagged with the validated Git revision, preserving
+deployment variables with `--keep-vars`, then deploys that tag to 100% of traffic.
+Version upload/deployment does not apply routes or domains, so existing hostnames
+and the public OpenAI ownership challenge stay in place. Deployment commands run
+serially; a failed run remains visible in Actions and can be rerun after correction.
+
+This deployment workflow changes no service code, tools, accepted inputs, installed
+skill, protocol, host manifest or distribution bytes. Plugin 1.4.0 remains compatible
+and requires no rebuild, reupload or new release for this repository-only automation.
