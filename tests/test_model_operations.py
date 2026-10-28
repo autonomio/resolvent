@@ -182,6 +182,47 @@ class ModelOperationTests(unittest.TestCase):
             before,after=Path(a),Path(b);write_state(before,base);write_state(after,state)
             validate_delta(after,before,state)
 
+    def test_linkage_for_an_incoming_connector_uses_the_admitted_base(self):
+        base=copy.deepcopy(self.state)
+        p=contribution(token='3'*32)
+        first=canonical_id('RUN-'+'1'*32,'claims','c1')
+        second=canonical_id('RUN-'+'2'*32,'claims','c1')
+        p['connectors']=[dict(id='r1',type='coupling',spec='structural:weak:balanced',
+            uncertainty='high',reason='Synthetic input connector.',evidence_ids=['e1'],
+            **{'from':'c1','to':second})]
+        state=copy.deepcopy(base);state.update(state_for(p))
+        rid=canonical_id(p['id'],'graph','r1')
+        record=copy.deepcopy(p['connectors'][0])
+        record.update(id=rid,state='active',reason='Synthetic supplied linkage correction.',
+            evidence_ids=[canonical_id(p['id'],'evidence','e1')],**{'from':first})
+        op=dict(id='link1',kind='linkage',subject_ids=[first,second],basis_ids=[p['id']],
+            reason=record['reason'],record=record,previous_sha256=None)
+        d=decisions(p);d.update(expected_model_sha256=model_digest(state),model_operations=[op])
+        proposed=copy.deepcopy(state);proposed.update(plan_admission(state,p['id'],d,ROOT))
+        receipt=proposed['briefs/closed/'+p['id'].replace('RUN-','BC-')+'.yaml']
+        saved=receipt['model_operations'][0]
+        self.assertIsNone(saved['previous_sha256'])
+        self.assertNotIn(rid,saved['read_sha256'])
+        self.assertEqual(proposed['graph/'+rid+'.yaml'],record)
+        with tempfile.TemporaryDirectory() as a,tempfile.TemporaryDirectory() as b:
+            before,after=Path(a),Path(b);write_state(before,base);write_state(after,proposed)
+            validate_delta(after,before,proposed)
+        changed=copy.deepcopy(d);changed['model_operations'][0]['previous_sha256']=digest(record)
+        with self.assertRaisesRegex(Invalid,'Stale relationship write'):
+            plan_admission(state,p['id'],changed,ROOT)
+        changed=copy.deepcopy(d);changed['model_operations'][0]['basis_ids']=[rid]
+        with self.assertRaisesRegex(Invalid,'cannot cite itself'):
+            plan_admission(state,p['id'],changed,ROOT)
+        # A later edit reads the actually admitted relationship and preserves its digest.
+        op=copy.deepcopy(op);op['previous_sha256']=digest(record)
+        op['basis_ids']=[rid];op['record']['reason']='Synthetic later linkage correction.'
+        updated,_,_=maintain(proposed,[op])
+        saved=updated['maintenance/M-'+'a'*32+'.yaml']['model_operations'][0]
+        self.assertEqual(saved['read_sha256'][rid],digest(record))
+        with tempfile.TemporaryDirectory() as a,tempfile.TemporaryDirectory() as b:
+            before,after=Path(a),Path(b);write_state(before,proposed);write_state(after,updated)
+            validate_delta(after,before,updated)
+
     def test_assessment_predecessors_are_explicit_and_stale_ones_fail(self):
         subjects=ids(self.state,'claims')
         state,_,_=maintain(self.state,[reassessment(self.state,subjects)],token='a')

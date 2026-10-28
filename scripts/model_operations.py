@@ -205,6 +205,7 @@ def apply_operations(state, operations, *, read_state=None):
     fail(isinstance(operations, list) and len(operations) <= 200, 'At most 200 model operations per record')
     result, changes, written = [], {}, set()
     idx = indexes(state)
+    base_graph = indexes(state if read_state is None else read_state).get('graph', {})
     by_id = {r['id']: (p, r) for p, r in state.items() if family(p) in CANONICAL_ROOTS}
     current = current_assessments(operation_records(state))
     reads = {r['id']:r for r in state.values()}
@@ -225,8 +226,11 @@ def apply_operations(state, operations, *, read_state=None):
         refs.extend(v for v in op.get('predecessors',{}).values() if v is not None)
         if op['kind']=='linkage' and isinstance(op.get('record'),dict):
             refs.extend(op['record'].get('evidence_ids',[]))
-            if op['record'].get('id') in reads:
-                refs.append(op['record']['id'])
+            rid = op['record'].get('id')
+            fail(rid in base_graph or rid not in op['basis_ids'],
+                 'A new relationship cannot cite itself as read basis; cite the input run')
+            if rid in base_graph:
+                refs.append(rid)
         fail(all(isinstance(v,str) and v in reads for v in refs), 'Unknown model operation read')
         op['read_sha256']={v:digest(reads[v]) for v in sorted(set(refs))}
         if op['kind'] == 'reassessment':
@@ -249,7 +253,7 @@ def apply_operations(state, operations, *, read_state=None):
             fail(isinstance(rid, str) and re.fullmatch('R-[0-9a-f]{32}', rid), 'Invalid relationship ID')
             fail(rid not in written, 'Only one write per record in a model-operation batch')
             written.add(rid)
-            previous = idx.get('graph', {}).get(rid)
+            previous = base_graph.get(rid)
             fail(op.get('previous_sha256') == (digest(previous) if previous else None), 'Stale relationship write')
             path = 'graph/' + rid + '.yaml'
             state[path] = changes[path] = copy.deepcopy(record)

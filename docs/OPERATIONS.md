@@ -468,7 +468,10 @@ Null means no prior typed reassessment; the writer captures the actual legacy
 baseline grade. Later results must name the current head. Only one new result per
 claim per PR is allowed. Linkage supplies a complete graph-schema `record` with
 an R-ID and `previous_sha256` (null if new); it uses the existing dependency and
-coupling types. Connector uncertainty is outside claim reassessment history.
+coupling types. The predecessor is the admitted base record, including when the
+same contribution creates and adjusts a connector. A new connector can cite its
+input run as basis, rather than citing itself. Connector uncertainty is outside
+claim reassessment history.
 Neither comparison nor linkage changes claim uncertainty as a side effect.
 
 For maintenance, use an existing pending M record; optional `subject_ids` selects

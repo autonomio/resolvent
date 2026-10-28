@@ -440,10 +440,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 31053,
-      "git_blob": "5b03cf069d33d8fc0f3d9df3cb378830f3e14750",
+      "bytes": 31244,
+      "git_blob": "f59accadb3b48162f6b854ed0fadaec473143eef",
       "mode": "100644",
-      "sha256": "8d97c42647bf900be27a0762d695786bbdae43b36af828b87f8867ae73841636"
+      "sha256": "d22e73a8688d93619c53beb8c5bffd6b8780a912c42712bbed5f1a5527f8ecd1"
     },
     "docs/Ontology.md": {
       "bytes": 14416,
@@ -722,10 +722,10 @@
       "sha256": "e66bdf481745cbbb0eadcd60d189f6ab36dfdaf884b4779b43987b206d905a5e"
     },
     "scripts/model_operations.py": {
-      "bytes": 15748,
-      "git_blob": "1db210e4045ad542032ee7f94d5d5e96d2cc4346",
+      "bytes": 15995,
+      "git_blob": "a20084edf86a28ac0387c98cee4a59f089269b72",
       "mode": "100644",
-      "sha256": "b6342418f3c0d8c139da5d080889d267ef5ef83c4e8b48187ebf9228c5cd7808"
+      "sha256": "8a52c45b8ee80369a3902ecbacb4262dfc70e0fbb6d36ef732fa4f380f68908f"
     },
     "scripts/notify_chatgpt_release.py": {
       "bytes": 7206,
@@ -1088,10 +1088,10 @@
       "sha256": "948e6a0ca3d5fa2fd5e6c44326f897cfc3b61d7438391ef51613290f0968c21f"
     },
     "tests/test_model_operations.py": {
-      "bytes": 23659,
-      "git_blob": "7088370e310e2b7e99f4685cae44364c3ea4dafb",
+      "bytes": 26445,
+      "git_blob": "d1e4150991215d5f1e5e3f5995fbacafa154afdd",
       "mode": "100644",
-      "sha256": "6874a0db9f638def1f55a78f7b21078b230c9b6ca3b6a09716367410c42bfce6"
+      "sha256": "5e244b75b6fc052b2356471fb067396ea0b8d055991afb9479c1c7323517d5ce"
     },
     "tests/test_packaging.py": {
       "bytes": 4871,
