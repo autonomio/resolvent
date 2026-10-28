@@ -112,6 +112,18 @@ class ModelOperationTests(unittest.TestCase):
         self.assertEqual(result['items'][0]['member_count'],2)
         self.assertEqual(q.candidates(kind='questions')['total'],2)
 
+    def test_non_claim_comparison_is_in_grouped_read_provenance(self):
+        subjects=ids(self.state,'sources')
+        state,_,d=maintain(self.state,[comparison(subjects)],apply=False)
+        mid='M-'+'a'*32
+        state['maintenance/'+mid+'.yaml']['claim_ids']=[]
+        d['reviewed_claim_ids']=[]
+        state.update(plan_maintenance(state,mid,d,ROOT))
+        q=self.query(state)
+        for subject in subjects:
+            paths={entry['path'] for entry in q.lookup(subject,level=2)['provenance']['items']}
+            self.assertIn('maintenance/'+mid+'.yaml',paths)
+
     def test_uncertain_and_overlapping_comparisons_do_not_group(self):
         for outcome in ('overlap','distinct','unresolved'):
             with self.subTest(outcome=outcome):

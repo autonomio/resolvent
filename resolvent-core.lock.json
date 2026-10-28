@@ -752,10 +752,10 @@
       "sha256": "b521a67b205666d8c73482da4227d3eaeb51a2ba31ec656d5321e16c5c363dbf"
     },
     "scripts/query_knowledge.py": {
-      "bytes": 27965,
-      "git_blob": "5a8dc6872473e678d214adfb3c6f5de62f3e1502",
+      "bytes": 28128,
+      "git_blob": "414259e51365cae1b5205463e34df0cba8902858",
       "mode": "100644",
-      "sha256": "3b5e9e412b6a56108b2eb465017acfd71ec19c5521e2d6cfa0d9bd4755eeddfc"
+      "sha256": "9b7998cc202af664745c6644cd801b15aefa857137b853594d9939c77e9564b6"
     },
     "scripts/reconcile_plugin_assets.py": {
       "bytes": 2445,
@@ -1088,10 +1088,10 @@
       "sha256": "948e6a0ca3d5fa2fd5e6c44326f897cfc3b61d7438391ef51613290f0968c21f"
     },
     "tests/test_model_operations.py": {
-      "bytes": 26445,
-      "git_blob": "d1e4150991215d5f1e5e3f5995fbacafa154afdd",
+      "bytes": 27025,
+      "git_blob": "dac499412fc19a35773734234663e1ce9579f4b7",
       "mode": "100644",
-      "sha256": "5e244b75b6fc052b2356471fb067396ea0b8d055991afb9479c1c7323517d5ce"
+      "sha256": "ec48dc3abddcdd38d941a98c39864ff12fd3847ddef1cd48ff61f7cd038831d0"
     },
     "tests/test_packaging.py": {
       "bytes": 4871,

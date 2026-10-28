@@ -168,11 +168,13 @@ class Knowledge:
         paths = {f'{kind}/{item_id}.yaml' for kind, values in ids.items() for item_id in values}
         provenance = self.knowledge['provenance']
         selected, runs = {}, set()
+        relevant_ids=set().union(*ids.values())
         for path, item in provenance.items():
             kind = family(path)
             if ((kind == 'closure' and paths.intersection(item['touched_files'])) or
                     (kind == 'maintenance' and (paths.intersection(item['touched_files']) or
-                                               ids['claims'].intersection(item['claim_ids'])))):
+                                               ids['claims'].intersection(item['claim_ids']))) or
+                    any(relevant_ids.intersection(op['subject_ids']) for op in item.get('model_operations',[]))):
                 selected[path] = item
                 if kind == 'closure':
                     runs.add(item['submission_id'])
