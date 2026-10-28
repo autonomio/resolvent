@@ -1,9 +1,9 @@
 {
   "format_version": "1.0",
   "client_protocol": "1.0",
-  "workflow_version": "1.0.1",
+  "workflow_version": "1.0.2",
   "entrypoint": "WORKFLOW.md",
-  "source_commit": "c47f436008ca2f10c258c2045d176bdad93c4a25",
+  "source_commit": "89c127ca860821520a9c1dcaa60a74c0658b58a1",
   "files": {
     "LICENSE.md": {
       "size": 1752,
@@ -16,9 +16,9 @@
       "git_blob_sha1": "34dcb4c5304c13cf4b1a80050ca98b82d01dfcae"
     },
     "WORKFLOW.md": {
-      "size": 6158,
-      "sha256": "e6d4e2ecee52c197a9d442950a1fb8eaaee9d8219a17e26ed67df7e9f5747a98",
-      "git_blob_sha1": "cbbd05c6bf88f6d1ca5e4e185682a1f3cc5a6ab4"
+      "size": 6815,
+      "sha256": "5e8f9608ca015e77fe1946c2c465b6def118dc2059c0080bd3246865220fc765",
+      "git_blob_sha1": "120d3f16304ea4fa17cbba3de40a445518baa46b"
     },
     "reformulation-operators.md": {
       "size": 4499,
