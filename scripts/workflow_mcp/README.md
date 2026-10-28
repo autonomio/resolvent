@@ -79,7 +79,10 @@ run attempt, preserving deployment variables with `--keep-vars`, then deploys th
 tag to 100% of traffic. The unique tag keeps reruns unambiguous.
 Version upload/deployment does not apply routes or domains, so existing hostnames
 and the public OpenAI ownership challenge stay in place. Deployment commands run
-serially; a failed run remains visible in Actions and can be rerun after correction.
+serially, with up to 100 pending runs retained instead of replacing the previous
+pending run. An older rerun therefore cannot evict a queued current-main deployment.
+Runs beyond GitHub's queue limit are canceled visibly in Actions. A failed or
+canceled run can be rerun after correction.
 
 This deployment workflow changes no service code, tools, accepted inputs, installed
 skill, protocol, host manifest or distribution bytes. Plugin 1.4.0 remains compatible
