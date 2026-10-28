@@ -1,5 +1,5 @@
 {
-  "version": "1.3",
+  "version": "1.4",
   "source_of_truth": "docs/contracts/activity/",
   "routes": {
     "research": "model_input_research.json",
@@ -14,7 +14,8 @@
     "ingestion.json",
     "admission.json",
     "maintenance.json",
-    "change_signals.json"
+    "change_signals.json",
+    "model_operations.json"
   ],
   "research_phases": [
     "research_brief_creation.json",

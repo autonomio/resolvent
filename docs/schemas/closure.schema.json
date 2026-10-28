@@ -2,7 +2,10 @@
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": "1.0"
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
     },
     "id": {
       "type": "string",
@@ -283,6 +286,21 @@
           }
         }
       }
+    },
+    "model_operations": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object"
+      }
+    },
+    "model_base_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "model_decisions_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
     }
   },
   "required": [
@@ -300,5 +318,40 @@
     "counts",
     "connection_review"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          {
+            "required": [
+              "model_operations"
+            ]
+          },
+          {
+            "required": [
+              "model_base_sha256"
+            ]
+          },
+          {
+            "required": [
+              "model_decisions_sha256"
+            ]
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "schema_version": {
+            "const": "1.1"
+          }
+        },
+        "required": [
+          "model_operations",
+          "model_base_sha256",
+          "model_decisions_sha256"
+        ]
+      }
+    }
+  ]
 }

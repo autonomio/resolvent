@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "activity_type": "maintenance",
   "authority": "scheduled, explicitly invoked or owner-enabled change-signal repository agent; changes through PR",
   "hard_rules": [
@@ -14,7 +14,11 @@
     "no_automatic_uncertainty_upgrades_from_repetition",
     "record_coverage_and_deferrals",
     "finish_pending_record_before_merge",
-    "no_change_is_valid_with_reason"
+    "no_change_is_valid_with_reason",
+    "research_validity_belongs_to_input_producer",
+    "external_agents_own_behaviors_and_execution",
+    "claim_uncertainty_changes_require_recorded_reassessment",
+    "preserve_claims_without_new_retirement_transitions"
   ],
   "procedure_steps": [
     "read_workset",

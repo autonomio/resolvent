@@ -61,10 +61,14 @@ class ModelTests(unittest.TestCase):
   for root in ['briefs/open/done/','briefs/ready/','briefs/closed/']:self.assertTrue(any(k.startswith(root) for k in s))
  def test_idempotence(self):
   p=contribution();self.assertEqual(plan_admission(admitted(p),p['id'],decisions(p),ROOT),{})
- def test_duplicate_merges_without_confidence_upgrade(self):
-  s=admitted();p=contribution('research','2'*32);p['claims'][0]['uncertainty']='medium';s.update(state_for(p));s.update(plan_admission(s,p['id'],decisions(p),ROOT))
+ def test_duplicate_with_same_assessment_merges_without_confidence_upgrade(self):
+  s=admitted();p=contribution('research','2'*32);s.update(state_for(p));s.update(plan_admission(s,p['id'],decisions(p),ROOT))
   self.assertEqual(validate_state(s,ROOT,True)['claims'],1);c=next(v for k,v in s.items() if k.startswith('claims/'))
   self.assertEqual(c['uncertainty'],'high');self.assertEqual(len(c['evidence_ids']),2)
+ def test_different_assessment_is_preserved_as_a_separate_claim(self):
+  s=admitted();p=contribution('research','2'*32);p['claims'][0]['uncertainty']='medium';s.update(state_for(p));s.update(plan_admission(s,p['id'],decisions(p),ROOT))
+  self.assertEqual(validate_state(s,ROOT,True)['claims'],2)
+  self.assertEqual({v['uncertainty'] for k,v in s.items() if k.startswith('claims/')},{'high','medium'})
  def test_concurrent_ids(self):self.assertNotEqual(canonical_id('RUN-'+'1'*32,'claims','c1'),canonical_id('RUN-'+'2'*32,'claims','c1'))
  def test_zero_claims(self):
   p=contribution();p['claims']=[];p['handoff']['no_claims_reason']='Inconclusive test.';self.assertNotIn('claims',validate_state(admitted(p),ROOT,True))

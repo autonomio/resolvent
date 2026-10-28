@@ -149,7 +149,6 @@ class TemporalTests(unittest.TestCase):
     def test_duplicate_same_scope_adds_evidence_without_confidence_promotion(self):
         state = admitted(proposal())
         incoming = proposal('2' * 32)
-        incoming['claims'][0]['uncertainty'] = 'medium'
         incoming['claims'][0]['valid_time']['notes'].append('Another synthetic limitation.')
         state.update(state_for(incoming))
         state.update(plan_admission(state, incoming['id'], decisions(incoming), ROOT))
@@ -165,7 +164,7 @@ class TemporalTests(unittest.TestCase):
         state.update(state_for(incoming))
         decision = decisions(incoming, 'merge')
         decision['claims']['c1']['target'] = canonical_id('RUN-' + '1' * 32, 'claims', 'c1')
-        with self.assertRaisesRegex(Invalid, 'Temporal scope differs'):
+        with self.assertRaisesRegex(Invalid, 'temporal scope differs'):
             plan_admission(state, incoming['id'], decision, ROOT)
         state.update(plan_admission(state, incoming['id'], decisions(incoming), ROOT))
         self.assertEqual(validate_state(state, ROOT, True)['claims'], 2)
@@ -180,15 +179,16 @@ class TemporalTests(unittest.TestCase):
         state.update(plan_admission(state, incoming['id'], decisions(incoming), ROOT))
         self.assertEqual(validate_state(state, ROOT, True)['claims'], 1)
 
-    def test_legacy_evidence_addition_preserves_existing_temporal_support(self):
+    def test_missing_temporal_scope_preserves_separate_claim_and_existing_support(self):
         state = admitted(proposal())
         incoming = proposal('2' * 32)
         incoming['schema_version'] = '1.0'
         incoming['claims'][0].pop('valid_time')
         state.update(state_for(incoming))
         state.update(plan_admission(state, incoming['id'], decisions(incoming), ROOT))
-        claim = next(record for path, record in state.items() if path.startswith('claims/'))
-        self.assertEqual(len(claim['evidence_ids']), 2)
+        self.assertEqual(validate_state(state, ROOT, True)['claims'], 2)
+        claim = next(record for path, record in state.items() if path.startswith('claims/') and 'valid_time' in record)
+        self.assertEqual(len(claim['evidence_ids']), 1)
         self.assertEqual(len(claim['valid_time']['intervals'][0]['evidence_ids']), 1)
 
     def test_local_temporal_definitions_and_bundled_schema_are_synchronized(self):
