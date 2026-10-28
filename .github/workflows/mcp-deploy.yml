@@ -56,5 +56,6 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
-          npx --no-install wrangler versions upload --keep-vars --tag "$SOURCE_COMMIT"
-          npx --no-install wrangler versions deploy --version-tag "$SOURCE_COMMIT@100%" --yes
+          deploy_tag="${SOURCE_COMMIT}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          npx --no-install wrangler versions upload --keep-vars --tag "$deploy_tag"
+          npx --no-install wrangler versions deploy --version-tag "$deploy_tag@100%" --yes

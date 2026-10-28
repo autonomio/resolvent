@@ -74,8 +74,9 @@ Store it as the encrypted repository Actions secret
 Workers, DNS or storage. Do not reuse a personal login token or another project's
 credential. Missing configuration fails the deployment without changing the Worker.
 
-The job uploads a version tagged with the validated Git revision, preserving
-deployment variables with `--keep-vars`, then deploys that tag to 100% of traffic.
+The job uploads a version tagged with the validated Git revision and unique Actions
+run attempt, preserving deployment variables with `--keep-vars`, then deploys that
+tag to 100% of traffic. The unique tag keeps reruns unambiguous.
 Version upload/deployment does not apply routes or domains, so existing hostnames
 and the public OpenAI ownership challenge stay in place. Deployment commands run
 serially; a failed run remains visible in Actions and can be rerun after correction.

@@ -68,10 +68,10 @@
       "sha256": "186015d65b7f2456d5661830bce4c6dcd3f93272f5645e54e7ad594526a46ac9"
     },
     ".github/workflows/mcp-deploy.yml": {
-      "bytes": 2241,
-      "git_blob": "ecc0110b98ad899045f59d7e93232a923f94ee55",
+      "bytes": 2314,
+      "git_blob": "32716def09fab304e00fe5f5b292a11b7dbaab59",
       "mode": "100644",
-      "sha256": "d713aef0d44280d814ae3eb50a8355be5049e04322ecf180e175c5622d0b67cb"
+      "sha256": "1f9b942825b10dcf54296a5464b07871cfcd5f32e1153eb9e38eeff66b60f1e7"
     },
     ".github/workflows/plugin-release.yml": {
       "bytes": 6443,
@@ -770,10 +770,10 @@
       "sha256": "82eb58e0dfc07769039f9fe7160d7fea44221ecb06e17679a656a82e7275c347"
     },
     "scripts/workflow_mcp/README.md": {
-      "bytes": 4686,
-      "git_blob": "b3bf5101c1c4d04acdabec0248732ba2a609e2c5",
+      "bytes": 4758,
+      "git_blob": "e56a6404d92ecf38f6b6aa1448527e23a38d8877",
       "mode": "100644",
-      "sha256": "6554c01a580f6cb5c5bfb29bb20d80bc6eaf00a121a4dfc1fd781a7ba0bd3e55"
+      "sha256": "472420e735552b7a43dc9c8e539bf74819cdf9d974cd14df5f82aed9a8208021"
     },
     "scripts/workflow_mcp/package-lock.json": {
       "bytes": 63615,
