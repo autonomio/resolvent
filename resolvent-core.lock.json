@@ -1,5 +1,5 @@
 {
-  "core_version": "1.2.0",
+  "core_version": "1.2.1",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -66,6 +66,12 @@
       "git_blob": "c6c3185aaa6106d8520b7777bbb89e31626ddbc2",
       "mode": "100644",
       "sha256": "186015d65b7f2456d5661830bce4c6dcd3f93272f5645e54e7ad594526a46ac9"
+    },
+    ".github/workflows/mcp-deploy.yml": {
+      "bytes": 2327,
+      "git_blob": "35bd3d2c806189ab875d9448c7c29f4d1080b6ce",
+      "mode": "100644",
+      "sha256": "f29118cfc9907aa1d4b8c553c80a587fe8ab78d09bebfb9e1214c01a36cbc08f"
     },
     ".github/workflows/plugin-release.yml": {
       "bytes": 6443,
@@ -764,10 +770,10 @@
       "sha256": "82eb58e0dfc07769039f9fe7160d7fea44221ecb06e17679a656a82e7275c347"
     },
     "scripts/workflow_mcp/README.md": {
-      "bytes": 3157,
-      "git_blob": "459aa7f205bd96cf697d31cb58f74a661c61616d",
+      "bytes": 4961,
+      "git_blob": "2999f6ec4052fbf255ca03a6c858eecd8d831de4",
       "mode": "100644",
-      "sha256": "cdc944fff06f3c323186875d4af08ec85dea3f91af074390840350610e624e88"
+      "sha256": "7ad04d3f35412d49c594bbaccefc95f16efab14bd76c9acae2e9d0155ef011b2"
     },
     "scripts/workflow_mcp/package-lock.json": {
       "bytes": 63615,
