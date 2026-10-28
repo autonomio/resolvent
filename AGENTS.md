@@ -33,9 +33,10 @@ work. Preserve evidence counterexamples and unresolved uncertainty. No minimum e
 count. Keep joint premise sets on evidence records. Do not create circular support.
 
 Scope, dates, conditions and populations belong in the statement when material.
-Meaning-changing rewrites require a new claim ID and retirement of the old claim,
-not silently reusing an ID for a different proposition. Editorial changes, evidence
-additions and reviewed uncertainty revisions may keep the ID.
+Meaning-changing rewrites require a new claim ID; preserve the original claim.
+Do not create claim-retirement transitions or silently reuse an ID for a different
+proposition. Legacy retired records remain readable. Editorial changes and evidence
+additions may keep the ID; uncertainty changes require a recorded reassessment.
 
 Treat a repository contribution as authority to process only its selected material.
 Do not capture unrelated chat history, credentials, private reasoning, or sensitive

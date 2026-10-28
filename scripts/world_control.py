@@ -18,12 +18,18 @@ from pathlib import Path
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from scripts.model import Invalid, digest, fail, indexes, load_state, read_data, validate_state
+from scripts.model import MAX_FILE_BYTES, Invalid, digest, fail, indexes, load_state, read_data, validate_state
 from scripts.temporal import merge_temporal, temporal_scope
+from scripts.model_operations import apply_operations, model_digest
 
 NAMESPACE = uuid.UUID('f546a1e4-a5b6-4a1d-9b85-d348abf54b03')
 FAMILIES = ('claims', 'evidence', 'sources', 'graph', 'questions', 'briefs')
 PREFIX = {'claims': 'C', 'evidence': 'E', 'sources': 'S', 'graph': 'R', 'questions': 'Q'}
+
+
+class RecordDumper(yaml.SafeDumper):
+    def ignore_aliases(self, data):
+        return True  # The reader deliberately rejects YAML anchors and aliases.
 
 
 def now() -> str:
@@ -47,8 +53,15 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
     closed_path = f"briefs/closed/{submission_id.replace('RUN-', 'BC-')}.yaml"
     if closed_path in state:
         fail(state[closed_path]['submission_sha256'] == digest(p), 'Existing closure refers to different input')
+        if 'model_decisions_sha256' in state[closed_path]:
+            fail(state[closed_path]['model_decisions_sha256'] == digest(decisions), 'Closed model decisions are immutable')
         return {}  # Idempotent retry; does not create duplicate objects.
-    fail(set(decisions) == {'claims', 'connection_review', 'follow_up_gaps'}, 'Decisions need claims, connection_review, follow_up_gaps')
+    required = {'claims', 'connection_review', 'follow_up_gaps'}
+    fail(required <= set(decisions) <= required | {'model_operations', 'expected_model_sha256'},
+         'Decisions need claims, connection_review, follow_up_gaps and supported model operations only')
+    extended = 'model_operations' in decisions
+    if extended:
+        fail(decisions.get('expected_model_sha256') == model_digest(state), 'Stale model snapshot')
     expected = {c['id'] for c in p['claims']}
     fail(set(decisions['claims']) == expected, 'Decisions must cover every candidate exactly once')
     after = copy.deepcopy(state)
@@ -79,15 +92,14 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
         if action == 'merge':
             cid = d.get('target')
             fail(cid in current_claims and current_claims[cid]['state'] == 'active', 'Merge target must be an active canonical claim')
-            if 'valid_time' in c:
-                fail(temporal_scope(c['valid_time']) == temporal_scope(current_claims[cid].get('valid_time')),
-                     'Temporal scope differs; do not rewrite an existing claim proposition')
+            fail(c['class'] == current_claims[cid]['class'] and c['uncertainty'] == current_claims[cid]['uncertainty'] and
+                 temporal_scope(c.get('valid_time')) == temporal_scope(current_claims[cid].get('valid_time')),
+                 'Class, uncertainty or temporal scope differs; preserve a separate claim and compare it')
             disposition = 'merged'
         elif action == 'accept':
             match = exact.get((normalized(c['statement']), c['class']), [])
-            if 'valid_time' in c:
-                match = [target for target in match if temporal_scope(current_claims[target].get('valid_time')) ==
-                         temporal_scope(c['valid_time'])]
+            match = [target for target in match if current_claims[target]['uncertainty'] == c['uncertainty'] and
+                     temporal_scope(current_claims[target].get('valid_time')) == temporal_scope(c.get('valid_time'))]
             fail(len(match) <= 1, f"Ambiguous existing duplicates for {c['id']}; choose merge target explicitly")
             cid = match[0] if match else canonical_id(submission_id, 'claims', c['id'])
             disposition = 'merged' if match else 'created'
@@ -160,6 +172,20 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
         bid = submission_id.replace('RUN-', 'BR-')
         set_record(f'briefs/open/done/{bid}.yaml', {'id': bid, 'submission_id': submission_id, 'brief': p['brief']})
         set_record(f'briefs/ready/{bid}.yaml', {'id': bid, 'submission_id': submission_id, 'result': p['result']})
+    operations = []
+    if 'model_operations' in decisions:
+        fail(isinstance(decisions['model_operations'],list), 'Model operations must be a list')
+        selected = {v for mapping in maps.values() for v in mapping.values() if v is not None}
+        for review in decisions['connection_review'].values():
+            selected.update(claim_ref(v) for v in review.get('considered_claim_ids', []))
+        for op in decisions['model_operations']:
+            fail(isinstance(op,dict) and isinstance(op.get('subject_ids'),list) and all(isinstance(v,str) for v in op['subject_ids']) and
+                 set(op['subject_ids']).intersection(selected), 'Operation is outside the selected contribution')
+            if op.get('kind') == 'reassessment':
+                fail(set(op['subject_ids']) <= set(idx.get('claims',{})).intersection(selected),
+                     'Reassess only admitted claims in the selected context')
+        operations, operation_changes = apply_operations(after, decisions['model_operations'], read_state=state)
+        changes.update({path: record for path, record in operation_changes.items() if state.get(path) != record})
     categorized = {mode: {g: [] for g in FAMILIES} for mode in ('created', 'updated')}
     for path in changes:
         categorized['updated' if path in state else 'created'][path.split('/')[0]].append(path)
@@ -179,21 +205,61 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
         'counts': {f'{n}_claims': sum(d['disposition'] == n for d in dispositions) for n in ('created', 'merged', 'rejected', 'deferred')}
     }
     closure['counts']['created_connectors'] = len(categorized['created']['graph'])
+    if extended:
+        closure.update(schema_version='1.1', model_operations=operations,
+                       model_base_sha256=decisions['expected_model_sha256'], model_decisions_sha256=digest(decisions))
     set_record(closed_path, closure)
     validate_state(after, policy_root)
+    return changes
+
+
+def plan_maintenance(state, maintenance_id, decisions, policy_root):
+    validate_state(state, policy_root)
+    idx = indexes(state)
+    fail(maintenance_id in idx.get('maintenance', {}), 'Unknown maintenance record')
+    record = idx['maintenance'][maintenance_id]
+    if record['status'] == 'completed':
+        fail(record.get('model_decisions_sha256') == digest(decisions), 'Completed maintenance decisions are immutable')
+        return {}
+    required = {'expected_model_sha256', 'model_operations', 'reviewed_claim_ids'}
+    fail(required <= set(decisions) <= required | {'findings', 'deferred', 'no_change_reason'},
+         'Unsupported maintenance decisions')
+    fail(decisions['expected_model_sha256'] == model_digest(state), 'Stale model snapshot')
+    selected = set(record['claim_ids']) | set(record.get('subject_ids',[]))
+    fail(isinstance(decisions['model_operations'],list), 'Model operations must be a list')
+    for op in decisions['model_operations']:
+        fail(isinstance(op,dict) and isinstance(op.get('subject_ids'),list) and all(isinstance(v,str) for v in op['subject_ids']) and
+             set(op['subject_ids']).intersection(selected), 'Operation is outside the selected maintenance workset')
+        if op.get('kind') == 'reassessment':
+            fail(set(op['subject_ids']) <= selected, 'Reassessment is outside the selected maintenance workset')
+    after = copy.deepcopy(state)
+    operations, changes = apply_operations(after, decisions['model_operations'])
+    changes={path:record for path,record in changes.items() if state.get(path)!=record}
+    result = copy.deepcopy(record)
+    result.update(schema_version='1.2', status='completed', model_operations=operations,
+                  model_base_sha256=decisions['expected_model_sha256'], model_decisions_sha256=digest(decisions),
+                  reviewed_claim_ids=decisions['reviewed_claim_ids'], touched_files=sorted(changes),
+                  findings=decisions.get('findings', list(dict.fromkeys(op['reason'] for op in operations))),
+                  deferred=decisions.get('deferred', []), no_change_reason=decisions.get('no_change_reason'))
+    path = f'maintenance/{maintenance_id}.yaml'
+    after[path] = changes[path] = result
+    validate_state(after, policy_root, require_closure=True)
     return changes
 
 
 def apply_changes(root: Path, changes: dict[str, dict]) -> None:
     """Write validated data. Roll back already written files on ordinary I/O failure."""
     originals: dict[Path, bytes | None] = {}
+    encoded={rel:yaml.dump(value,Dumper=RecordDumper,sort_keys=False,allow_unicode=True).encode('utf-8')
+             for rel,value in changes.items()}
+    fail(all(len(data)<=MAX_FILE_BYTES for data in encoded.values()), 'Planned record exceeds the 2 MiB file limit')
     try:
-        for rel, value in changes.items():
+        for rel, data in encoded.items():
             path = root / rel
             path.parent.mkdir(parents=True, exist_ok=True)
             originals[path] = path.read_bytes() if path.exists() else None
             temporary = path.with_suffix(path.suffix + '.tmp')
-            temporary.write_text(yaml.safe_dump(value, sort_keys=False, allow_unicode=True), encoding='utf-8')
+            temporary.write_bytes(data)
             os.replace(temporary, path)
     except OSError:
         for path, original in originals.items():
@@ -207,7 +273,7 @@ def apply_changes(root: Path, changes: dict[str, dict]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('submission', help='RUN-ID or input-artefacts/RUN-ID.json')
+    parser.add_argument('submission', help='RUN-ID, M-ID or its input/maintenance file')
     parser.add_argument('--root', type=Path, default=Path('.'))
     parser.add_argument('--decisions', type=Path, required=True, help='Admission-agent decisions JSON, see docs/AGENT_JOBS.md')
     parser.add_argument('--apply', action='store_true', help='Apply validated changes; default is dry run')
@@ -225,7 +291,9 @@ def main() -> int:
         try:
             os.close(fd)
             state = load_state(root)
-            changes = plan_admission(state, Path(args.submission).stem, decisions, root)
+            identity = Path(args.submission).stem
+            planner = plan_maintenance if identity.startswith('M-') else plan_admission
+            changes = planner(state, identity, decisions, root)
             if args.apply:
                 apply_changes(root, changes)
             print(json.dumps({'mode': 'applied' if args.apply else 'dry_run', 'files': sorted(changes), 'already_processed': not bool(changes)}, indent=2))

@@ -15,6 +15,7 @@ if __package__ in (None, ''):
 from scripts.build_knowledge import ROOT, json_bytes, projection, sha256
 from scripts.model import CANONICAL_ROOTS, Invalid, digest, family, safe_relative, unique_pairs, validate_state
 from scripts.temporal import applicability, point
+from scripts.model_operations import current_assessments, equivalence_groups, model_digest, operation_records
 
 
 def read_json(contents: bytes) -> dict:
@@ -86,6 +87,25 @@ class Knowledge:
             raise Invalid('Package does not record closed structural validation')
         self.build = {'source_revision': manifest['source_revision'], 'manifest_sha256': manifest_hash,
                        'input_tree_sha256': manifest['input_tree_sha256']}
+        self.state = state
+        self.model_sha256 = model_digest(state)
+        self.operations = operation_records(state)
+        self.groups = equivalence_groups(state, ops=self.operations)
+        self.current_assessments = current_assessments(self.operations)
+        self.supplied_assessments = {cid:[] for cid in self.records['claims']}
+        provenance=self.knowledge['provenance']
+        runs={r['id']:r for r in provenance.values() if r.get('id','').startswith('RUN-')}
+        for receipt in provenance.values():
+            if receipt.get('id','').startswith('BC-'):
+                run=runs[receipt['submission_id']]
+                candidates={r['id']:r for r in run['claims']}
+                for disposition in receipt['claim_dispositions']:
+                    cid=disposition['claim_id']
+                    if cid is not None:
+                        candidate=candidates[disposition['candidate_id']]
+                        self.supplied_assessments[cid].append({'id':run['id']+'#'+candidate['id'],
+                            'kind':'supplied_assessment','uncertainty':candidate['uncertainty'],
+                            'disposition':disposition['disposition']})
         self.by_id = {record_id: (group, record) for group, records in self.records.items()
                        for record_id, record in records.items()}
         self.rebuild_index()
@@ -114,7 +134,8 @@ class Knowledge:
         return result
 
     def envelope(self, operation: str, **result) -> dict:
-        return {'format_version': '1.0', 'build': dict(self.build), 'operation': operation, **result}
+        return {'format_version': '1.1', 'build': dict(self.build), 'model_sha256':self.model_sha256,
+                'operation': operation, **result}
 
     def relevant(self, record_id: str) -> tuple[dict, dict]:
         group, record = self.by_id[record_id]
@@ -172,15 +193,49 @@ class Knowledge:
             return {'found': False, 'record': None}
         group, record = self.by_id[record_id]
         result = {'found': True, 'kind': group, 'record': copy.deepcopy(record)}
+        members = self.groups[record_id]
+        result['equivalence_group'] = {'id':members[0], 'members':page(members,related_limit,related_offset)}
+        if 'state' in record:
+            states={self.by_id[cid][1]['state'] for cid in members}
+            result['equivalence_group']['states']=sorted(states)
+        if group == 'claims':
+            ratings = [{'claim_id':cid, 'uncertainty':self.records['claims'][cid]['uncertainty'],
+                        'assessment':self.current_assessments.get(cid)} for cid in members]
+            for cid in members:
+                if cid not in self.current_assessments:
+                    ratings.extend({'claim_id':cid,'uncertainty':item['uncertainty'],'assessment':item['id']}
+                        for item in self.supplied_assessments[cid]
+                        if item['uncertainty'] != self.records['claims'][cid]['uncertainty'])
+            values = {item['uncertainty'] for item in ratings}
+            result['current_assessment'] = {'status':'agreed' if len(values)==1 else 'disputed',
+                    'uncertainty':next(iter(values)) if len(values)==1 else None,
+                    'members':page(ratings,related_limit,related_offset)}
         if level == 0:
             return result
         ids, provenance = self.relevant(record_id)
-        ids[group].discard(record_id)
+        for member in members:
+            if member != record_id:
+                more_ids, more_provenance=self.relevant(member)
+                for kind,values in more_ids.items():
+                    ids[kind].update(values)
+                provenance.update(more_provenance)
+        ids[group].difference_update(members)
         related = {}
         for kind, values in ids.items():
             if kind == 'sources' and level < 2:
                 continue
-            items = [copy.deepcopy(self.records[kind][item_id]) for item_id in sorted(values)]
+            items, seen = [], set()
+            for item_id in sorted(values):
+                identity=self.groups[item_id][0]
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                view=self.view(item_id,0,related_limit,related_offset)
+                item=view['record']
+                item['equivalence_group']=view['equivalence_group']
+                if 'current_assessment' in view:
+                    item['current_assessment']=view['current_assessment']
+                items.append(item)
             if kind == 'evidence' and level < 2:
                 for item in items:
                     item.pop('premise_claim_ids')
@@ -203,7 +258,11 @@ class Knowledge:
         return self.envelope('lookup', **self.view(record_id, level, related_limit, related_offset))
 
     def search(self, text='', *, claim_class=None, uncertainty=None, state=None,
-               limit=20, offset=0, level=0, related_limit=50) -> dict:
+               limit=20, offset=0, level=0, related_limit=50, kind='claims') -> dict:
+        if kind != 'claims':
+            if any(v is not None for v in (claim_class,uncertainty,state)):
+                raise Invalid('Claim filters require the claims record kind')
+            return self.candidates(text,kind=kind,limit=limit,offset=offset,grouped=True)
         bound(limit, 1, 100, 'limit')
         bound(offset, 0, sys.maxsize, 'offset')
         bound(level, 0, 2, 'level')
@@ -222,6 +281,13 @@ class Knowledge:
             matched = sorted(record_id for record_id, terms in document.items() if query.intersection(terms))
             hits.append((score, cid, matched))
         hits.sort(key=lambda hit: (-hit[0], hit[1]))
+        seen, grouped = set(), []
+        for hit in hits:
+            identity = self.groups[hit[1]][0]
+            if identity not in seen:
+                seen.add(identity)
+                grouped.append(hit)
+        hits = grouped
         results = page(hits, limit, offset)
         results['items'] = [dict(self.view(cid, level, related_limit, 0), relevance=score,
                                  matched_record_ids=matched) for score, cid, matched in results['items']]
@@ -321,6 +387,12 @@ class Knowledge:
                 groups[status].append((cid, reason))
         result = {}
         for status, items in groups.items():
+            seen,unique=set(),[]
+            for item in items:
+                identity=self.groups[item[0]][0]
+                if identity not in seen:
+                    seen.add(identity);unique.append(item)
+            items=unique
             collection = page(items, limit, offset)
             collection['items'] = [dict(self.view(cid, level, related_limit, 0), temporal_status=status,
                                         temporal_reason=reason) for cid, reason in collection['items']]
@@ -328,9 +400,56 @@ class Knowledge:
         return self.envelope('valid_at', at=at, interpretation='recorded_applicability_only',
                              outside_recorded_intervals=outside, **result)
 
-    def lineage(self, evidence_id: str | None = None) -> dict:
+    def lineage(self, evidence_id: str | None = None, *, limit=20, offset=0, max_bytes=32768) -> dict:
         from scripts.source_lineage import source_lineage
-        return source_lineage(self, evidence_id)
+        report = source_lineage(self, evidence_id, include_peer_lists=limit is None)
+        if limit is None:
+            return report  # Retain the native programmatic report for existing callers.
+        from scripts.model_context import bounded_page, card
+        items=[]
+        for kind in ('sources','evidence','claims','connectors'):
+            for node in report[kind].values():
+                record=node.get('record',node)
+                items.append(card('graph' if kind=='connectors' else kind,record))
+        for flag in report['flags']:
+            items.append({'id':flag['id'],'kind':'lineage_flag','flag_kind':flag['kind'],
+                          'basis':flag['basis'],'evidence_count':len(flag['evidence_ids']),
+                          'source_count':len(flag['source_ids'])})
+        return bounded_page(self,'lineage',items,focus_evidence_id=evidence_id,
+                            interpretation=report['interpretation'],limit=limit,offset=offset,max_bytes=max_bytes)
+
+    def candidates(self, text='', **options):
+        from scripts.model_context import candidates
+        return candidates(self,text,**options)
+
+    def context(self, record_id, **options):
+        from scripts.model_context import context
+        return context(self,record_id,**options)
+
+    def passage(self, record_id, **options):
+        from scripts.model_context import passage
+        return passage(self,record_id,**options)
+
+    def assessments(self, record_id, **options):
+        from scripts.model_context import assessment_history
+        return assessment_history(self,record_id,**options)
+
+    def changes(self, before_package, **options):
+        from scripts.model_context import changes
+        return changes(self,before_package,**options)
+
+    def lineage_flag(self, flag_id, *, limit=20, offset=0, max_bytes=32768):
+        from scripts.source_lineage import source_lineage
+        from scripts.model_context import bounded_page, card
+        report=source_lineage(self,include_peer_lists=False)
+        flag=next((f for f in report['flags'] if f['id']==flag_id),None)
+        if flag is None:
+            raise Invalid('Unknown lineage flag')
+        ids=sorted(set(flag['source_ids']+flag['evidence_ids']+flag['associated_claim_ids']))
+        return bounded_page(self,'lineage_flag',[card(*self.by_id[v]) for v in ids],
+                            flag_id=flag_id,flag_kind=flag['kind'],basis=flag['basis'],
+                            independence_assessment=flag['independence_assessment'],
+                            limit=limit,offset=offset,max_bytes=max_bytes)
 
 
 def main() -> int:
@@ -347,11 +466,33 @@ def main() -> int:
     search.add_argument('--uncertainty', choices=('low', 'medium', 'high'))
     search.add_argument('--state', choices=('active', 'retired'))
     search.add_argument('--offset', type=int, default=0)
+    search.add_argument('--kind',choices=CANONICAL_ROOTS,default='claims')
     temporal = sub.add_parser('valid-at')
     temporal.add_argument('at')
     temporal.add_argument('--offset', type=int, default=0)
     lineage = sub.add_parser('lineage')
     lineage.add_argument('--evidence', dest='evidence_id')
+    candidate = sub.add_parser('candidates')
+    candidate.add_argument('text',nargs='?',default='')
+    candidate.add_argument('--kind',choices=CANONICAL_ROOTS,default='claims')
+    context = sub.add_parser('context')
+    context.add_argument('record_id')
+    context.add_argument('--purpose',choices=('comparison','linkage','reassessment'),default='comparison')
+    assessment = sub.add_parser('assessments')
+    assessment.add_argument('record_id')
+    change=sub.add_parser('changes')
+    change.add_argument('--before-package',required=True,type=Path)
+    flag=sub.add_parser('lineage-flag')
+    flag.add_argument('flag_id')
+    passage = sub.add_parser('passage')
+    passage.add_argument('record_id')
+    passage.add_argument('--field')
+    passage.add_argument('--offset',type=int,default=0)
+    passage.add_argument('--max-bytes',type=int,default=32768)
+    for command in (candidate,context,assessment,lineage,change,flag):
+        command.add_argument('--limit',type=int,default=20)
+        command.add_argument('--offset',type=int,default=0)
+        command.add_argument('--max-bytes',type=int,default=32768)
     for name in ('traverse', 'dependents'):
         walk = sub.add_parser(name)
         walk.add_argument('seed')

@@ -24,11 +24,20 @@ Basic retrieval requires no database, generated knowledge package or shell.
 
 For context, return a compact briefing of relevant statements, assumptions,
 uncertainties and gaps. For a question, answer from the recorded evidence and identify
-what it does not settle. Preserve source access, disputed accounts and retirement.
+what it does not settle. Preserve source access, disputed accounts and legacy states.
 For “what applied then”, show unknown/disputed applicability separately; publication
 and admission are different clocks. Cite native record IDs/paths and the pinned
 revision. Label new reasoning as analysis; do not save it without a request.
 A bounded file search does not establish exhaustive graph coverage.
+
+When the selected world has adopted model-operation contracts, follow those current
+contracts over the bundled legacy retirement/duplicate guidance. Claims remain
+permanent; changed propositions get new IDs, and uncertainty changes need explicit
+recorded reassessment. Equivalent records retain every original ID and visibly
+disputed assessments. Local candidate, context, passage, history and lineage tools
+provide bounded reads; external agents own the judgments and execution. Do not
+apply these rules to worlds that have not adopted them. Contribution protocol 1.2
+and the installed client's intent, destination and review boundaries are unchanged.
 
 ## Research and add
 

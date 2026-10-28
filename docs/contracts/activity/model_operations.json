@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "kind": "model_tooling",
+  "authority": "Externally supplied model judgments through existing independently reviewed PRs",
+  "input_protocol": "1.2 unchanged",
+  "formats": {"query": "1.1", "admission_closure": "1.1", "maintenance": "1.2"},
+  "read_interface": "scripts/query_knowledge.py: Knowledge and local CLI",
+  "reads": {
+    "candidates": "Keyword-overlap candidates or paginated enumeration by canonical kind; selection reasons, never semantic identity",
+    "context": "Record/group neighbourhood cards for comparison, linkage or reassessment; no behavior execution",
+    "passage": "Native text field or complete record/operation JSON in byte-bounded character ranges",
+    "assessments": "Immutable supplied grades and reassessments, with explicit current result",
+    "changes": "Canonical changes between pinned packages plus new model operations",
+    "lineage": "Existing source/evidence lineage cues as paginated cards; lineage-flag expands members"
+  },
+  "read_bounds": {"default_items": 20, "maximum_items": 100, "maximum_bytes": 32768, "continuation": "next_offset at the same pinned build"},
+  "write_interface": "scripts/world_control.py RUN-ID-or-M-ID --decisions FILE [--apply]; default dry run",
+  "common_supplied_fields": ["id", "kind", "subject_ids", "basis_ids", "reason"],
+  "operation_fields": {
+    "comparison": ["outcome: equivalent|overlap|distinct|unresolved", "supersedes: current pair operation reference or null"],
+    "reassessment": ["uncertainty: low|medium|high", "predecessors: claim ID to current reassessment reference or null"],
+    "linkage": ["record: complete existing graph-schema dependency/coupling record", "previous_sha256: current relationship digest or null for new"]
+  },
+  "writer_captured_fields": ["read_sha256: record/operation ID to digest", "previous_uncertainty: claim ID to previous grade for reassessments"],
+  "references": {"operation": "BC-ID#local-id or M-ID#local-id", "supplied_assessment": "RUN-ID#candidate-id", "group": "Any original canonical member ID remains an address; the display representative is derived"},
+  "hard_rules": [
+    "external_agents_own_atomic_behaviors_semantic_judgment_and_execution",
+    "research_validity_belongs_to_input_producer_no_external_source_fetching",
+    "only_accepted_equivalence_groups_records",
+    "preserve_all_original_ids_anchors_and_provenance",
+    "non_equivalence_within_transitive_groups_is_rejected",
+    "grouped_connector_and_premise_cycles_are_rejected",
+    "comparison_and_linkage_never_change_claim_uncertainty",
+    "exact_claim_reuse_requires_equal_class_temporal_scope_and_uncertainty",
+    "first_reassessment_continues_actual_base_grade_subsequent_reassessment_continues_current_head",
+    "one_reassessment_per_claim_per_delta_no_history_branches",
+    "differing_current_or_unreassessed_legacy_supplied_grades_are_disputed",
+    "read_digests_rechecked_against_actual_base_on_delta_validation",
+    "retry_same_receipt_and_decisions_is_no_op",
+    "no_claim_deletion_or_new_claim_retirement",
+    "no_new_record_family_runtime_scheduler_provider_or_hosted_service"
+  ],
+  "details": "docs/OPERATIONS.md#model-tooling-for-external-agents"
+}

@@ -173,7 +173,7 @@ Claim disclosure levels (`--level 0`, `1`, or `2`) are progressive:
   `inspected`/`not_retrieved` status, plus original contributions, closures, research
   archives, relevant maintenance and declared parent-run provenance.
 
-Search returns claims only. It indexes their statements, linked evidence summaries
+Claim search indexes statements, linked evidence summaries
 and limitations, and linked source title/URI/date/locator/excerpt text. It requires
 all query words, ranks by whole-word occurrence count, and breaks ties by claim ID.
 `relevance` means keyword retrieval relevance only. Rebuilding the in-memory index
@@ -198,7 +198,7 @@ Search supports `--offset`; graph depth is explicit (default 1, maximum 10), and
 `truncated` signals a result limit. Each related/provenance collection has its own
 `total` and `next_offset`: `--related-limit` defaults to 50 (maximum 1000), and lookup
 supports `--related-offset` to fetch later pages. Direct record lookup remains
-available for every linked canonical ID. The query format is version 1.0 and all
+available for every linked canonical ID. The query format is version 1.1 and all
 returned data belongs to the selected build, independently of later repository edits.
 
 ## Historical knowledge and world-valid time
@@ -250,7 +250,8 @@ python scripts/query_knowledge.py --package .resolvent/knowledge lineage
 python scripts/query_knowledge.py --package .resolvent/knowledge lineage --evidence E-<uuid>
 ```
 
-`Knowledge.lineage(evidence_id=None)` returns a deterministic read-only report pinned
+`Knowledge.lineage(evidence_id=None, limit=None)` retains the complete native
+programmatic report. The default API/CLI now returns bounded cards (see below), pinned
 to the package's build/revision. It retains source/evidence records and anchors,
 declared source ancestors, unknown/unretrieved nodes, upstream evidence through
 joint claim premises, associated claims and connector-only evidence. A focused
@@ -394,3 +395,100 @@ funding simulations or source material. Do not submit unrelated chat turns, secr
 patient records, or other sensitive personal information without explicit authority
 and suitable repository access controls. A private repository is not a substitute
 for applicable data-handling obligations. Full transcripts are not required.
+
+## Model tooling for external agents
+
+Core 1.3.0 / compiler 1.4.0 adds local model operations. External agents own
+comparison, linkage and reassessment, including semantic judgments and execution.
+Resolvent accepts valid supplied research; it does not implement those behaviors,
+fetch sources, invoke providers or add a scheduler. The existing admission and
+maintenance lanes, independent review and protected merge remain in place.
+
+Build a pinned closed package with the existing builder. Available reads include:
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge candidates "candidate wording" --kind claims
+python scripts/query_knowledge.py --package .resolvent/knowledge candidates --kind questions --offset 20
+python scripts/query_knowledge.py --package .resolvent/knowledge context C-<id> --purpose reassessment
+python scripts/query_knowledge.py --package .resolvent/knowledge passage S-<id> --field excerpt
+python scripts/query_knowledge.py --package .resolvent/knowledge assessments C-<id>
+python scripts/query_knowledge.py --package .resolvent/knowledge changes --before-package .resolvent/earlier
+python scripts/query_knowledge.py --package .resolvent/knowledge lineage
+python scripts/query_knowledge.py --package .resolvent/knowledge lineage-flag <flag-id>
+```
+
+The Python methods use those names. New reads and default lineage return at most
+20 cards (maximum 100) and 32 KiB of encoded JSON, including build metadata.
+`--max-bytes` can lower the cap to 1 KiB. Responses include totals and `next_offset`;
+continue against the same pinned package. `passage` offsets count characters,
+while its output cap counts encoded bytes, preserving Unicode and escapes. Omit
+`--field` to read an entire native record/operation JSON in chunks. An item that
+cannot fit fails explicitly. Existing full lookup/search/traversal retain their
+native disclosure interfaces; use cards/passages for bounded agent context.
+The former complete lineage library report remains available only via explicit
+`limit=None`; it is not the bounded agent surface.
+
+`candidates` accepts each canonical kind. Empty text enumerates by ID; nonempty
+text ranks any keyword overlap, with selection reasons. It does not infer meaning,
+truth or independence. `search --kind sources|evidence|questions` returns grouped
+cards; ordinary claim search and valid-time reads group accepted equivalents too.
+Existing lineage flags supply source-origin/hash/URI/excerpt cues; `lineage-flag`
+returns bounded member cards. Context returns a selected group neighbourhood,
+with evidence, declared premises, relationship endpoints, questions and operation
+references. Use passage/lookup for details and the existing traversal/impact tools
+for further investigation. No read implies exhaustive coverage.
+
+Query envelope 1.1 retains build pins and adds `model_sha256` (canonical records
+plus accepted operation contents). The compiled artifact wrapper stays 1.0.
+Supplied assessments are visible at `RUN-ID#candidate-id`; operation references
+are `BC-ID#local-id` or `M-ID#local-id`. Grouped views combine provenance, list
+member IDs and legacy states, and expose differing assessments as disputed.
+Every original record remains directly addressable. The representative can change
+when members join; use an original member ID as the stable group address.
+
+To accompany admission, add `expected_model_sha256` from the reader and a
+`model_operations` list to the existing decisions. Local operation IDs match
+`[a-z][a-z0-9_-]{0,63}` and are unique within the receipt. Each decision supplies
+`kind`, `subject_ids`, `basis_ids` and `reason`, plus the kind-specific fields in
+`docs/contracts/activity/model_operations.json`. Subjects must intersect the
+selected contribution or workset; reassessment targets must all be selected,
+already admitted claims. At most 200 operations belong in one receipt.
+
+Comparison requires two same-kind records and `outcome`, with `supersedes: null`
+for the first decision. Correct a decision by naming the current pair reference;
+prior decisions remain immutable. Claims need matching class and temporal scope
+for equivalence. Source equivalence preserves dates, versions and anchored
+passages; evidence equivalence preserves origins, independence and joint premises.
+Questions, sources and evidence keep per-run records and compact only in reads.
+Exact claim reuse also requires matching uncertainty. Otherwise admission preserves
+a separate claim and an external comparison can explicitly group it.
+
+Reassessment supplies a new `uncertainty` and `predecessors` map for every target.
+Null means no prior typed reassessment; the writer captures the actual legacy
+baseline grade. Later results must name the current head. Only one new result per
+claim per PR is allowed. Linkage supplies a complete graph-schema `record` with
+an R-ID and `previous_sha256` (null if new); it uses the existing dependency and
+coupling types. Connector uncertainty is outside claim reassessment history.
+Neither comparison nor linkage changes claim uncertainty as a side effect.
+
+For maintenance, use an existing pending M record; optional `subject_ids` selects
+non-claim records without changing the existing claim-coverage fields. The decisions
+contain `expected_model_sha256`, `model_operations` and `reviewed_claim_ids`, with
+optional actual `findings`, `deferred` or `no_change_reason`. Run the same writer:
+
+```sh
+python scripts/world_control.py M-<id> --decisions .resolvent/decisions.json
+python scripts/world_control.py M-<id> --decisions .resolvent/decisions.json --apply
+python scripts/compiler.py --require-closure
+```
+
+The writer validates before applying, captures per-record read digests and previous
+grades, and writes closure 1.1 or completed maintenance 1.2. Retry the same receipt
+and decisions for no changes; changed decisions cannot rewrite a closed receipt.
+CI checks read digests against the actual base, current predecessors, history
+branching, grouped cycles, exact canonical deltas and legacy provenance integrity.
+Unrelated base changes do not invalidate recorded per-record reads; changed basis
+requires fresh decisions. Compiler green status certifies structure, not judgment.
+Recent-change queries include provenance-only model operations. Existing recent,
+targeted and rotating maintenance can use these interfaces without new scheduling.
+No bulk migration, production-data rewrite or contribution protocol change is needed.

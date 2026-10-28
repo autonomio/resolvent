@@ -1,12 +1,11 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "activity_type": "admission",
   "authority": "PR-side curator, independently reviewed",
   "hard_rules": [
     "read_governance_from_base_branch",
     "every_candidate_requires_disposition",
     "evidence_before_confidence",
-    "exact_duplicates_merge_without_automatic_uncertainty_reduction",
     "bounded_connection_pass_required",
     "known_correctness_failures_must_not_be_deferred",
     "no_mandatory_edge_count",
@@ -16,11 +15,15 @@
     "governance_and_data_changes_in_separate_prs",
     "temporal_intervals_reference_claim_evidence",
     "source_and_admission_dates_do_not_imply_valid_time",
-    "temporal_scope_changes_never_silently_reuse_claim_ids"
+    "temporal_scope_changes_never_silently_reuse_claim_ids",
+    "research_validity_belongs_to_input_producer",
+    "exact_claim_reuse_requires_same_class_temporal_scope_and_uncertainty",
+    "non_claim_compaction_uses_recorded_equivalence_groups",
+    "claim_uncertainty_changes_require_recorded_reassessment"
   ],
   "procedure_steps": [
     "validate_submission",
-    "inspect_evidence_and_scope",
+    "read_supplied_evidence_and_scope",
     "review_claim_classes_and_uncertainty",
     "resolve_duplicates_and_identity",
     "record_justified_immediate_connectors",

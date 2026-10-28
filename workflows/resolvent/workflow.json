@@ -1,6 +1,6 @@
 {
   "format_version": "1.0",
   "client_protocol": "1.0",
-  "workflow_version": "1.0.1",
+  "workflow_version": "1.0.2",
   "entrypoint": "WORKFLOW.md"
 }

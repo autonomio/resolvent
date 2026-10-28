@@ -386,3 +386,21 @@ The owner authorized public OpenAI submission and free Cloudflare hosting on
 2026-10-27. Platform legal/policy attestations still belong to the authorized human
 publisher. Local and raw MCP transport tests do not establish live host behavior,
 public-directory approval or publication.
+
+## Model tooling compatibility (core 1.3.0)
+
+Repository-local query envelope 1.1, closure 1.1 and maintenance 1.2 add bounded
+model reads and recorded external judgments. Core 1.3.0 changes exact claim reuse
+to require matching uncertainty and temporal scope, rejects new claim retirements,
+and requires explicit reassessment for claim uncertainty changes. Existing worlds
+and provenance remain readable; adopting worlds change through reviewed core PRs.
+
+Submission protocol 1.2, fixed client protocol 1.0, generic public MCP interfaces
+and submitted plugin 1.4.0 distributions remain byte-for-byte unchanged. The
+installed client already gives the selected world's approved base contracts
+authority over its model. Live workflow 1.0.2 explicitly directs adopted worlds
+to those contracts over the bundled legacy duplicate/retirement examples. It
+preserves legacy states and does not instruct older worlds to adopt new rules.
+No package or portal resubmission is required; reviewed live guidance uses the
+existing workflow-release channel. No new permission, service or agent runner is
+introduced. Reproducible package checks verify both submitted ZIPs remain intact.

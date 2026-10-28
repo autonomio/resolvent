@@ -2,12 +2,13 @@
   "activity_type": "ingestion",
   "kind": "mutation_pathway",
   "purpose": "deterministic_normalized_input_to_world_model_transformation",
-  "version": "1.2",
+  "version": "1.3",
   "profile": "autonomio_resolvent_template",
   "schema": "docs/schemas/submission.schema.json",
   "required_context_paths": [
     "docs/contracts/activity/ingestion.json",
-    "docs/schemas/submission.schema.json"
+    "docs/schemas/submission.schema.json",
+    "docs/contracts/activity/model_operations.json"
   ],
   "enforcement": {
     "structural": "JSON schemas and scripts/compiler.py",
@@ -48,7 +49,10 @@
     "temporal_scope_changes_never_silently_reuse_claim_ids",
     "source_ancestry_references_resolve",
     "source_ancestry_is_acyclic",
-    "source_ancestry_metadata_does_not_establish_independence"
+    "source_ancestry_metadata_does_not_establish_independence",
+    "research_validity_belongs_to_input_producer",
+    "claim_uncertainty_changes_require_recorded_reassessment",
+    "preserve_claims_without_new_retirement_transitions"
   ],
   "write_interface": {
     "dry_run": "python scripts/world_control.py input-artefacts/RUN-<uuid>.json --decisions .resolvent/decisions.json",
@@ -71,8 +75,7 @@
   "allowed_mutation_modes": [
     "add",
     "merge_evidence",
-    "update_with_maintenance_record",
-    "retire_with_maintenance_record"
+    "update_with_maintenance_record"
   ],
   "representation": "One canonical YAML record per object; derived graph views are rebuildable, never a second editable truth."
 }

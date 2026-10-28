@@ -66,7 +66,7 @@ evidence access or lifecycle. Retired records remain inspectable at past world t
 Temporal scope is material to identity. Admission remaps its evidence IDs, merges
 additional support only for the same supplied temporal scope, and cannot silently
 overwrite an existing ID with another temporal proposition. A meaning-changing
-replacement needs a new ID and reviewed retirement of the old claim. Metadata-only
+replacement needs a new ID while preserving the original claim. Metadata-only
 annotations preserving an already scoped statement may retain the ID through
 reviewed maintenance. Dates still belong in the self-contained statement when
 material; the annotation is not a substitute for that requirement.
@@ -120,7 +120,7 @@ retrieved; preserve the limitation in notes and the actual access status.
 Declared parent links and matching declared digests establish metadata relationships,
 not truth or independent observation. Same-URI and repeated-excerpt cues remain
 heuristics. Different URLs, missing flags or declared originals do not establish
-independence either. Reviewers inspect actual support and scope; reports never
+independence either. Reviewers inspect supplied support and scope; reports never
 automatically promote evidence, alter uncertainty or retire a record. Preserve joint
 premise sets when tracing evidence through earlier claims.
 
@@ -159,7 +159,11 @@ run is idempotent. Continued or corrected research uses a new run and `parent_ru
 
 Merged contributions, closures, archived research phases and completed maintenance
 records are immutable. Canonical assertions may gain evidence or be reassessed via
-PR. Meaning-changing replacement gets a new ID; retire, do not delete, old records.
+PR. Meaning-changing replacement gets a new ID; preserve the original. New claim
+retirements are rejected; legacy retired claims remain readable. Neither a new ID
+nor an equivalence decision redirects existing dependencies or moves evidence.
+Different propositions coexist; explicit reassessment changes their credibility.
+There is no new replacement-status field or automatic choice of a current proposition.
 
 ## Research artifacts
 
@@ -190,3 +194,41 @@ its identity. New records remain pending until the usual agent processing and
 independent review; the pending record cannot merge. Completed records retain the
 existing immutability rule. Contribution protocol 1.2 and canonical record formats
 are unchanged.
+
+## Recorded comparison and reassessment
+
+Admission closure 1.1 and maintenance 1.2 may contain typed `model_operations`.
+Their permanent address is the receipt ID plus `#` plus local operation ID. Results
+name canonical subjects, supplied basis IDs, a reason and writer-captured read
+digests. These are externally supplied judgments, not independent observations.
+
+A comparison records `equivalent`, `overlap`, `distinct` or `unresolved` for two
+claims, questions, sources or evidence records of the same kind. A correction names
+the current comparison in `supersedes`; one current decision per pair and no
+branching or circular history. Current equivalences form transitive read groups.
+No current non-equivalence pair may occur within a group. Claims must share class
+and recorded temporal scope. Source grouping preserves anchored passages, dates and
+known versions; evidence grouping preserves origins, independence and joint
+premises. Semantic identity remains the external agent's responsibility.
+
+Every original ID is a stable address into its current group. The derived `id`
+shown for a group is its smallest member, not a new persistent identity; it can
+change as membership changes. Native records and raw relationship endpoints remain
+intact. Grouping checks connector self-links and dependency/evidential cycles too.
+Different legacy lifecycle states remain visible as group states; grouping never
+reactivates a record or resolves a question.
+
+Supplied grades are addressed as `RUN-ID#candidate-id` through their immutable
+closure dispositions. Reassessment appends a reason, basis, new uncertainty,
+previous uncertainty and current predecessor per claim. The first predecessor is
+null: its previous grade is the actual base claim's legacy baseline, not a guessed
+historical assessment. Exactly one new reassessment per claim per PR is allowed;
+the current stored grade must equal the head result. `low` still requires that
+claim's own independent inspected evidence. Connector uncertainty remains ordinary
+relationship maintenance, outside claim assessment history.
+
+Differing current member grades, or legacy merged supplied grades without a later
+explicit reassessment, appear as disputed. No averaging or automatic uncertainty
+change occurs. New exact claim reuse requires matching uncertainty as well as
+statement, class and temporal scope. Otherwise preserve a separate claim; an
+external comparison may group it. History remains retrievable after reassessment.

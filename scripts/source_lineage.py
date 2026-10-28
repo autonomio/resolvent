@@ -10,7 +10,7 @@ from scripts.build_knowledge import json_bytes, sha256
 from scripts.model import Invalid
 
 
-def source_lineage(knowledge, evidence_id: str | None = None) -> dict:
+def source_lineage(knowledge, evidence_id: str | None = None, *, include_peer_lists=True) -> dict:
     records = knowledge.records
     sources, evidence, claims = [records[group] for group in ('sources', 'evidence', 'claims')]
     if evidence_id is not None and evidence_id not in evidence:
@@ -62,10 +62,13 @@ def source_lineage(knowledge, evidence_id: str | None = None) -> dict:
             'flag_ids': [], 'related_evidence_ids': [], 'independence_assessment': 'not_determined',
         }
     flags = []
+    members_by_source=defaultdict(set)
+    for eid,node in evidence_nodes.items():
+        for sid in node['source_ancestry_ids']:
+            members_by_source[sid].add(eid)
 
     def flag(kind: str, basis: str, key: str, source_ids: set[str], *, require_peer=True):
-        members = sorted(eid for eid, node in evidence_nodes.items()
-                         if source_ids.intersection(node['source_ancestry_ids']))
+        members = sorted(set().union(*(members_by_source[sid] for sid in source_ids)))
         if not members or (require_peer and len(members) < 2):
             return
         body = {'kind': kind, 'basis': basis, 'key': key, 'source_ids': sorted(source_ids),
@@ -115,7 +118,8 @@ def source_lineage(knowledge, evidence_id: str | None = None) -> dict:
     for item in flags:
         for eid in item['evidence_ids']:
             evidence_nodes[eid]['flag_ids'].append(item['id'])
-            evidence_nodes[eid]['related_evidence_ids'].extend(peer for peer in item['evidence_ids'] if peer != eid)
+            if include_peer_lists:
+                evidence_nodes[eid]['related_evidence_ids'].extend(peer for peer in item['evidence_ids'] if peer != eid)
     selected_sources = (set(sources) if evidence_id is None else
                         {sid for eid in selected_evidence for sid in evidence_nodes[eid]['source_ancestry_ids']})
     selected_connectors = {rid for eid in selected_evidence for rid in evidence_nodes[eid]['connector_ids']}

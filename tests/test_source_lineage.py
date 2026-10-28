@@ -86,7 +86,7 @@ class LineageTests(unittest.TestCase):
         self.query = Knowledge(self.package)
 
     def test_direct_and_indirect_copies_expose_one_declared_origin(self):
-        report = self.query.lineage(ident('evidence','e3'))
+        report = self.query.lineage(ident('evidence','e3'),limit=None)
         source = report['sources'][ident('sources','s3')]
         self.assertEqual(source['ancestor_source_ids'],sorted([ident('sources','s1'),ident('sources','s2')]))
         self.assertEqual(source['declared_original_source_ids'],[ident('sources','s1')])
@@ -96,7 +96,7 @@ class LineageTests(unittest.TestCase):
         self.assertEqual(flag['independence_assessment'],'unresolved')
 
     def test_identical_declared_hashes_are_distinct_from_similarity_heuristics(self):
-        flags = self.query.lineage()['flags']
+        flags = self.query.lineage(limit=None)['flags']
         exact = next(item for item in flags if item['kind']=='shared_declared_content_sha256')
         self.assertEqual(exact['basis'],'deterministic_metadata')
         self.assertEqual(exact['source_ids'],sorted([ident('sources','s1'),ident('sources','s2')]))
@@ -105,13 +105,13 @@ class LineageTests(unittest.TestCase):
         self.assertEqual(len(repeated['source_ids']),3)
 
     def test_distinct_declared_source_does_not_become_an_independence_verdict(self):
-        report = self.query.lineage(ident('evidence','e4'))
+        report = self.query.lineage(ident('evidence','e4'),limit=None)
         self.assertEqual(report['flags'],[])
         self.assertEqual(report['evidence'][ident('evidence','e4')]['independence_assessment'],'not_determined')
         self.assertEqual(report['sources'][ident('sources','s4')]['record'],self.state[f"sources/{ident('sources','s4')}.yaml"])
 
     def test_premise_inheritance_includes_connector_only_evidence(self):
-        report = self.query.lineage(ident('evidence','e5'))
+        report = self.query.lineage(ident('evidence','e5'),limit=None)
         evidence = report['evidence'][ident('evidence','e5')]
         self.assertEqual(evidence['record']['claim_ids'],[])
         self.assertEqual(evidence['record']['premise_claim_ids'],[ident('claims','c1'),ident('claims','c2')])
@@ -122,7 +122,7 @@ class LineageTests(unittest.TestCase):
         self.assertTrue({ident('claims','c1'),ident('claims','c4')} <= set(report['claims']))
 
     def test_unknown_ancestry_and_unretrieved_access_remain_unresolved(self):
-        report = self.query.lineage(ident('evidence','e5'))
+        report = self.query.lineage(ident('evidence','e5'),limit=None)
         sid = ident('sources','s5')
         self.assertEqual(report['sources'][sid]['unresolved_sources'][sid],['ancestry_unknown','not_retrieved'])
         self.assertEqual(report['evidence'][ident('evidence','e5')]['unresolved_sources'][sid],['ancestry_unknown','not_retrieved'])
@@ -130,8 +130,8 @@ class LineageTests(unittest.TestCase):
 
     def test_report_is_stable_keeps_anchors_and_does_not_mutate_the_model(self):
         before = copy.deepcopy(self.query.knowledge)
-        report = self.query.lineage()
-        self.assertEqual(json_bytes(report),json_bytes(self.query.lineage()))
+        report = self.query.lineage(limit=None)
+        self.assertEqual(json_bytes(report),json_bytes(self.query.lineage(limit=None)))
         self.assertEqual(self.query.knowledge,before)
         self.assertEqual(report['build']['source_revision'],self.revision)
         source = report['sources'][ident('sources','s1')]['record']
@@ -233,7 +233,7 @@ class AncestryValidationTests(unittest.TestCase):
             package=Path(directory)/'package';package.mkdir()
             for name,data in compile_revision(repo,'HEAD').items():
                 (package/name).write_bytes(data)
-            report=Knowledge(package).lineage(ident('evidence','e2'))
+            report=Knowledge(package).lineage(ident('evidence','e2'),limit=None)
             source=report['sources'][ident('sources','s2')]
             self.assertEqual(source['declared_original_source_ids'],[])
             self.assertEqual(source['unresolved_sources'][ident('sources','s2')],['ancestry_unknown'])

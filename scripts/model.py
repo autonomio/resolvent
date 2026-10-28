@@ -375,14 +375,18 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
             except ValueError as error:
                 raise Invalid(str(error)) from error
         fail(set(m["claim_ids"]) <= set(claims), f"{m['id']}: unresolved maintenance claim")
+        fail(set(m.get('subject_ids',[])) <= set().union(*(set(idx.get(k,{})) for k in CANONICAL_ROOTS)),
+             'Unknown maintenance subject')
         fail(set(m["reviewed_claim_ids"]) <= set(m["claim_ids"]), f"{m['id']}: reviewed claims outside workset")
         fail(all(safe_relative(p) and p in state and p.split('/')[0] in CANONICAL_ROOTS for p in m["touched_files"]), "Invalid maintenance touched file")
         if m["status"] == "completed":
             fail(set(m["reviewed_claim_ids"]) == set(m["claim_ids"]) or bool(m["deferred"]), "Incomplete maintenance coverage needs explicit deferrals")
-            fail(bool(m["touched_files"]) or bool(m["no_change_reason"]), "No-change maintenance requires an explanation")
+            fail(bool(m["touched_files"]) or bool(m.get('model_operations')) or bool(m["no_change_reason"]), "No-change maintenance requires an explanation")
             fail(bool(m["findings"]) or bool(m["no_change_reason"]), "Maintenance needs findings or no-change reason")
         elif require_closure:
             raise Invalid(f"Awaiting maintenance agent: {m['id']} is pending")
+    from scripts.model_operations import validate_operations
+    validate_operations(state, policy_root)
     historical_coverage = set()
     for record in idx.get("closure", {}).values():
         historical_coverage.update(record["touched_files"])
@@ -415,10 +419,13 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
     data_changes = {p for p in changed if p in current or p in old}
     governance_changes = changed - data_changes
     fail(not (data_changes and governance_changes), "Separate governance/code changes from model-data PRs: " + ", ".join(sorted(governance_changes)))
-    fail(not (set(old) - set(current)), "Do not delete model history; retire records instead")
+    fail(not (set(old) - set(current)), "Do not delete model history")
     for path in old:
         if family(path) in ("submission", "closure", "brief", "result", "maintenance"):
             fail(old[path] == current.get(path), f"Merged provenance is immutable; use a new run: {path}")
+    new_assessments = {subject for path in data_changes if path in current
+                       for op in current[path].get('model_operations', [])
+                       if op.get('kind') == 'reassessment' for subject in op['subject_ids']}
     actual = {p for p in data_changes if family(p) in (*CANONICAL_ROOTS, "brief", "result")}
     covered: set[str] = set()
     for path in data_changes:
@@ -428,3 +435,39 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
         if family(path) == "closure" or (family(path) == "maintenance" and record["status"] == "completed"):
             covered.update(record["touched_files"])
     fail(actual == covered, f"Materialized delta and integration records differ. Unrecorded: {sorted(actual-covered)}; not changed: {sorted(covered-actual)}")
+    from scripts.model_operations import operation_records, current_assessments
+    old_ops, proposed_ops = operation_records(old), operation_records(current)
+    old_current = current_assessments(old_ops)
+    new_refs = set(proposed_ops) - set(old_ops)
+    old_claims = indexes(old).get('claims', {})
+    old_records = {r['id']:r for r in old.values()} | old_ops
+    new_records = {r['id']:r for r in current.values()} | proposed_ops
+    assessed, linked = set(), set()
+    for ref in new_refs:
+        operation = proposed_ops[ref]
+        for identity, expected in operation['read_sha256'].items():
+            fail(expected == digest(old_records.get(identity,new_records[identity])),
+                 'Stale model operation read: ' + identity)
+        if operation['kind'] == 'reassessment':
+            for subject, predecessor in operation['predecessors'].items():
+                fail(subject not in assessed, 'Only one new reassessment per claim in a delta')
+                assessed.add(subject)
+                fail(subject in old_claims, 'Reassess admitted claims in a subsequent change')
+                fail(predecessor == old_current.get(subject) and
+                     operation['previous_uncertainty'][subject] == old_claims[subject]['uncertainty'],
+                     'Reassessment must continue the actual base assessment')
+        if operation['kind'] == 'linkage':
+            record = operation['record']
+            rid = record['id']
+            fail(rid not in linked, 'Only one relationship write per delta')
+            linked.add(rid)
+            fail(operation['previous_sha256'] == (digest(old_records[rid]) if rid in old_records else None),
+                 'Relationship must continue the actual base record')
+            fail(new_records[rid] == record, 'Recorded relationship differs from materialized delta')
+    for path in data_changes:
+        if path in current and family(path) == 'claims':
+            record, previous = current[path], old.get(path)
+            fail(record['state'] != 'retired' or previous is not None and previous['state'] == 'retired',
+                 'Claims remain permanent; do not create claim-retirement transitions')
+            if previous and previous['uncertainty'] != record['uncertainty']:
+                fail(record['id'] in new_assessments, 'Uncertainty changes require an explicit reassessment')
