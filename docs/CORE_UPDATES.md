@@ -75,6 +75,12 @@ is committed with the previous bot head and current main as parents. This is an
 ordinary fast-forward of the bot branch, preserves its history and current data,
 and dispatches new validation. Old CI cannot authorize the refreshed head.
 
+The native validation-dispatch command may return no output or a run URL. Its
+successful exit acknowledges dispatch; it does not establish completed validation.
+Command failures and malformed JSON responses still stop the updater. Before
+retrying an uncertain outcome, inspect the actual PR, head and workflow runs;
+an error does not establish that the preceding mutation was rolled back.
+
 The proposed validation workflow runs the candidate compiler against the actual
 populated world in the tests job, with read-only permissions and no persisted Git
 credential. The existing integrity job still uses base-branch policy. Incompatible

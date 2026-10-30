@@ -41,6 +41,37 @@ class Provider:
         raise AssertionError(args)
 
 
+class AdapterTests(unittest.TestCase):
+    def test_workflow_dispatch_accepts_empty_and_url_output_once(self):
+        args=('workflow','run','validate.yml','--repo','example/world','--ref','resolvent/core/1.1.0')
+        for output in (b'',b'https://github.com/example/world/actions/runs/123\n'):
+            with self.subTest(output=output),patch.object(core_update.subprocess,'run',return_value=
+                    subprocess.CompletedProcess(['gh',*args],0,stdout=output,stderr=b'')) as run:
+                self.assertIsNone(core_update.api(*args))
+                run.assert_called_once_with(['gh',*args],input=None,capture_output=True,check=True,env=None)
+
+    def test_json_commands_still_require_valid_json(self):
+        for output in (b'{"id":123}',b'https://github.com/example/world/pull/123\n'):
+            with self.subTest(output=output),patch.object(core_update.subprocess,'run',return_value=
+                    subprocess.CompletedProcess(['gh','api'],0,stdout=output,stderr=b'')) as run:
+                if output.startswith(b'{'):
+                    self.assertEqual(core_update.api('api','repos/example/world'),{'id':123})
+                else:
+                    with self.assertRaises(Invalid):
+                        core_update.api('api','repos/example/world')
+                run.assert_called_once()
+
+    def test_failed_or_uncertain_dispatch_stops_without_retry(self):
+        for error in (subprocess.CalledProcessError(1,['gh','workflow','run'],
+                      output=b'https://github.com/example/world/actions/runs/123\n'),
+                      OSError('Synthetic uncertain command outcome')):
+            with self.subTest(error=error),patch.object(core_update.subprocess,'run',side_effect=error) as run:
+                with self.assertRaises(type(error)) as raised:
+                    core_update.api('workflow','run','validate.yml')
+                self.assertIs(raised.exception,error)
+                run.assert_called_once()
+
+
 class CoreTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
@@ -222,6 +253,27 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(self.marker.exists())
         self.assertFalse(any('merge' in args for args,_ in provider.calls))
         self.assertFalse([p for args,p in provider.calls if p and p.get('draft')])
+
+    def test_successful_native_url_dispatch_finishes_after_one_pr_creation(self):
+        provider=Provider();dispatches=[]
+        def native_dispatch(*args,payload=None):
+            if args[:2]!=('workflow','run'):
+                return provider(*args,payload=payload)
+            dispatches.append(args)
+            with patch.object(core_update.subprocess,'run',return_value=subprocess.CompletedProcess(
+                    ['gh',*args],0,stdout=b'https://github.com/example/world/actions/runs/123\n',stderr=b'')) as run:
+                result=core_update.api(*args,payload=payload)
+                run.assert_called_once()
+                return result
+        with patch.object(core_update,'git',side_effect=self.local_fetch):
+            result=core_update.publish(self.world,'example/world',provider=native_dispatch)
+        self.assertEqual(result,{'status':'pr_created','pull_request':'https://github.com/example/world/pull/1',
+                                 'core_version':'1.1.0'})
+        self.assertEqual(len([args for args,_ in provider.calls if args[:3]==('api','--method','POST')]),1)
+        self.assertEqual(dispatches,[('workflow','run','validate.yml','--repo','example/world',
+                                     '--ref','resolvent/core/1.1.0')])
+        self.assertEqual(core_release.git(self.world,'rev-parse','HEAD').decode().strip(),self.base)
+        self.assertFalse(self.marker.exists())
 
     def test_unrelated_open_update_and_unfamiliar_branch_block_publication(self):
         provider=Provider();provider.pending=[{'headRefName':'resolvent/core/1.0.1'}]
