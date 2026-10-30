@@ -1,5 +1,5 @@
 {
-  "core_version": "1.3.2",
+  "core_version": "1.3.3",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -440,10 +440,10 @@
       "sha256": "7893e5e7b5564db6d5fd73f9ea7ec7dda0e49eb269c4e8c959bc64d53933f4e8"
     },
     "docs/CORE_UPDATES.md": {
-      "bytes": 9190,
-      "git_blob": "2e09a26fc2dde42fac2c4dfe0306f7e2756842f9",
+      "bytes": 20245,
+      "git_blob": "c3a9f229ba267383394cf14f5ade8aeaaa812b88",
       "mode": "100644",
-      "sha256": "d2e918194be80a0ab8edcfbc53e0d42de027142a77626552bc1549d463caf50b"
+      "sha256": "daaa7926ac221e0f87fc87041feb7106dee8471b23c974ac77f5e8b11e233d4b"
     },
     "docs/EXTRACTION.md": {
       "bytes": 2436,
