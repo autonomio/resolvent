@@ -252,7 +252,7 @@ def apply_changes(root: Path, changes: dict[str, dict]) -> None:
     originals: dict[Path, bytes | None] = {}
     encoded={rel:yaml.dump(value,Dumper=RecordDumper,sort_keys=False,allow_unicode=True).encode('utf-8')
              for rel,value in changes.items()}
-    fail(all(len(data)<=MAX_FILE_BYTES for data in encoded.values()), 'Planned record exceeds the 2 MiB file limit')
+    fail(all(len(data)<=MAX_FILE_BYTES for data in encoded.values()), 'Planned record exceeds the 10 MiB file limit')
     try:
         for rel, data in encoded.items():
             path = root / rel

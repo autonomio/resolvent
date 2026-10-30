@@ -5,6 +5,9 @@ privacy, destination and review boundaries always apply; this document grants no
 permissions. Retain workflow version/source commit and the selected world revision
 with the operation's internal checkpoint.
 
+Core 1.3.1 permits data files up to 10 MiB each. Follow the selected world's
+approved core limit; an updated plugin does not upgrade an older world's core.
+
 ## Research and spar in the chat
 
 For research or sparring without an addition request, answer and refine normally.

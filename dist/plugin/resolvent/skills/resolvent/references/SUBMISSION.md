@@ -86,7 +86,8 @@ Use the JSON example in `assets/conversation-example.json` for field structure,
 replacing every illustrative value with actual selected material. It is a synthetic
 example, never a seed claim to submit. Do not submit placeholder evidence.
 
-File size limit: 2 MiB. Keep excerpts focused; store links/anchors rather than entire
+File size limit: 10 MiB per data file on updated core. Older worlds retain their
+approved repository limit until core adoption. Keep excerpts focused; store links/anchors rather than entire
 papers or chat histories. Split material at meaningful boundaries when necessary.
 After input preparation, act as the repository's PR-side admission worker under the
 approved contracts. Generate the closure through the approved tool from actual

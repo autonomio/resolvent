@@ -35,6 +35,8 @@ rules; explicit preflight, submit-only, review-only and no-merge limits prevail.
 
 ## Plugin releases and distributions
 
+Plugin **1.4.1** aligns contribution guidance with core 1.3.1's 10 MiB per-data-file
+limit. Existing worlds adopt the larger limit through their normal core update.
 Plugin **1.4.0** adds a public MCP verifier for current workflow delivery and protocol
 compatibility to the fixed client and separately versioned live workflow references,
 including explicit read/write intent, distillation and integrated question reformulation.
@@ -46,8 +48,8 @@ main-branch change passes validation, CI publishes versioned GitHub assets and t
 standalone `plugin-release` branch. Public directory setup is a separate first step.
 
 - [Latest published packages](https://github.com/autonomio/resolvent/releases/latest)
-- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.4.0.zip)
-- [Claude plugin ZIP](dist/claude/resolvent-1.4.0.zip)
+- [ChatGPT plugin ZIP](dist/chatgpt/resolvent-1.4.1.zip)
+- [Claude plugin ZIP](dist/claude/resolvent-1.4.1.zip)
 - [Plugin release and compatibility instructions](docs/PLUGIN_RELEASE.md)
 
 Both ZIPs contain identical code, skills, assets and synchronized host manifests.

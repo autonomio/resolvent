@@ -19,7 +19,7 @@ from scripts.temporal import validate_temporal
 DATA_ROOTS = ("claims", "evidence", "sources", "graph", "questions", "input-artefacts", "briefs", "maintenance")
 CANONICAL_ROOTS = ("claims", "evidence", "sources", "graph", "questions")
 PREFIXES = {"claims": "C", "evidence": "E", "sources": "S", "graph": "R", "questions": "Q"}
-MAX_FILE_BYTES = 2 * 1024 * 1024
+MAX_FILE_BYTES = 10 * 1024 * 1024
 ID = re.compile(r"^(?:C|E|S|R|Q|RUN|BR|BC|M)-[0-9a-f]{32}$")
 
 
@@ -58,7 +58,7 @@ def read_data(path: Path) -> dict:
     if path.is_symlink():
         raise Invalid(f"Symlinks are not accepted: {path}")
     if path.stat().st_size > MAX_FILE_BYTES:
-        raise Invalid(f"File exceeds the 2 MiB contribution limit: {path}")
+        raise Invalid(f"File exceeds the 10 MiB contribution limit: {path}")
     raw = path.read_text(encoding="utf-8")
     try:
         if path.suffix == ".json":

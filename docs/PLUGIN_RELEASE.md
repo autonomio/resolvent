@@ -1,6 +1,6 @@
 # Resolvent plugin releases
 
-Resolvent 1.4.0 is the generic Autonomio plugin. The developer and website are
+Resolvent 1.4.1 is the generic Autonomio plugin. The developer and website are
 Autonomio and https://autonom.io. Its description identifies the supported task:
 update a Resolvent world model in a GitHub repository the user can access from
 the chat where the plugin is invoked.
@@ -51,7 +51,7 @@ repository operations remain in the invoking host or local session.
 - `.claude-plugin/marketplace.json`: local Claude catalog.
 - `assets/resolvent.svg` and `assets/resolvent.png`: original icon and directory PNG.
 - `docs/PLUGIN_README.md`: standalone README included in each plugin package.
-- `dist/chatgpt/resolvent-1.4.0.zip` and `dist/claude/resolvent-1.4.0.zip`: identical
+- `dist/chatgpt/resolvent-1.4.1.zip` and `dist/claude/resolvent-1.4.1.zip`: identical
   self-contained plugin distributions, with both host manifests.
 - `dist/plugin/resolvent/`: standalone local catalog source, generated from the same files.
 - `dist/resolvent.zip`: optional standalone Claude skill compatibility artifact.
@@ -404,3 +404,14 @@ preserves legacy states and does not instruct older worlds to adopt new rules.
 No package or portal resubmission is required; reviewed live guidance uses the
 existing workflow-release channel. No new permission, service or agent runner is
 introduced. Reproducible package checks verify both submitted ZIPs remain intact.
+
+## Data-file limit compatibility (core 1.3.1)
+
+Core 1.3.1 / compiler 1.4.1 raises the per-data-file byte limit from 2 MiB to
+10 MiB across reads, committed snapshots and planned writes. Submission protocol
+1.2, schemas, authority and independent review requirements are unchanged.
+Plugin 1.4.1 aligns its bundled contribution guidance; both host packages are
+rebuilt together. Workflow 1.0.3 makes the selected world's approved core limit
+authoritative for existing clients too. Older worlds retain their own limit
+until normal core adoption. The already submitted plugin 1.4.0 ZIPs retain their
+original bytes; this change does not replace or cancel that public review.

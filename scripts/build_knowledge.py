@@ -23,7 +23,7 @@ from scripts.temporal import point
 
 ROOT = Path(__file__).resolve().parent.parent
 FORMAT_VERSION = '1.0'
-COMPILER_VERSION = '1.4.0'
+COMPILER_VERSION = '1.4.1'
 
 
 def json_bytes(value: object) -> bytes:
@@ -86,7 +86,7 @@ def snapshot(repo: Path, revision: str, destination: Path) -> tuple[str, dict[st
         if not size.isdigit():
             raise Invalid(f'Missing local Git object: {path}')
         if int(size) > MAX_FILE_BYTES:
-            raise Invalid(f'File exceeds the 2 MiB contribution limit: {path}')
+            raise Invalid(f'File exceeds the 10 MiB contribution limit: {path}')
         contents = git(repo, 'cat-file', 'blob', oid.decode())
         target = destination / path
         target.parent.mkdir(parents=True, exist_ok=True)

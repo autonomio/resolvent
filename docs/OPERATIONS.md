@@ -32,6 +32,14 @@ A workflow/code/schema change goes in its own governance PR. After approval, the
 new policy applies to future contributions. Structural green status is not semantic
 approval. External review agents need their own proper review identity/permissions.
 
+## Data-file size
+
+Core 1.3.1 accepts each model or provenance data file up to and including
+10 MiB (10,485,760 bytes). The same byte limit applies to working-tree reads,
+committed Git snapshots and serialized admission/maintenance writes. Larger
+files fail before parsing or writing. Existing worlds adopt this limit through
+their normal core update; installing a plugin alone does not update that policy.
+
 ## Compiled knowledge packages
 
 Build a disposable, offline read view from a locally available admitted Git commit:

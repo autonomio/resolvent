@@ -3,7 +3,7 @@ name: resolvent
 description: Research and refine questions, distill selected discussion, read your Resolvent world model, or explicitly add findings and questions through your authorized GitHub connection.
 metadata:
   author: Autonomio
-  version: "1.4.0"
+  version: "1.4.1"
 ---
 
 # Resolvent
