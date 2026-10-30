@@ -5,10 +5,12 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import yaml
 
 from scripts.change_signals import workset_id
+from scripts import signal_maintenance
 from scripts.model import Invalid
 from scripts.signal_contract import signal_id
 from scripts.signal_maintenance import model_signal, publish, push_before
@@ -118,6 +120,28 @@ class PublisherTests(unittest.TestCase):
         self.api.previous[0]['state']='CLOSED'
         self.assertEqual(self.publish(api=self.api,now=NOW)['status'],'duplicate_pr')
         self.assertEqual(sum(args[:3]==('api','--method','POST') for args,_ in self.api.calls),1)
+
+    def test_native_url_dispatch_finishes_new_and_retained_worksets(self):
+        dispatches=[]
+        def native_dispatch(*args,payload=None):
+            if args[:2]!=('workflow','run'):
+                return self.api(*args,payload=payload)
+            dispatches.append(args)
+            with patch('subprocess.run',return_value=subprocess.CompletedProcess(
+                    ['gh',*args],0,stdout=b'https://github.com/example/world/actions/runs/123\n',stderr=b'')) as run:
+                result=signal_maintenance.github(*args,payload=payload)
+                run.assert_called_once()
+                return result
+        first=self.publish(api=native_dispatch,now=NOW)
+        self.assertEqual(first['status'],'pr_created')
+        original=self.git('ls-remote','origin','refs/heads/'+self.branch())
+        self.clean_retry()
+        self.assertEqual(self.publish(api=native_dispatch,now=NOW)['status'],'duplicate_pr')
+        self.assertEqual(self.git('ls-remote','origin','refs/heads/'+self.branch()),original)
+        self.assertEqual(self.git('rev-parse','HEAD'),self.revision)
+        self.assertEqual(sum(args[:3]==('api','--method','POST') for args,_ in self.api.calls),1)
+        self.assertEqual(dispatches,[('workflow','run','validate.yml','--repo','example/world',
+                                     '--ref',self.branch())]*2)
 
     def test_existing_weekly_workset_and_stale_head_defer_without_writes(self):
         self.api.pending=[{'headRefName':'resolvent/maintenance/M-'+'1'*32,'url':'synthetic'}]
