@@ -65,7 +65,7 @@ jobs:
           else
             git -C "$WORKFLOW_CHECKOUT" checkout --orphan workflow-release
           fi
-          rsync -a --delete --exclude=.git "$RELEASE_ROOT/workflow/" "$WORKFLOW_CHECKOUT/"
+          rsync -a --checksum --delete --exclude=.git "$RELEASE_ROOT/workflow/" "$WORKFLOW_CHECKOUT/"
           git -C "$WORKFLOW_CHECKOUT" config user.name 'github-actions[bot]'
           git -C "$WORKFLOW_CHECKOUT" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git -C "$WORKFLOW_CHECKOUT" add --all
@@ -86,7 +86,7 @@ jobs:
           else
             git -C "$RELEASE_CHECKOUT" checkout --orphan plugin-release
           fi
-          rsync -a --delete --exclude=.git "$RELEASE_ROOT/plugin/" "$RELEASE_CHECKOUT/"
+          rsync -a --checksum --delete --exclude=.git "$RELEASE_ROOT/plugin/" "$RELEASE_CHECKOUT/"
           git -C "$RELEASE_CHECKOUT" config user.name 'github-actions[bot]'
           git -C "$RELEASE_CHECKOUT" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git -C "$RELEASE_CHECKOUT" add --all
