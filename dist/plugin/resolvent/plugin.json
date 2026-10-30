@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "resolvent",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Research and refine questions, read your Resolvent world model, or explicitly add selected findings and discussion through your authorized GitHub connection.",
   "author": {
     "name": "Autonomio",
@@ -35,7 +35,7 @@
         "termsOfServiceURL": "https://resolvent.autonom.io/terms"
       },
       "publication": {
-        "release_notes": "Adds a public, stateless MCP verifier for reviewed workflow delivery and protocol compatibility, with support, privacy and MIT terms pages. Repository operations continue through the user’s authorized GitHub connection or local session. No world-model schema or authority change.",
+        "release_notes": "Raises the supported per-data-file limit from 2 MiB to 10 MiB on updated repository core and aligns bundled contribution guidance. Existing world schemas, permissions and review requirements are unchanged.",
         "countries": []
       },
       "review": {
