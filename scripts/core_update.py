@@ -167,6 +167,8 @@ def api(*args,payload=None,token_env=None):
         environment={**os.environ,'GH_TOKEN':token}
     response=subprocess.run(['gh',*args],input=None if payload is None else json_bytes(payload),
                             capture_output=True,check=True,env=environment)
+    if args[:2]==('workflow','run'):
+        return None  # Native dispatch output may be empty or a run URL, not JSON.
     return decode(response.stdout) if response.stdout.strip() else None
 
 
