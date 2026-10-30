@@ -110,6 +110,105 @@ The initial public channel still needs an authorized upstream publication. Built
 published, proposed and merged core versions are different states; an open update
 PR does not mean the organization has installed it.
 
+## Read-only readiness inspection (contract 1.0)
+
+The supported status-only alternative is the inspection recipe below. It works
+from an external trusted reader, including before a project has adopted an updater.
+There is currently no status-only `core_update.py` invocation: omitting
+`--auto-merge` still permits branches, PRs and validation dispatches. Do not probe
+readiness by calling `publish()`, `continue_update()`, preparing a disposable PR,
+or running scripts from the inspected project or candidate release.
+
+Select an explicit `OWNER/REPOSITORY` and full installed commit. Record observation
+time, the repository's main SHA, each inspected PR's base/head, and the selected
+published channel/source/lock digest. Read local Git objects without checkout,
+fetching into the destination, or changing its refs, index, configuration or files:
+
+```sh
+WORLD_ROOT=/path/to/selected/project
+WORLD_REPOSITORY=OWNER/REPOSITORY
+WORLD_COMMIT=$(GIT_NO_LAZY_FETCH=1 GIT_ALLOW_PROTOCOL='' git --no-replace-objects -C "$WORLD_ROOT" rev-parse --verify 'HEAD^{commit}')
+GIT_NO_LAZY_FETCH=1 GIT_ALLOW_PROTOCOL='' git --no-replace-objects -C "$WORLD_ROOT" ls-tree "$WORLD_COMMIT" -- resolvent-core.lock.json
+GIT_NO_LAZY_FETCH=1 GIT_ALLOW_PROTOCOL='' git --no-replace-objects -C "$WORLD_ROOT" show "$WORLD_COMMIT:resolvent-core.lock.json"
+gh api --method GET "repos/$WORLD_REPOSITORY"
+gh api --method GET "repos/$WORLD_REPOSITORY/git/ref/heads/main"
+```
+
+An absent lock makes the `show` command fail; record that observation and continue
+with useful remote facts. The selected commit excludes uncommitted edits; identify
+that scope explicitly. Disable lazy fetching and replacement objects in an automated
+reader, as the existing trusted Git reader does. Use disposable storage for any
+upstream fetch, reconstructed Git tree or copy assessment. Never expose credentials
+to inspected code. Re-read main and PR heads after inspection; moved identities
+make dependent findings stale rather than authorizing an update.
+
+Report these facts separately; a successful inspection is not a ready installation:
+
+| Fact | Supported interpretation |
+| --- | --- |
+| Installed baseline | A missing/malformed lock leaves the installed version unknown. Validate a regular lock against its matching fixed-origin published source, not just its declared version. Compare installed core blobs/modes with that baseline and report local differences. Do not use upstream whole-tree inventory equality as a downstream readiness test. |
+| Published release | Read only `autonomio/resolvent`'s `core-release:core.json`, pin its source commit and verify the source lock digest, inventory, modes, sizes and object/hash identities using the existing release rules. Main, plugin/compiler versions and GitHub release tags are not the core channel. An unavailable channel is not evidence that the world is current. |
+| Updater capability | Verify the installed updater scripts and workflow against a recognized published baseline and its adopted policy. Lock format `1.0` alone does not distinguish the older prepare-only updater from guarded completion. Missing, modified, prepare-only and unrecognized/future implementations remain distinct; a flag or filename is not capability proof. |
+| Enrollment | Report the effective opt-in, workflow availability, configured automation-secret name and automated-review setting independently. Being current does not establish enrollment, and enrollment does not establish a particular release can be copied. |
+| Copy feasibility | For the selected release, compare affected core files to the installed baseline, detect new-path collisions and inspect preserved workflow safety. Unaffected local customizations may survive. `plan()` returning `current` only establishes lock equality; it skips drift/enrollment checks. Any use of trusted copy-planning helpers belongs in disposable Git storage, never as a destination mutation probe. |
+| Data compatibility | Until suitable unprivileged candidate validation has run on this world's actual proposed state, report not checked. Neither copy feasibility nor green upstream tests proves compatibility. Attribute a known compiler failure only when that step actually failed; another CI failure is not proof of incompatible data. |
+| Pending update | Identify its own release target independently of the latest channel; older pending PRs deliberately finish first. Verify the full expected core-copy tree and unchanged data/configuration/unmanaged blobs, not its branch name, prose or lock alone. Report closed-unmerged, merged, multiple/conflicting PRs and orphaned/unrecognized update branches separately. |
+| Completion conditions | Inspect exact-head checks/statuses, reviews/threads, current base, conflicts and ordinary merge eligibility under the installed updater's gates. Report independently observed blockers and unassessed conditions separately; the inspector never approves, refreshes, dispatches or merges. |
+
+Contract 1.0's recognized guarded-completion reference is published core 1.3.2,
+source `f87165009edb8d3540091ae77f2e463fa3b4dbed`. Verify the installed
+`scripts/core_update.py`, `core_merge.py`, `core_release.py`, `core_review.py`,
+`.github/workflows/core-update.yml` and `validate.yml` against that source's
+published lock before attributing its capabilities. Other recognized baselines
+need the same byte verification and their own policy interpretation; an older or
+future implementation is not granted this reference's capabilities by its version.
+
+### Selected-repository GitHub reads
+
+The following are GET-only observation sources, relative to `repos/OWNER/REPO`.
+They are optional according to the observer's existing access; do not acquire
+administrative permissions merely to obtain a partial report. Follow all returned
+pagination or mark the bounded result incomplete. Variables use at most 30 entries
+per page; use each endpoint's documented bounds for other lists.
+
+| Observation | Read source and meaning |
+| --- | --- |
+| Repository/main identity | Repository metadata and `git/ref/heads/main`: default branch, template/upstream exclusions, ordinary merge methods and current SHA. The automatic updater expects downstream non-template repositories with main. |
+| Opt-in | `actions/variables` plus `actions/organization-variables`, filtered to `RESOLVENT_CORE_UPDATES`: resolve the repository override before the inherited value, and compare the effective value to `true`. Retain no unrelated variable values. Without a confirmed repository override, unknown inherited access prevents asserting the effective value or absence. See [variable reads](https://docs.github.com/en/rest/actions/variables#list-repository-organization-variables). |
+| Automation secret metadata | `actions/secrets` and `actions/organization-secrets`, filtered to `RESOLVENT_AUTOMATION_TOKEN`: shared secret names/metadata only. Resolve repository precedence, and assert absence only with complete authorized observations of both applicable scopes. A masked 404 or 403 means unknown, not missing. Metadata cannot establish the stored credential's identity, expiry, permissions or usability. See [secret metadata reads](https://docs.github.com/en/rest/actions/secrets#list-repository-organization-secrets). |
+| Actions/workflows | `actions/permissions`, `actions/workflows/core-update.yml` and `actions/workflows/validate.yml`: enabled/active state and applicable action restrictions. Inspect their pinned installed definitions for adopted guards, events and identities; customized/unknown definitions cannot inherit capability merely from the workflow names. |
+| Copy-review identity | `actions/permissions/workflow`: observe `can_approve_pull_request_reviews` when accessible, preserving read-only default permissions. This concerns ephemeral `github.token`, not the stored automation credential. Unknown access remains unknown. See [workflow permissions](https://docs.github.com/en/rest/actions/permissions#get-default-workflow-permissions-for-a-repository). |
+| PRs and branches | Paginated `pulls?state=all` and matching Git branch refs: select `resolvent/core/` candidates, then inspect only those PRs. Read `pulls/N`, exact base/head refs and paginated GraphQL reviews/review threads; incomplete history cannot establish approval or resolution. |
+| CI evidence | `commits/HEAD/check-runs?filter=latest`, `commits/HEAD/status` and the relevant run/job metadata: both named validation checks must be successful GitHub Actions checks on that exact head, and additional current failures matter. Preserve missing, pending, failed, unreadable and incomplete outcomes. Respect the installed gate's own limits; collecting more pages does not change its behavior. |
+| Repository protections | `branches/main/protection`, `rules/branches/main`, PR review/mergeability metadata and merge-method settings: rules may be inherited from the organization. Unreadable protection or an empty repository-only ruleset does not prove unrestricted merging. Retain human/CODEOWNER and merge-queue requirements; indeterminate mergeability stays unknown. See [effective branch rules](https://docs.github.com/en/rest/repos/rules#get-rules-for-a-branch). |
+
+Keep credential configuration, the observer's read capabilities and actual automation
+authority separate. The required automation permissions remain those in
+[one-time setup](#one-time-setup); a successful repository read or a configured
+secret does not verify them. Read-only inspection cannot test a stored token by
+using it. Do not retrieve secret values, scan unrelated repositories, return raw
+credential-bearing errors, or suggest disabling protections as remediation.
+
+Each finding must distinguish observed facts, confirmed absence, unknown,
+unsupported, unavailable, not checked and stale observations, with its identity and
+reason. Preserve useful partial results when one source is inaccessible. This
+recipe defines supported objects and interpretation, not a new CLI/JSON report or
+an exit code that certifies readiness. Future machine-readable output needs its own
+versioned field/reason-code and pagination contract; internal exception strings
+are not that interface. All later updater writes must re-establish their gates.
+
+For a legacy, prepare-only or unverified installation, the supported next step is
+a separately reviewed governance PR establishing the upstream baseline, reconciling
+local core customizations and adopting the current updater, matching upstream lock
+and approved copy-review policy. Preserve model data, configuration and unmanaged
+files. Never manufacture an upstream lock from a customized tree or force-sync it.
+The chat plugin does not enroll a repository. The downstream application continues
+to own provisioning, credentials, organization layout, scheduling and aggregation.
+
+Compatibility: this inspection contract adds no runtime behavior, permissions,
+canonical fields, schema or plugin/MCP capability. No plugin package or live-workflow
+release is needed; only the independently versioned core documentation changes.
+
 ## Upstream release preparation
 
 Only the upstream project regenerates its lock. Stage the intended generic changes,
