@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 import yaml
 
-from scripts import core_release, core_update
+from scripts import core_release, core_update, signal_maintenance
 from scripts.build_knowledge import json_bytes
 from scripts.model import DATA_ROOTS, Invalid, validate_state, load_state
 from test_model import ROOT, write_state
@@ -44,32 +44,38 @@ class Provider:
 class AdapterTests(unittest.TestCase):
     def test_workflow_dispatch_accepts_empty_and_url_output_once(self):
         args=('workflow','run','validate.yml','--repo','example/world','--ref','resolvent/core/1.1.0')
-        for output in (b'',b'https://github.com/example/world/actions/runs/123\n'):
-            with self.subTest(output=output),patch.object(core_update.subprocess,'run',return_value=
-                    subprocess.CompletedProcess(['gh',*args],0,stdout=output,stderr=b'')) as run:
-                self.assertIsNone(core_update.api(*args))
-                run.assert_called_once_with(['gh',*args],input=None,capture_output=True,check=True,env=None)
+        for adapter in (core_update.api,signal_maintenance.github):
+            for output in (b'',b' \n',b'https://github.com/example/world/actions/runs/123\n'):
+                with self.subTest(adapter=adapter,output=output),patch('subprocess.run',return_value=
+                        subprocess.CompletedProcess(['gh',*args],0,stdout=output,stderr=b'')) as run:
+                    self.assertIsNone(adapter(*args))
+                    run.assert_called_once()
+                    self.assertEqual(run.call_args.args,(['gh',*args],))
+                    self.assertTrue(run.call_args.kwargs['check'])
 
     def test_json_commands_still_require_valid_json(self):
-        for output in (b'{"id":123}',b'https://github.com/example/world/pull/123\n'):
-            with self.subTest(output=output),patch.object(core_update.subprocess,'run',return_value=
-                    subprocess.CompletedProcess(['gh','api'],0,stdout=output,stderr=b'')) as run:
-                if output.startswith(b'{'):
-                    self.assertEqual(core_update.api('api','repos/example/world'),{'id':123})
-                else:
-                    with self.assertRaises(Invalid):
-                        core_update.api('api','repos/example/world')
-                run.assert_called_once()
+        for adapter in (core_update.api,signal_maintenance.github):
+            for output in (b'{"id":123}',b'[123]',b'{"id":',b'https://github.com/example/world/pull/123\n'):
+                with self.subTest(adapter=adapter,output=output),patch('subprocess.run',return_value=
+                        subprocess.CompletedProcess(['gh','api'],0,stdout=output,stderr=b'')) as run:
+                    if output in (b'{"id":123}',b'[123]'):
+                        self.assertEqual(adapter('api','repos/example/world'),json.loads(output))
+                    else:
+                        with self.assertRaises((Invalid,json.JSONDecodeError)):
+                            adapter('api','repos/example/world')
+                    run.assert_called_once()
 
     def test_failed_or_uncertain_dispatch_stops_without_retry(self):
-        for error in (subprocess.CalledProcessError(1,['gh','workflow','run'],
-                      output=b'https://github.com/example/world/actions/runs/123\n'),
-                      OSError('Synthetic uncertain command outcome')):
-            with self.subTest(error=error),patch.object(core_update.subprocess,'run',side_effect=error) as run:
-                with self.assertRaises(type(error)) as raised:
-                    core_update.api('workflow','run','validate.yml')
-                self.assertIs(raised.exception,error)
-                run.assert_called_once()
+        for adapter in (core_update.api,signal_maintenance.github):
+            for error in (subprocess.CalledProcessError(1,['gh','workflow','run'],output=b''),
+                          subprocess.CalledProcessError(1,['gh','workflow','run'],
+                          output=b'https://github.com/example/world/actions/runs/123\n'),
+                          OSError('Synthetic uncertain command outcome')):
+                with self.subTest(adapter=adapter,error=error),patch('subprocess.run',side_effect=error) as run:
+                    with self.assertRaises(type(error)) as raised:
+                        adapter('workflow','run','validate.yml')
+                    self.assertIs(raised.exception,error)
+                    run.assert_called_once()
 
 
 class CoreTests(unittest.TestCase):
@@ -238,7 +244,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(result['status'],'published')
         self.assertEqual(result['source_commit'],source)
 
-    def test_failed_pr_creation_reuses_branch_and_dispatch_retry_is_idempotent(self):
+    def test_failed_pr_creation_and_dispatch_retries_reuse_branch_and_pr(self):
         provider=Provider();provider.fail='create'
         with patch.object(core_update,'git',side_effect=self.local_fetch):
             with self.assertRaises(subprocess.CalledProcessError):
@@ -254,7 +260,7 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(any('merge' in args for args,_ in provider.calls))
         self.assertFalse([p for args,p in provider.calls if p and p.get('draft')])
 
-    def test_successful_native_url_dispatch_finishes_after_one_pr_creation(self):
+    def test_native_url_dispatch_preserves_created_and_existing_pr_results(self):
         provider=Provider();dispatches=[]
         def native_dispatch(*args,payload=None):
             if args[:2]!=('workflow','run'):
@@ -267,11 +273,13 @@ class CoreTests(unittest.TestCase):
                 return result
         with patch.object(core_update,'git',side_effect=self.local_fetch):
             result=core_update.publish(self.world,'example/world',provider=native_dispatch)
+            resumed=core_update.publish(self.world,'example/world',provider=native_dispatch)
         self.assertEqual(result,{'status':'pr_created','pull_request':'https://github.com/example/world/pull/1',
                                  'core_version':'1.1.0'})
+        self.assertEqual(resumed,{'status':'existing_pr','pull_request':result['pull_request']})
         self.assertEqual(len([args for args,_ in provider.calls if args[:3]==('api','--method','POST')]),1)
         self.assertEqual(dispatches,[('workflow','run','validate.yml','--repo','example/world',
-                                     '--ref','resolvent/core/1.1.0')])
+                                     '--ref','resolvent/core/1.1.0')]*2)
         self.assertEqual(core_release.git(self.world,'rev-parse','HEAD').decode().strip(),self.base)
         self.assertFalse(self.marker.exists())
 

@@ -1,5 +1,5 @@
 {
-  "core_version": "1.3.4",
+  "core_version": "1.3.5",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -440,10 +440,10 @@
       "sha256": "7893e5e7b5564db6d5fd73f9ea7ec7dda0e49eb269c4e8c959bc64d53933f4e8"
     },
     "docs/CORE_UPDATES.md": {
-      "bytes": 20635,
-      "git_blob": "ba58017cd2cada13f6bc787165f61322c38ee492",
+      "bytes": 20773,
+      "git_blob": "598310a983080db6ae3b53ac1dcb5393434dea22",
       "mode": "100644",
-      "sha256": "d2af12bc77401ec4989a52b4b06c7d816b549568a59247799fb5710335fcf279"
+      "sha256": "6e5d4c65b508e903e16923b2ef76135e657d076f224092766d3da2541bab6bdc"
     },
     "docs/EXTRACTION.md": {
       "bytes": 2436,
@@ -782,10 +782,10 @@
       "sha256": "8b498eea59b41fa79112f812382a656017c80b0d4028be51fdfdbaa023374d34"
     },
     "scripts/signal_maintenance.py": {
-      "bytes": 9404,
-      "git_blob": "89f695ac0b3c7f6c7b655b34a0bb4a3ff92d65f6",
+      "bytes": 9524,
+      "git_blob": "3077195c6caeaf54fb00c3cf7b3d100dc0dfa902",
       "mode": "100644",
-      "sha256": "893d9e8dd8608c863b7d4cfc197d620825e45e0c660fd741495810b946fdec04"
+      "sha256": "bf24a4c5c579bef62c17d21e85182f2d55745889a20cb39558c7fa8c3cf39dae"
     },
     "scripts/source_lineage.py": {
       "bytes": 7609,
@@ -1082,10 +1082,10 @@
       "sha256": "8f791718c2e0bd75eec557605fd3d7ac83f3f3a505bacec1c736a07e21a08414"
     },
     "tests/test_core_update.py": {
-      "bytes": 24422,
-      "git_blob": "05fd20d72fad3e0aea61551d9be174c1094cfdbf",
+      "bytes": 25114,
+      "git_blob": "04008d43024c7798954810b550e83277424384b3",
       "mode": "100644",
-      "sha256": "38d87e720341fff8167c53d8c9cb1709f4eb3fdcb980ef42cd55ae685fafb88f"
+      "sha256": "16dd7f6295b59ab9eb0957934e6998b6f9739d2294c4cef26a76091e60eae7a0"
     },
     "tests/test_file_limits.py": {
       "bytes": 3187,
@@ -1142,10 +1142,10 @@
       "sha256": "c9c06f723ba67f1b3fb9f5f957f4f36e2fb85fe94723eb42a95a2e4bb73b5ea6"
     },
     "tests/test_signal_maintenance.py": {
-      "bytes": 10245,
-      "git_blob": "592abdcf0f389923451ac347b8d8c84f0c4556ac",
+      "bytes": 11670,
+      "git_blob": "4cc5e3184b6e22f4690836a94541256bc5d08f30",
       "mode": "100644",
-      "sha256": "b106c4314879eb70f89043a5ca8ac9a2687a5f7431e08a962deac96542cb6df1"
+      "sha256": "87f6c99e9d389791e7348dbe9e06d67e00dcf88a6e2ade3785bd99647207723a"
     },
     "tests/test_source_lineage.py": {
       "bytes": 14027,

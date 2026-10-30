@@ -28,6 +28,8 @@ def git(root, *args, input=None):
 def github(*args, payload=None):
     result = subprocess.run(['gh',*args],input=None if payload is None else json_bytes(payload),
                             capture_output=True,check=True)
+    if args[:2]==('workflow','run'):
+        return None  # Native dispatch output may be empty or a run URL, not JSON.
     return json.loads(result.stdout) if result.stdout.strip() else None
 
 

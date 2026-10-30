@@ -80,6 +80,8 @@ successful exit acknowledges dispatch; it does not establish completed validatio
 Command failures and malformed JSON responses still stop the updater. Before
 retrying an uncertain outcome, inspect the actual PR, head and workflow runs;
 an error does not establish that the preceding mutation was rolled back.
+PR reuse does not guarantee dispatch idempotency: an explicit prepare-only retry
+still requests validation again for an existing open PR.
 
 The proposed validation workflow runs the candidate compiler against the actual
 populated world in the tests job, with read-only permissions and no persisted Git
