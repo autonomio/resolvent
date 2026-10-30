@@ -1,5 +1,5 @@
 {
-  "core_version": "1.3.1",
+  "core_version": "1.3.2",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -74,10 +74,10 @@
       "sha256": "f29118cfc9907aa1d4b8c553c80a587fe8ab78d09bebfb9e1214c01a36cbc08f"
     },
     ".github/workflows/plugin-release.yml": {
-      "bytes": 6443,
-      "git_blob": "b33f712c9862d708095362cebaae763882232fed",
+      "bytes": 6465,
+      "git_blob": "99fb1e0f22f324acf617f692fb3c6255daa8ded4",
       "mode": "100644",
-      "sha256": "e5fa00e1b2e757311eb13ddb8babf704ea288941e2222673dfee9a04018d474d"
+      "sha256": "8f7ca37ddf2ff53999d6cde5c994dcb0140fbb1174b2d7313d8f43452135f60a"
     },
     ".github/workflows/signal-maintenance.yml": {
       "bytes": 2021,
@@ -1134,6 +1134,12 @@
       "git_blob": "834d358b3c4b5009e601bf33fc07271ad76b0eb0",
       "mode": "100644",
       "sha256": "9766c43ea79492c00e794525a7e678384a52426dd360cdb036a8b8160d9670bd"
+    },
+    "tests/test_release_copy.py": {
+      "bytes": 2448,
+      "git_blob": "afbb50c96a1ff66337ac88e823c47360ad78a748",
+      "mode": "100644",
+      "sha256": "c9c06f723ba67f1b3fb9f5f957f4f36e2fb85fe94723eb42a95a2e4bb73b5ea6"
     },
     "tests/test_signal_maintenance.py": {
       "bytes": 10245,
