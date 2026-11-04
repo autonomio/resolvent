@@ -166,12 +166,13 @@ def report(run, claims):
         elif not isinstance(basis, list) or any(not isinstance(e, str) or e not in evidence for e in basis):
             notes.append('The recommendation cites evidence unavailable in this contribution; it remains unassessed.')
             recommended = None
+        elif not basis:
+            notes.append('The recommendation cites no evidence; it remains unassessed.')
+            recommended = None
         elif audit != 'complete':
             # Fail closed: duplicate rows anywhere, even unmapped ones, or an incomplete audit leave no verdict to rely on.
             notes.append('Only a complete producer audit without duplicate rows yields an assessed recommendation.')
             recommended = None
-        elif not basis:
-            notes.append('The recommendation cites no evidence.')
         if audit != 'complete':
             notes.append(AUDIT_NOTES[audit])
         verdict = None

@@ -260,9 +260,9 @@ recommendation and evidence, and the review horizon. A proposed prior is a
 destination claim ID, never a mapped candidate ID. It is compared with the read
 revision only when it is an active claim with the auditor's recorded grade, the same
 class and temporal scope, and a match reason; sameness remains the auditor's
-proposal. Missing, legacy or malformed reviews, unavailable evidence, duplicate raw
-audit rows (even with `audit_complete=true`), incomplete audits and failed prior
-checks stay explicit limitations, never comparisons. A review horizon (`scheduled`,
+proposal. Missing, legacy or malformed reviews, missing or unavailable evidence,
+duplicate raw audit rows (even with `audit_complete=true`), incomplete audits and
+failed prior checks stay explicit limitations, never comparisons. A review horizon (`scheduled`,
 `event_driven`, `historical` or `unknown`) prompts reassessment only. A passed date
 is not falsification, uncertainty decay, retirement or valid time; automatic expiry
 actions are outside this profile.

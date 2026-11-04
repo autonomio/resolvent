@@ -192,12 +192,13 @@ class UncertaintyReviewTests(unittest.TestCase):
         self.assertIn(duplicate, found['limitations'])
         self.assertIn(AUDIT_NOTES['ambiguous'], found['limitations'])
         # A review marked assessed fails closed on duplicate rows (even ones the producer map cannot resolve), an
-        # incomplete audit, unavailable evidence or a blank reason; its otherwise comparable prior is never compared.
+        # incomplete audit, unavailable or no evidence, or a blank reason; its otherwise comparable prior is never compared.
         first = existing()
         base = admitted(first)
         prior = {'prior_claim_id': claim_id(first), 'prior_class': 'moderate', 'prior_match_reason': 'Same synthetic proposition.'}
         cases = (('6', {}, 'duplicate', AUDIT_NOTES['ambiguous']), ('7', {}, 'unmapped duplicate', AUDIT_NOTES['ambiguous']),
                  ('8', {}, 'incomplete', AUDIT_NOTES['partial']), ('9', {'evidence_ids': ['e9']}, 'unavailable', 'unavailable'),
+                 ('c', {'evidence_ids': []}, 'no evidence', 'cites no evidence'),
                  ('b', {'reason': ' '}, 'blank reason', 'No assessed recommendation'))
         for token, changes, case, note in cases:
             p = handoff(token, **prior, **changes)
@@ -214,10 +215,6 @@ class UncertaintyReviewTests(unittest.TestCase):
                 self.assertEqual((found['prior']['destination']['status'], found['prior']['uncertainty_change']),
                                  ('comparable', 'not_comparable'))
                 self.assertTrue(any(note in limitation for limitation in found['limitations']))
-        p = handoff('c', evidence_ids=[])
-        found = self.supplied(admit({}, p), p)['uncertainty_review']
-        self.assertEqual((found['status'], found['producer_audit']), ('assessed', 'complete'))
-        self.assertIn('The recommendation cites no evidence.', found['limitations'])
 
     def test_legacy_malformed_and_unreviewed_inputs_read_explicitly(self):
         p = handoff()
