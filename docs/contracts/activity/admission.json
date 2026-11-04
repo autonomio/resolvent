@@ -1,7 +1,7 @@
 {
-  "version": "1.3",
+  "version": "1.4",
   "activity_type": "admission",
-  "authority": "PR-side curator, independently reviewed",
+  "authority": "PR-side curator, independently reviewed; mechanical for verified contributions where the world opts in",
   "hard_rules": [
     "read_governance_from_base_branch",
     "every_candidate_requires_disposition",
@@ -34,5 +34,31 @@
     "materialize_on_pr_branch",
     "run_compiler",
     "request_independent_review"
-  ]
+  ],
+  "verified_contributions": {
+    "opt_in": "resolvent.yaml verified_contributions: true; off by default; turning it on is a governance change",
+    "receipt": "method_metadata.verification version 1",
+    "route": "source_material",
+    "writer": "scripts/world_control.py RUN-ID --verified [--apply]",
+    "review": "none; merge when CI passes",
+    "hard_rules": [
+      "off_unless_the_base_branch_resolvent_yaml_opts_in",
+      "every_candidate_has_a_supported_final_verdict_bound_to_its_exact_statement_sha256",
+      "withheld_claims_stay_out",
+      "receipt_counts_match_supported_and_withheld_claims",
+      "every_candidate_accepted_with_its_recorded_verdict_as_reason",
+      "exported_candidate_uncertainty_is_admitted_as_supplied",
+      "no_agent_decisions_or_model_operations",
+      "relationships_to_existing_claims_and_duplicates_deferred_to_maintenance",
+      "whole_data_delta_equals_the_mechanical_admission_on_the_actual_base",
+      "one_verified_contribution_per_delta",
+      "ci_repair_only_makes_ci_pass_and_never_changes_admitted_material"
+    ],
+    "procedure_steps": [
+      "dry_run_verified_admission",
+      "materialize_on_pr_branch",
+      "run_compiler",
+      "merge_when_ci_passes"
+    ]
+  }
 }

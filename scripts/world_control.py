@@ -2,7 +2,9 @@
 """Materialize a reviewed handoff on a PR branch, never merge it.
 
 Default is a dry run. --apply writes only after the complete proposed state passes
-validation. Decisions must be supplied by the admission agent, not invented here.
+validation. Decisions must be supplied by the admission agent, not invented here,
+except where resolvent.yaml opts in: there --verified admits a contribution with a
+producer verification receipt mechanically (scripts/verified_admission.py).
 """
 from __future__ import annotations
 
@@ -277,12 +279,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('submission', help='RUN-ID, M-ID or its input/maintenance file')
     parser.add_argument('--root', type=Path, default=Path('.'))
-    parser.add_argument('--decisions', type=Path, required=True, help='Admission-agent decisions JSON, see docs/AGENT_JOBS.md')
+    supplied = parser.add_mutually_exclusive_group(required=True)
+    supplied.add_argument('--decisions', type=Path, help='Admission-agent decisions JSON, see docs/AGENT_JOBS.md')
+    supplied.add_argument('--verified', action='store_true',
+                          help='Mechanical admission of a contribution with a producer verification receipt, where '
+                               'resolvent.yaml sets verified_contributions: true; takes no decisions')
     parser.add_argument('--apply', action='store_true', help='Apply validated changes; default is dry run')
     args = parser.parse_args()
     try:
-        decisions = read_data(args.decisions)
+        decisions = None if args.verified else read_data(args.decisions)
         root = args.root.resolve()
+        if args.verified:
+            from scripts.verified_admission import enabled
+            fail(enabled(root), 'Mechanical admission is off in this world: resolvent.yaml must set '
+                                'verified_contributions: true through a governance PR. Use admission-agent decisions.')
         lockdir = root / '.resolvent'
         lockdir.mkdir(exist_ok=True)
         lock = lockdir / 'admission.lock'
@@ -294,8 +304,12 @@ def main() -> int:
             os.close(fd)
             state = load_state(root)
             identity = Path(args.submission).stem
-            planner = plan_maintenance if identity.startswith('M-') else plan_admission
-            changes = planner(state, identity, decisions, root)
+            if args.verified:
+                from scripts.verified_admission import plan_verified
+                changes = plan_verified(state, identity, root)
+            else:
+                planner = plan_maintenance if identity.startswith('M-') else plan_admission
+                changes = planner(state, identity, decisions, root)
             if args.apply:
                 apply_changes(root, changes)
             print(json.dumps({'mode': 'applied' if args.apply else 'dry_run', 'files': sorted(changes), 'already_processed': not bool(changes)}, indent=2))

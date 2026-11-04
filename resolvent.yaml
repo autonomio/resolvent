@@ -3,3 +3,6 @@ project: Resolvent
 scope: Research contributed to this repository; refine through a governance PR when needed.
 # No owner/repository is hardcoded. Use the repository selected in the conversation.
 # Authors may contribute through PRs; only the repository's merge authority admits them.
+# true admits producer-verified contributions mechanically, with no admission agent or
+# independent review (docs/AGENT_JOBS.md). Change it only through a governance PR.
+verified_contributions: false

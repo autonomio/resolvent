@@ -1,7 +1,7 @@
 {
   "activity_type": "model_input_source",
   "kind": "input_shim",
-  "version": "1.0",
+  "version": "1.1",
   "profile": "autonomio_resolvent_template",
   "schema": "docs/schemas/submission.schema.json",
   "required_context_paths": [
@@ -11,7 +11,7 @@
   ],
   "enforcement": {
     "structural": "JSON schemas and scripts/compiler.py",
-    "semantic": "independent repository-agent review; not guaranteed by schema validation"
+    "semantic": "independent repository-agent review, except verified_admission below; not guaranteed by schema validation"
   },
   "input_method": "source_material",
   "output_contract": {
@@ -44,5 +44,13 @@
     "build_ingestion_handoff_package",
     "submit_handoff_as_pull_request"
   ],
-  "admission_authority": "Repository agents and independent PR review; no desktop canonical writes or operator confirmation field."
+  "admission_authority": "Repository agents and independent PR review; no desktop canonical writes or operator confirmation field.",
+  "verified_admission": {
+    "applies_when": "resolvent.yaml verified_contributions: true and method_metadata.verification version 1",
+    "writer": "scripts/world_control.py RUN-ID --verified [--apply]",
+    "admission_agent": "none",
+    "independent_review": "none; merge when CI passes",
+    "repair": "an agent may fix a failing check without touching the research",
+    "contract": "docs/contracts/activity/admission.json verified_contributions"
+  }
 }

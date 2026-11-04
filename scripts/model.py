@@ -473,3 +473,5 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
                 fail(record['id'] in new_assessments, 'Uncertainty changes require an explicit reassessment')
     from scripts.model_operations import check_merges
     check_merges(old, current)
+    from scripts.verified_admission import validate_verified_delta
+    validate_verified_delta(base, old, current, data_changes)
