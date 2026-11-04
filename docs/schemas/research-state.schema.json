@@ -33,7 +33,7 @@
         "kind": {"enum": ["canonical_question", "persisted_external_reference"]},
         "reference": {"type": "string"}, "reference_pointer": {"type": ["string", "null"]},
         "matched_submission_ids": {"$ref": "#/$defs/strings"},
-        "rule": {"const": "existing_context_neighbourhood_and_support_chains"}
+        "rule": {"const": "question_claims_and_support_chains"}
       }
     },
     "canonical": {
@@ -44,7 +44,16 @@
       }
     },
     "assessments": {"type": "object", "additionalProperties": {"type": "object"}},
-    "producer_material": {"type": "object", "additionalProperties": {"type": "object"}},
+    "producer_material": {"type": "object", "additionalProperties": {
+      "type": "object", "required": ["record", "record_sha256", "omissions"], "additionalProperties": false,
+      "properties": {
+        "record": {"type": "object"}, "record_sha256": {"$ref": "#/$defs/digest"},
+        "omissions": {"type": "array", "items": {
+          "type": "object", "required": ["pointer", "value_sha256", "reason"], "additionalProperties": false,
+          "properties": {"pointer": {"type": "string"}, "value_sha256": {"$ref": "#/$defs/digest"}, "reason": {"type": "string"}}
+        }}
+      }
+    }},
     "contributing_submission_ids": {"$ref": "#/$defs/strings"},
     "publications": {"type": "array", "items": {
       "type": "object", "required": ["submission_id", "basis", "paper_id", "doi", "url", "reference", "review_records", "stages", "limitations"], "additionalProperties": false,
@@ -77,10 +86,11 @@
       "properties": {"submission_id": {"type": "string"}, "basis": {"type": "string"}, "fields": {"type": "object"}}
     }},
     "coverage": {
-      "type": "object", "required": ["exhaustive", "omissions", "omitted_record_counts", "unknown_paper_coverage", "source_identity"], "additionalProperties": false,
+      "type": "object", "required": ["exhaustive", "omissions", "omitted_record_counts", "producer_material_input", "unknown_paper_coverage", "source_identity"], "additionalProperties": false,
       "properties": {
         "exhaustive": {"const": false}, "omissions": {"$ref": "#/$defs/strings"},
         "omitted_record_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "producer_material_input": {"enum": ["original_git_json", "compiled_json_values"]},
         "unknown_paper_coverage": {"type": "string"}, "source_identity": {"type": "string"}
       }
     }

@@ -87,6 +87,7 @@ class Knowledge:
             raise Invalid('Package does not record closed structural validation')
         self.build = {'source_revision': manifest['source_revision'], 'manifest_sha256': manifest_hash,
                        'input_tree_sha256': manifest['input_tree_sha256']}
+        self.input_hashes = dict(manifest['input_files'])
         self.state = state
         self.model_sha256 = model_digest(state)
         self.operations = operation_records(state)
@@ -492,6 +493,7 @@ def main() -> int:
     research.add_argument('reference')
     research.add_argument('--repository', required=True)
     research.add_argument('--reference-pointer', help='Persisted submission JSON pointer for an external question reference')
+    research.add_argument('--source-repo', type=Path, help='Local repository containing the pinned original producer JSON objects')
     research.add_argument('--complete', action='store_true', help='Explicit full portable object instead of bounded JSON text pages')
     research.add_argument('--offset', type=int, default=0)
     research.add_argument('--max-bytes', type=int, default=32768)

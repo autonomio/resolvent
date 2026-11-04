@@ -452,10 +452,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 35978,
-      "git_blob": "c082c2f7a75c6247f7136ba8b3cb8c2928999d1a",
+      "bytes": 37518,
+      "git_blob": "53693531385054ff24bcb889d8d6050c8c681aa0",
       "mode": "100644",
-      "sha256": "8beb2eba5e85988534c1e62f6ad4b7fc64dfb1e41360918fd87bb803b249f60f"
+      "sha256": "5224e0d6f20d831b4070bed3929b72109d35c31b7098b38dbb096f6bd19c1042"
     },
     "docs/Ontology.md": {
       "bytes": 14416,
@@ -632,10 +632,10 @@
       "sha256": "6b0bb0df9be90923bc275ec41b8302cccf043b6e2f98bee046671fce95e9fa0a"
     },
     "docs/schemas/research-state.schema.json": {
-      "bytes": 5354,
-      "git_blob": "73487e854992adbb3cf21e29c1d4bab8bdde5207",
+      "bytes": 5970,
+      "git_blob": "344556411d5bc7d0a0894be85a7870f9c8175d18",
       "mode": "100644",
-      "sha256": "08cf793e35a6e71f423706a1d353407966b67619cb78c8fc0641eff9df0ac018"
+      "sha256": "64eb109794131b1a6f5deaa82c4bb5f2dba2feff4a151610b8ef30ee53931389"
     },
     "docs/schemas/sources.schema.json": {
       "bytes": 2083,
@@ -770,10 +770,10 @@
       "sha256": "b521a67b205666d8c73482da4227d3eaeb51a2ba31ec656d5321e16c5c363dbf"
     },
     "scripts/query_knowledge.py": {
-      "bytes": 29006,
-      "git_blob": "2f8ebe7681a4f6fc00668de6a1296d778bdc1d06",
+      "bytes": 29196,
+      "git_blob": "c7764f012198f4fc5a90714fce0ad1d6c1c9d9f0",
       "mode": "100644",
-      "sha256": "cc7c8cd5d5a5c085849d75038a14a10d35fa12899ac5e122967167b6e1f6dacb"
+      "sha256": "e4ad89df004a0894789d671423a9b56f61fa527b0eaf539bb34329b71ed05744"
     },
     "scripts/reconcile_plugin_assets.py": {
       "bytes": 2445,
@@ -782,10 +782,10 @@
       "sha256": "4f4e8f17614f040e868666b2e1c0cf8235b239865944e52ace0f4bc9efa2ff9d"
     },
     "scripts/research_state.py": {
-      "bytes": 19127,
-      "git_blob": "bc920187eef8cedb44ec6fd347894a8be5d482a5",
+      "bytes": 22073,
+      "git_blob": "3dc9c2be70aac7def776002edfd406644739a4b1",
       "mode": "100644",
-      "sha256": "911b375e46bf0e49c49b40f22e49fdd408a521e57fc7a62f63dd17a033556eeb"
+      "sha256": "f051c501a35a661a8d4f4daef0a911efa348a935230ada426b76361f69dde6d3"
     },
     "scripts/signal_contract.py": {
       "bytes": 2591,
@@ -1154,10 +1154,10 @@
       "sha256": "c9c06f723ba67f1b3fb9f5f957f4f36e2fb85fe94723eb42a95a2e4bb73b5ea6"
     },
     "tests/test_research_state.py": {
-      "bytes": 14724,
-      "git_blob": "b2c588505cfa8e233f9b5eaa95827167689f635e",
+      "bytes": 17668,
+      "git_blob": "d814448ee84798dc924eff487a1692f17ebec8e0",
       "mode": "100644",
-      "sha256": "4ff9b3c1bf21e4584b5ad76a6369984e4447397aa45ab08ca68f5dca18664936"
+      "sha256": "81f10ae4071b74d00947b104b635ffa3c78f13438676603a35b7ed5642257f5a"
     },
     "tests/test_signal_maintenance.py": {
       "bytes": 11670,

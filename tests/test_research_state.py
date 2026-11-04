@@ -8,7 +8,7 @@ import unittest
 import jsonschema
 
 from scripts.build_knowledge import json_bytes
-from scripts.model import Invalid
+from scripts.model import Invalid, digest
 from scripts.research_state import research_artifact
 from scripts.world_control import canonical_id, plan_admission
 from test_model import ROOT, admitted, contribution, decisions, state_for
@@ -51,7 +51,13 @@ class ResearchStateTests(unittest.TestCase):
         self.assertEqual(result['question']['recorded_texts'][0]['text'], p['brief']['question'])
         for group, records in q.records.items():
             self.assertEqual(result['canonical'][group], records)
-        self.assertEqual(result['producer_material'], q.knowledge['provenance'])
+        run_view = result['producer_material'][f"input-artefacts/{p['id']}.json"]
+        self.assertEqual(run_view['record']['claims'], p['claims'])
+        self.assertEqual(run_view['record']['sources'], p['sources'])
+        self.assertTrue(run_view['omissions'])
+        self.assertNotIn('content', run_view['record']['result']['artifacts'][0])
+        self.assertEqual(run_view['record_sha256'], digest(p))
+        self.assertEqual(run_view['omissions'][0]['value_sha256'], digest(p['result']['artifacts'][0]['content']))
         self.assertEqual(result['contributing_submission_ids'], [p['id']])
         self.assertEqual(result['build'], q.build)
         self.assertEqual(result['repository'], 'example/world')
@@ -98,9 +104,9 @@ class ResearchStateTests(unittest.TestCase):
             state.update(plan_admission(state, p['id'], d, ROOT))
             result = self.export(self.query(state))
             self.assertEqual(result['canonical']['claims'], {})
-            run = result['producer_material'][f"input-artefacts/{p['id']}.json"]
+            run = result['producer_material'][f"input-artefacts/{p['id']}.json"]['record']
             self.assertEqual(run['claims'], p['claims'])
-            receipt = result['producer_material'][f"briefs/closed/BC-{'1'*32}.yaml"]
+            receipt = result['producer_material'][f"briefs/closed/BC-{'1'*32}.yaml"]['record']
             self.assertEqual(receipt['claim_dispositions'][0]['disposition'], 'rejected' if action == 'reject' else 'deferred')
             self.assertEqual(receipt['follow_up_gaps'], d['follow_up_gaps'])
 
@@ -139,7 +145,7 @@ class ResearchStateTests(unittest.TestCase):
             p = proposal(); p['result']['artifacts'][0]['content'] = content
             result = self.export(self.query(admitted(p)))
             self.assertEqual(result['review_coverage'][0]['status'], 'unknown')
-            self.assertEqual(result['producer_material'][f"input-artefacts/{p['id']}.json"], p)
+            self.assertEqual(result['producer_material'][f"input-artefacts/{p['id']}.json"]['record'], p)
 
     def test_unlinked_world_data_is_omitted_with_an_explicit_scope(self):
         state = admitted(proposal()); p = contribution(token='3'*32)
@@ -149,6 +155,17 @@ class ResearchStateTests(unittest.TestCase):
         self.assertNotIn(p['id'], result['contributing_submission_ids'])
         self.assertNotIn(canonical_id(p['id'], 'claims', 'c1'), result['canonical']['claims'])
         self.assertTrue(result['coverage']['omissions'])
+
+    def test_graph_neighbours_do_not_import_another_questions_claims(self):
+        from test_knowledge import linked_state
+        state = linked_state(); qid = ids(state, 'questions')[0]
+        cid = canonical_id('RUN-'+'1'*32, 'claims', 'c1')
+        state['questions/'+qid+'.yaml']['claim_ids'] = [cid]
+        q = self.query(state)
+        result = q.research_state(qid, repository='example/world', complete=True)
+        self.assertEqual(set(result['canonical']['claims']), {cid})
+        self.assertEqual(result['canonical']['graph'], {})
+        self.assertEqual(result['coverage']['omitted_record_counts']['claims'], 1)
 
     def test_unicode_pages_reassemble_exact_export_with_stable_digest(self):
         p = proposal(); p['sources'][0]['excerpt'] = 'Synthetic 🙂 \\ " quotation\n'*50
@@ -215,6 +232,31 @@ class ResearchStateTests(unittest.TestCase):
             'values': [research()['references']], 'artifacts': [{'index': 0, 'name': 'canary-research.json', 'style': 'default'}],
             'view': False, 'sha256': checksum}
         self.assertEqual(research_artifact(p)[1], expected)
+
+    def test_original_git_json_restores_order_dependent_checksums_with_verified_pins(self):
+        p = proposal(); payload = research(); payload['native'] = {'$canary_ref': '/claims'}
+        expected = research(); expected['native'] = p['claims']
+        p['result']['artifacts'][0]['content'] = json.dumps(payload)
+        expanded = json.dumps(expected, ensure_ascii=False)
+        checksum = hashlib.sha256(json.dumps({'artifacts': [expanded]}, ensure_ascii=False,
+            sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        p['method_metadata']['canary_encoding'] = {'format': 'canary.references', 'version': 1,
+            'values': [], 'artifacts': [{'index': 0, 'name': 'canary-research.json', 'style': 'default'}],
+            'view': False, 'sha256': checksum}
+        fixture = QueryFixture(admitted(p)); self.addCleanup(fixture.temp.cleanup)
+        self.assertEqual(self.export(fixture.query)['review_coverage'][0]['status'], 'unknown')
+        result = self.export(fixture.query, source_repo=fixture.root/'repo')
+        self.assertEqual(result['review_coverage'][0]['status'], 'preserved_producer_report')
+        self.assertEqual(result['coverage']['producer_material_input'], 'original_git_json')
+        path = f"input-artefacts/{p['id']}.json"
+        fixture.query.input_hashes[path] = '0'*64
+        with self.assertRaisesRegex(Invalid, 'input-file hash'):
+            self.export(fixture.query, source_repo=fixture.root/'repo')
+        from unittest.mock import patch
+        with patch('scripts.research_state.git', return_value=b'10485761\n') as read:
+            with self.assertRaisesRegex(Invalid, '10 MiB'):
+                self.export(fixture.query, source_repo=fixture.root/'repo')
+            self.assertEqual(read.call_count, 1)  # Refuse before reading the oversized blob.
 
     def test_cli_and_schema(self):
         fixture = QueryFixture(admitted(proposal())); self.addCleanup(fixture.temp.cleanup)

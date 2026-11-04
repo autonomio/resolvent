@@ -465,7 +465,7 @@ from its selected destination, not guessed from the package or an external page.
 
 ```sh
 python scripts/query_knowledge.py --package .resolvent/knowledge research-state Q-<id> --repository owner/world
-python scripts/query_knowledge.py --package .resolvent/knowledge research-state external-question-9 --repository owner/world --reference-pointer /method_metadata/external/question --complete > .resolvent/research-state.json
+python scripts/query_knowledge.py --package .resolvent/knowledge research-state external-question-9 --repository owner/world --reference-pointer /method_metadata/external/question --source-repo . --complete > .resolvent/research-state.json
 ```
 
 For an external question without a Q record, supply the JSON pointer to its
@@ -477,11 +477,21 @@ reference under `method_metadata.portal_context.question_ref` can select
 consulted. An absent reference fails instead of inventing a question binding.
 Each preserved brief's question text remains separately attributed.
 
-Selection reuses context neighbourhoods for the question and its seed claims,
-then retains evidence, source ancestry and premise support chains. It does not
-walk every graph neighbourhood or infer semantic relevance. The portable object
-keeps native canonical records and current assessment/dispute views separate from
-immutable producer submissions, closure dispositions and maintenance receipts.
+`--source-repo` (Python `source_repo=Path(...)`) optionally reads the original RUN
+JSON from the package's exact Git commit using the existing local object reader.
+It disables replacement objects and lazy fetching, verifies each original blob
+against the package's input-file hash and requires equal compiled JSON values.
+This preserves the original object-field order for producer checksums that cover
+embedded JSON strings. Compiled values alone normalize field order and can make
+those checksums unverifiable; without original objects that coverage stays unknown.
+No selected-revision code is executed and no source, URI or missing object is fetched.
+
+Selection reuses question context and the admitted claims named by matched runs,
+retaining evidence, source ancestry and premise support chains. Context supplies
+relationships within those question claims; other graph neighbours are omitted
+explicitly. It does not infer semantic relevance. The portable object keeps native
+canonical records and current assessment/dispute views separate from views of
+preserved producer submissions, closure dispositions and maintenance receipts.
 Rejected/deferred candidates, recorded gaps, contradictions, source passages,
 access limitations and original IDs remain visible in those records. No new
 contradiction is inferred. Scope omissions and unknown paper coverage are explicit;
@@ -495,6 +505,17 @@ provider, credentials or filesystem/URL reference resolution is required. Other,
 missing or malformed formats retain their raw submissions and report unknown
 coverage. Observations remain per submission; DOI, URL and hash equality never
 collapse histories or establish independent evidence.
+
+Each `producer_material` entry contains a `record` view, the normalized original
+`record_sha256` and explicit field `omissions`. For successfully decoded producer
+reports, duplicate display/encoding metadata and embedded artifact payloads are
+omitted from the view; their JSON pointers and normalized value digests identify
+the originals in the same pinned package. Native proposals, sources, dispositions,
+access limits and extracted review/findings records remain included. Unknown
+formats keep their original content. These omissions avoid copying entire producer
+UI bundles into question context. `--complete` assembles the portable view, not
+the omitted extension payloads. In producer `basis` strings, the pointer after a
+second `#` addresses the decoded embedded JSON document.
 
 The four stage fields distinguish recorded discovery/citation, inspected passages,
 reported acquisition and reported substantive review. A positive substantive

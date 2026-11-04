@@ -8,9 +8,10 @@ from __future__ import annotations
 import copy
 import json
 import math
+from pathlib import Path
 
-from scripts.build_knowledge import json_bytes, sha256
-from scripts.model import CANONICAL_ROOTS, Invalid, family, unique_pairs
+from scripts.build_knowledge import git, json_bytes, sha256
+from scripts.model import CANONICAL_ROOTS, MAX_FILE_BYTES, Invalid, digest, family, unique_pairs
 from scripts.model_context import text_page
 
 MAX_EXPANDED_BYTES = 32 * 1024 * 1024
@@ -151,7 +152,28 @@ def context_ids(knowledge, identity):
         offset = page['next_offset']
 
 
-def export_state(knowledge, reference, *, repository, reference_pointer=None):
+def portable_provenance(history, decoded_runs):
+    """Keep research records, with explicit digests for omitted extension payloads."""
+    result = {}
+    for path, original in history.items():
+        record, omissions = copy.deepcopy(original), []
+        rid = original.get('id') if family(path) == 'submission' else original.get('submission_id')
+        def omit(container, key, pointer):
+            value = container.pop(key)
+            omissions.append({'pointer': pointer, 'value_sha256': digest(value),
+                              'reason': 'Producer extension payload omitted; pinned original remains available.'})
+        if rid in decoded_runs:
+            metadata = record.get('method_metadata', {})
+            for key in ('canary_view', 'canary_encoding'):
+                if key in metadata:
+                    omit(metadata, key, '/method_metadata/' + key)
+            for i, artifact in enumerate(record.get('result', {}).get('artifacts', [])):
+                omit(artifact, 'content', '/result/artifacts/' + str(i) + '/content')
+        result[path] = {'record': record, 'record_sha256': digest(original), 'omissions': omissions}
+    return result
+
+
+def export_state(knowledge, reference, *, repository, reference_pointer=None, source_repo=None):
     if not isinstance(repository, str) or not repository.strip() or len(repository) > 2048:
         raise Invalid('Supply the selected repository identity (not inferred from package data)')
     if not isinstance(reference, str) or not reference:
@@ -187,9 +209,17 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None):
         if not direct_runs:
             raise Invalid('No preserved submission matches this exact external question reference')
         selection_kind = 'persisted_external_reference'
-    # One existing context neighbourhood per seed claim. Do not walk the whole graph.
-    for cid in sorted(selected.intersection(knowledge.records['claims'])):
-        selected.update(context_ids(knowledge, cid))
+    # Retain relationships within the question's claims, rather than importing
+    # other questions through graph neighbours. Premise support still closes below.
+    seed_claims = selected.intersection(knowledge.records['claims'])
+    selected.difference_update(identity for identity in list(selected)
+        if knowledge.by_id[identity][0] == 'graph' and not
+        {knowledge.by_id[identity][1]['from'], knowledge.by_id[identity][1]['to']} <= seed_claims)
+    for cid in sorted(seed_claims):
+        for identity in context_ids(knowledge, cid):
+            kind, record = knowledge.by_id[identity]
+            if kind == 'graph' and {record['from'], record['to']} <= seed_claims:
+                selected.add(identity)
     # Retain complete support/premise chains for the selected neighbourhood.
     pending = list(selected)
     while pending:
@@ -220,7 +250,23 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None):
         if parent is not None and runs[parent][0] not in history:
             pending_runs.append(parent)
     contributing = {item['id']: item for path, item in history.items() if family(path) == 'submission'}
-    papers, coverage, findings = [], [], []
+    if source_repo is not None:
+        from scripts.query_knowledge import read_json
+        for rid, run in list(contributing.items()):
+            path = runs[rid][0]
+            object_ref = knowledge.build['source_revision'] + ':' + path
+            size = git(Path(source_repo), 'cat-file', '-s', object_ref).strip()
+            if not size.isdigit() or int(size) > MAX_FILE_BYTES:
+                raise Invalid('Original producer JSON exceeds the 10 MiB contribution limit')
+            raw = git(Path(source_repo), 'show', object_ref)
+            if sha256(raw) != knowledge.input_hashes[path]:
+                raise Invalid('Original producer JSON differs from the pinned input-file hash')
+            original = read_json(raw)
+            if original != run:
+                raise Invalid('Original producer JSON differs from the compiled values')
+            contributing[rid] = original
+            history[path] = original
+    papers, coverage, findings, decoded_runs = [], [], [], set()
     question_texts = ([{'id': reference, 'text': knowledge.records['questions'][reference]['question'],
                        'basis': knowledge.knowledge['record_paths'][reference]}] if reference_pointer is None else
         [{'id': rid, 'text': runs[rid][1]['brief']['question'], 'basis': runs[rid][0] + '#/brief/question'}
@@ -283,6 +329,7 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None):
             coverage.append({'submission_id': rid, 'status': 'preserved_producer_report',
                              'artifact': anchor, 'unmatched_review_records': orphan})
             papers.extend(run_papers)
+            decoded_runs.add(rid)
             findings.append({'submission_id': rid, 'basis': anchor,
                              'fields': {key: artifact[key] for key in ('contradictions', 'gaps', 'caveats', 'residue', 'next_questions', 'scope_note') if key in artifact}})
         except (ValueError, Invalid, KeyError, IndexError, TypeError, RecursionError, OverflowError):
@@ -292,22 +339,23 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None):
         'repository': repository, 'build': dict(knowledge.build), 'model_sha256': knowledge.model_sha256,
         'question': {'reference': reference, 'recorded_texts': question_texts},
         'selection': {'kind': selection_kind, 'reference': reference, 'reference_pointer': reference_pointer,
-                      'matched_submission_ids': sorted(direct_runs), 'rule': 'existing_context_neighbourhood_and_support_chains'},
+                      'matched_submission_ids': sorted(direct_runs), 'rule': 'question_claims_and_support_chains'},
         'canonical': {kind: {i: knowledge.records[kind][i] for i in sorted(grouped[kind])} for kind in CANONICAL_ROOTS},
         'assessments': {cid: knowledge.view(cid, 0, 100, 0)['current_assessment'] for cid in sorted(grouped['claims'])},
-        'producer_material': history, 'contributing_submission_ids': sorted(contributing),
+        'producer_material': portable_provenance(history, decoded_runs), 'contributing_submission_ids': sorted(contributing),
         'publications': papers, 'review_coverage': coverage, 'producer_findings': findings,
-        'coverage': {'exhaustive': False, 'omissions': ['Unlinked questions, graph neighbourhoods beyond seed claims and material absent from the selected revision.',
+        'coverage': {'exhaustive': False, 'omissions': ['Graph neighbours outside the question claims, omitted producer extension fields and material absent from the selected revision.',
             'No semantic contradiction discovery or verification of producer research was performed.'],
             'omitted_record_counts': {kind: len(knowledge.records[kind]) - len(grouped[kind]) for kind in CANONICAL_ROOTS},
+            'producer_material_input': 'original_git_json' if source_repo is not None else 'compiled_json_values',
             'unknown_paper_coverage': 'Absence of a review record never means a paper was not reviewed.',
             'source_identity': 'Original source IDs, URIs, locators, access and hashes remain in canonical/producer records; hashes do not establish independence.'}})
 
 
-def research_state(knowledge, reference, *, repository, reference_pointer=None, complete=False, offset=0, max_bytes=32768):
+def research_state(knowledge, reference, *, repository, reference_pointer=None, source_repo=None, complete=False, offset=0, max_bytes=32768):
     if type(complete) is not bool:
         raise Invalid('complete must be boolean')
-    state = export_state(knowledge, reference, repository=repository, reference_pointer=reference_pointer)
+    state = export_state(knowledge, reference, repository=repository, reference_pointer=reference_pointer, source_repo=source_repo)
     if complete:
         if offset != 0:
             raise Invalid('Complete export cannot resume at an offset')
