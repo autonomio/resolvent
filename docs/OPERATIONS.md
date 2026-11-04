@@ -16,6 +16,15 @@ and branch deletion. Restrict new governance changes to human maintainer review.
 Owner-enrolled exact upstream core copies use the upstream approval and automated
 destination verification described in `docs/CORE_UPDATES.md`; they do not add a
 per-fork human review requirement or bypass repository protections.
+A world that opts in with `verified_contributions: true` in `resolvent.yaml`, through
+a governance PR, admits verified contributions mechanically, and they merge without
+review (see `docs/AGENT_JOBS.md`). To allow that, let the identity that merges them do
+so without an approving review, for example with a pull-request-only ruleset bypass.
+Keep the required checks and an up-to-date branch for every PR, and keep review
+required for everyone else. CI checks a receipt against the statements it covers; it
+does not authenticate the producer. Opt in only for a producer the world trusts, and
+let the bypass identity merge only that producer's verified contribution PRs.
+Without the opt-in, nothing changes.
 
 The bootstrap owner may initialize an empty repository with the template files.
 Subsequent research and maintenance changes use PRs. No sample research is merged.
@@ -603,3 +612,68 @@ requires fresh decisions. Compiler green status certifies structure, not judgmen
 Recent-change queries include provenance-only model operations. Existing recent,
 targeted and rotating maintenance can use these interfaces without new scheduling.
 No bulk migration, production-data rewrite or contribution protocol change is needed.
+
+### Producer uncertainty metadata and reviewed merges
+
+Core 1.4.0 / compiler 1.5.0 reads each candidate's preserved
+`method_metadata.claim_metadata` `uncertainty` (the writer's grade),
+`uncertainty_review` and `freshness` without any producer runtime. Admission
+decisions and closures are unchanged: each candidate keeps its exported grade.
+
+`query_knowledge.py assessments C-<id>` (`Knowledge.assessments`) adds to each
+supplied grade that carries this metadata:
+
+- `writer_uncertainty`: the original label and its ordinal grade.
+- `uncertainty_review`: `status`, `recommended_uncertainty`, canonical and original
+  evidence IDs, `producer_audit` (`complete`, `partial`, `ambiguous` or `absent`),
+  the raw row's `audit_verdict`, limitations and any `prior`. `assessed` needs a
+  reason, evidence in this contribution and a complete audit without duplicate rows;
+  anything else is `not_assessed` and never compared. A prior shows the
+  auditor-reported grade, a `destination` check against the package revision
+  (`comparable`, `missing`, `stale`, `scope_differs` or `no_match_reason`), the
+  recomputed `uncertainty_change` and the producer's own change.
+- `review_horizon`: policy, dates, triggers, rationale and the fixed interpretation
+  that a passed date changes nothing.
+
+Free text is previewed and long lists are shortened with a note; the pinned run keeps
+the originals. Contributions without this metadata report nothing extra.
+
+A merge is a current `equivalent` claim comparison. When it joins claims whose
+grades differ and any carries an `uncertainty_review`, admission refuses it. A
+maintenance record performs it and reassesses every claim of the merged group, so
+all of them must be in the workset:
+
+```json
+[{"id": "merge1", "kind": "comparison", "subject_ids": ["C-old", "C-new"], "basis_ids": ["E-old", "E-new"],
+  "outcome": "equivalent", "supersedes": null, "reason": "Same proposition, class and scope."},
+ {"id": "merge1-grade", "kind": "reassessment", "subject_ids": ["C-old", "C-new"],
+  "basis_ids": ["E-old", "E-new", "RUN-new"], "uncertainty": "high",
+  "predecessors": {"C-old": null, "C-new": null}, "reason": "Merged outcome on the cited evidence."}]
+```
+
+The writer captures `previous_uncertainty` for both claims: the old and incoming
+grades. `basis_ids` cite every run whose review covers a merged claim. No merged
+claim may end more confident than the most confident merged grade, and a merged
+claim whose uncertainty falls must cite independent inspected evidence of the merged
+claims. When one member cannot hold `low`, give it its own reassessment and outcome.
+The writer and PR delta validation apply the same rule. Equal-grade merges, and
+merges without producer reviews, keep the existing behaviour.
+
+### Verified contributions
+
+Core 1.5.0 / compiler 1.6.0 adds an opt-in mechanical admission for
+`source_material` contributions with a version 1 `method_metadata.verification`
+receipt, such as a connector v4 bundle. A world turns it on with
+`verified_contributions: true` in `resolvent.yaml`; it is off by default. With it
+off, the writer refuses `--verified` and CI adds no check.
+
+`world_control.py RUN-ID --verified [--apply]` takes no decisions file. The writer
+checks that each candidate has a supported final verdict, for the producer claim
+mapped to it, bound to its exact statement's SHA-256, and that withheld claims stay
+out. It accepts every candidate with the recorded verdict as its reason, keeps each
+exported grade, defers relationships to existing claims to maintenance, and writes
+an ordinary closure 1.0. With the opt-in on in the base branch's `resolvent.yaml`,
+PR delta validation recomputes the admission on the actual base and fails unless
+the delta is exactly that result, so an agent closure, an edited record or a stale
+base cannot pass as mechanical. Contributions without a receipt, and closures
+already merged, are unaffected.

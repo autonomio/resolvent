@@ -16,6 +16,7 @@ from scripts.build_knowledge import ROOT, json_bytes, projection, sha256
 from scripts.model import CANONICAL_ROOTS, Invalid, digest, family, safe_relative, unique_pairs, validate_state
 from scripts.temporal import applicability, point
 from scripts.model_operations import current_assessments, equivalence_groups, model_digest, operation_records
+from scripts.uncertainty_review import report as uncertainty_report
 
 
 def read_json(contents: bytes) -> dict:
@@ -100,13 +101,15 @@ class Knowledge:
             if receipt.get('id','').startswith('BC-'):
                 run=runs[receipt['submission_id']]
                 candidates={r['id']:r for r in run['claims']}
+                # Preserved writer/auditor metadata and horizons are reported beside, never applied to, the grade.
+                reported=uncertainty_report(run,self.records['claims'])
                 for disposition in receipt['claim_dispositions']:
                     cid=disposition['claim_id']
                     if cid is not None:
                         candidate=candidates[disposition['candidate_id']]
                         self.supplied_assessments[cid].append({'id':run['id']+'#'+candidate['id'],
                             'kind':'supplied_assessment','uncertainty':candidate['uncertainty'],
-                            'disposition':disposition['disposition']})
+                            'disposition':disposition['disposition'],**reported.get(candidate['id'],{})})
         self.by_id = {record_id: (group, record) for group, records in self.records.items()
                        for record_id, record in records.items()}
         self.rebuild_index()

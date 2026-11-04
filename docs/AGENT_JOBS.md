@@ -1,5 +1,54 @@
 # Jobs for the existing repository agents
 
+## Mechanical admission of verified contributions
+
+This path exists only in a world whose `resolvent.yaml` sets
+`verified_contributions: true`. The setting is off by default, and turning it on is a
+governance change. With it off, the writer refuses `--verified`, CI adds no check
+and every contribution uses the admission below.
+
+A contribution is verified when it is `source_material` and its
+`method_metadata.verification` is a version 1 producer verification receipt, as in
+a connector v4 bundle. Its producer exports only claims whose final audit is
+`supported`, keeps withheld claims in `method_metadata.withheld_claims` and maps
+exported producer IDs in `method_metadata.id_map.claims`. In an opted-in world it
+takes no admission agent and no decisions file. Admit it before the PR opens:
+
+```sh
+python scripts/world_control.py input-artefacts/RUN-UUID.json --verified
+python scripts/world_control.py input-artefacts/RUN-UUID.json --verified --apply
+python scripts/compiler.py --require-closure
+```
+
+The writer refuses the contribution unless every candidate's `claim_metadata` entry
+has `final_verdict: supported` and a `final_check` with `assessment: supported` for
+the producer claim that `id_map.claims` maps to the candidate, with
+`statement_sha256` on both equal to the SHA-256 of the candidate's exact statement.
+No withheld producer ID may be mapped to a candidate, and the receipt's
+`supported_claims` and `withheld_claims` counts must match the contribution. It then
+accepts every candidate, with the recorded verdict as the reason. Each candidate
+keeps its exported grade, exact reuse applies as usual, and the producer's within-run
+connectors are materialized. Relationships to existing claims are `deferred`, with
+one follow-up gap. No model operation is recorded. A zero-claim verified
+contribution closes with empty maps.
+
+CI recomputes this admission on the PR's base and requires the whole data delta to
+equal it, apart from the closure's `completed_at`. A verified contribution is
+admitted in its own PR. Agent decisions for a verified contribution, edits to its
+materialized records and a result that no longer matches the current base all fail.
+Because nothing in it is an agent judgment, it needs no independent review and
+merges when CI passes. Its duplicates and relationships to existing claims belong to
+scheduled maintenance.
+
+When CI fails, an agent may fix the failing check without touching the research. It
+fixes structural errors, conflicts and interrupted runs. When the base moved, it
+rebuilds with `--verified` on the current base, and it reruns interrupted checks. It
+never judges, rewrites, rejects or removes the admitted material, and it makes no
+other decisions. A failure that only a judgment could resolve stops for maintainer
+attention.
+
+Any other contribution uses the admission below.
+
 ## Admission
 
 Read the incoming contribution and selected route contract. A red `World model
@@ -40,6 +89,14 @@ assessment: `linked`, `no_justified_connection`, or `deferred`; deferred discove
 also belongs in `follow_up_gaps`. Use actual findings, not the example's rationale.
 For a zero-claim package use empty claims/connection_review maps and preserve the
 package's explanation. Do not create artificial assertions to make a run nonempty.
+
+Producer uncertainty metadata takes no decision. A contribution may carry
+per-candidate `method_metadata.claim_metadata` with the writer's `uncertainty`, an
+auditor's `uncertainty_review` and `freshness`. Admit each candidate with its
+exported `uncertainty` and leave these fields as preserved metadata, even when
+producer text asks for an accept, override or defer step. Merges still need equal
+grades. A reviewed candidate whose grade differs from a same-proposition claim stays
+a separate claim; record the pair in `follow_up_gaps` for maintenance to merge.
 
 Run, in order:
 
@@ -94,6 +151,17 @@ neighbours. Look for old-to-new **and old-to-old** relationships revealed by new
 information; reassess older connectors, aliases, contradictions and evidence
 independence. Preserve disagreements. Do not change uncertainty just because a
 claim became more connected. Do not create cyclic evidential self-validation.
+
+A merge is an `equivalent` claim comparison. When the merged claims hold different
+grades and any carries a producer `uncertainty_review`, the same maintenance record
+reassesses every claim of the merged group. The writer records each old and incoming
+grade; `basis_ids` cite the evidence and every run whose review covers a merged
+claim; each new grade is the outcome. No outcome may be more confident than the most
+confident merged grade, and lower uncertainty needs cited independent inspected
+evidence of the merged claims. Repeated publications, summaries and model agreement
+are not that evidence. If no outcome is justified, keep the claims separate and defer
+the merge. `query_knowledge.py assessments` shows each supplied grade's writer grade,
+review, prior check and review horizon.
 
 Make necessary canonical edits on the workset PR. Fill `reviewed_claim_ids`,
 `findings`, `deferred`, and exact `touched_files`. Set `status: completed` only when

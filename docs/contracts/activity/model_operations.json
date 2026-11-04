@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "kind": "model_tooling",
   "authority": "Externally supplied model judgments through existing independently reviewed PRs",
   "input_protocol": "1.2 unchanged",
@@ -10,7 +10,7 @@
     "context": "Record/group neighbourhood cards for comparison, linkage or reassessment; no behavior execution",
     "research_state": "Portable question neighbourhood, support chains and preserved producer review history; default byte-bounded JSON text pages, explicit complete export",
     "passage": "Native text field or complete record/operation JSON in byte-bounded character ranges",
-    "assessments": "Immutable supplied grades and reassessments, with explicit current result",
+    "assessments": "Immutable supplied grades with any preserved writer grade, audit review, prior check against the read revision and review horizon, plus reassessments, with explicit current result",
     "changes": "Canonical changes between pinned packages plus new model operations",
     "lineage": "Existing source/evidence lineage cues as paginated cards; lineage-flag expands members"
   },
@@ -37,6 +37,9 @@
     "first_reassessment_continues_actual_base_grade_subsequent_reassessment_continues_current_head",
     "one_reassessment_per_claim_per_delta_no_history_branches",
     "differing_current_or_unreassessed_legacy_supplied_grades_are_disputed",
+    "producer_uncertainty_metadata_is_reported_never_applied_and_proposed_priors_are_destination_ids",
+    "reviewed_claim_merges_across_differing_grades_happen_in_maintenance_and_reassess_every_merged_claim",
+    "merges_never_promote_confidence_beyond_the_most_confident_merged_grade_or_without_independent_evidence",
     "read_digests_rechecked_against_actual_base_on_delta_validation",
     "retry_same_receipt_and_decisions_is_no_op",
     "no_claim_deletion_or_new_claim_retirement",

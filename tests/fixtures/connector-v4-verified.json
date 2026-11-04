@@ -1,0 +1,566 @@
+{
+  "schema_version": "1.0",
+  "id": "RUN-ffb8bfc7cc7442cc85deffec723d1544",
+  "input_method": "source_material",
+  "created_at": "2026-11-04T16:11:32.466703+00:00",
+  "researcher": "Producer",
+  "title": "Synthetic fixture question?",
+  "scope": "Synthetic fixture question?",
+  "origin": {
+    "mode": "retrospective",
+    "coverage": "partial",
+    "limitations": [
+      "A selected research corpus is not exhaustive world knowledge; the independent audit defines checked scope."
+    ]
+  },
+  "parent_run_id": null,
+  "brief": null,
+  "result": {
+    "summary": "Saved Producer research bundle; inspect findings and recorded completion limits.",
+    "acceptance_outcomes": [],
+    "limitations": [
+      "Compiled settings do not certify scientific interpretation, source completeness or search recall.",
+      "The saved specification repeats settings; live models, discovery and engine versions can change.",
+      "Freshness, gaps, residue, evidence relations and audit scope are retained in the full research artifact and metadata.",
+      "Preserve the accompanying neutral bundle archive for original materials; public source URLs alone do not preserve its bytes.",
+      "Original low uncertainty is retained only with explicitly audited independent, inspected, addressable supporting evidence; otherwise candidate uncertainty is at least medium. Source independence is not scientific certainty. Original judgments remain in claim_metadata.",
+      "Observed facts are source-attributed reported findings, bounded by the stated study and audit scope; they are not universal truths. Resolvent still owns admission."
+    ],
+    "artifacts": [
+      {
+        "name": "producer-bundle.json",
+        "content": "{\"format\": \"producer.research-bundle\", \"version\": 1, \"id\": \"RB-ffb8bfc7cc7442cc85deffec723d1544\", \"created_at\": \"2026-11-04T16:11:32.466703+00:00\", \"state\": \"finished\", \"execution\": {\"status\": \"answered\", \"answered\": true, \"audit_complete\": null}, \"specification\": {\"source_yaml\": \"question: Synthetic fixture question?\\nretrieval:\\n  target_papers: 1\\naudit:\\n  max_correction_rounds: 3\\n\", \"resolved\": {\"version\": 1, \"question\": \"Synthetic fixture question?\", \"research\": {\"model\": \"gpt-6.1-sol\", \"effort\": \"xhigh\"}, \"audit\": {\"model\": \"gpt-6.1-sol\", \"effort\": \"xhigh\", \"budget_seconds\": null, \"max_correction_rounds\": 3}, \"retrieval\": {\"selection\": \"coverage\", \"target_papers\": 1, \"corpus\": \"fresh\", \"access\": \"open_full_text\"}, \"subagents\": false}, \"spec_sha256\": \"c9a1c4cdb9e194a3f272b2180d39bf81502532a9d5a8059792707f88839aaefe\", \"compiler_version\": 1, \"checks\": [\"strict_declaration\", \"supported_research_and_audit\", \"source_policy\", \"positive_limits\", \"unlimited_audit\", \"no_subagents\", \"api_owned_fresh_workspace\"], \"engine\": {\"python\": \"3.12.15\", \"sources\": {\"revision_artifacts.py\": \"c6e0fc4dd59494687dd8eb3657c60c3ff94e5a211a4092d8fea297f3f22ccfbd\", \"correction_runtime.py\": \"a474982a41a32922ce48e962a30bfc60e96f7e41cfd5c67c233ca89ff44da344\", \"corrections.py\": \"0d3c2c3b4c2bcc15cc0479c7299e342b403039deaff898e58f8042da912fa604\", \"audit_validation.py\": \"fe80cff6a1aef2807a35aef402dbde654f5dcda43ae0100f1582c03ce3cd0188\", \"claim_checks.py\": \"5e0225259f025a62fc5ebbdd627b8ad288c53cd54cf02b205ae474c80479e146\", \"claim_uncertainty.py\": \"43b4a98cc74fc40c6c6b54d9a4da6e74cf6749b1f4f0a5ce274a4a6744496a7f\", \"coverage_protocol.py\": \"aa0c6b8703a1c62ce178455047316e3fe4d9091eb96c0a7827b613c24b7b84fc\", \"coverage_runtime.py\": \"0c6ac28dbd4a9030389edf6de169b8e55e00e3e81767f256f13bd867449ae7b0\", \"coverage_export.py\": \"f75cbf612040cebf2370fb1f15db9be693d403faa40cf7ffe410e85f92d6c98f\", \"paper_metadata.py\": \"89437c6fe598fa23bccc46833ac7d8984a3bfacf1733cc72132dff5daa88addb\", \"source_adapters.py\": \"f848056e9d01bb382de5204552fdfe0616f9b06cf1db07cf3ca03975d57e0332\", \"candidate_index.py\": \"afe9f7c1a359d14368ee4b88b7a4de14072e357483d61e2a8f9b25b7690d14e9\", \"codex_execution.py\": \"cacfef319dcc0592d7a6ab48e03efb2114f77e30e3a179a4f5f6f05a7777c012\", \"codex_auth.py\": \"2a0724cd52ea67b5b9357f71f78ef7f51faa1c4a4fc6fb399fab6b26b06cb5d7\", \"claim_freshness.py\": \"b1e63f7f589536814226fbf88e27f3812bf23746a15c02d8d767eeb91f7d33a4\", \"research_spec.py\": \"2621bb5be8d9710c4f078fb0058ac29f7a310ba387e5bf77ee36657b77c510c7\", \"research_state.py\": \"9f55115fff2e7687fe83b07fb183e7c593d9820c49b3c7d2eebe1d029172a23f\", \"research_bundle.py\": \"8b4693a41906215ee6f7eddb91bd94afcb03f7d0dbc1c1c22552c3895061bee9\", \"bundle_connectors.py\": \"2c00b7c2531726c60cd16cc544851902f01c0b839b6c99cadf798435dc99e432\", \"compact_bundle.py\": \"004fc89eda9be20b1b83b680adb0bcc3d393e76fe25b4264506a0b331d471783\", \"bundle_encoding.py\": \"fcb158758fa5da091e4d401e14da7df68f490916ff6568f87c80bade0a038a23\", \"local_text.py\": \"db25da7689e37b38aa64e35e3b6a3532d8cdf7c2af80db5d9d712fff8a486a5e\", \"processes.py\": \"c6a044d028ea9173c965c1f7634ce776d81d85ebae4f9d490464b3a0a78d341d\", \"pdf_capacity.py\": \"e3f329a65485f82f950e0a433b4e330e9c7280b9ae51e0b25370d365ccded0c4\", \"research_tools.py\": \"a02da425dbc6a6954dbd2505ad7a946c508813b0972b653352a695671fd0ebf9\", \"tools_cli.py\": \"af006d4ce6bfa6ac6f6a43f814351072e6914e52466cd459baa019d8e230f26f\", \"runtime_paths.py\": \"a35cb97618478a6d92923de3e8883e5e5c50186d92df4e03ab9aa1b4eeac6b81\", \"api_client.py\": \"4430a9ca0046c81b530973382549a0d35fa106353fcbf5a5c9f97aab4ec0be8f\", \"redact.py\": \"2a066dd4151badd97d8cfc18213b4cf4b7b7526af09c4a9617be2e744406c069\"}, \"dependency_lock_sha256\": \"1ff0a69d71982564c812778fad483e7453bfcafa6c0090ca2315c96457213719\"}}, \"artifacts\": [{\"path\": \"access.json\", \"bytes\": 1290, \"sha256\": \"a17b8f3de74630bd7cd59854ce9171977793cafab54c13a7ef0e2b69fb851f1e\"}, {\"path\": \"answer.json\", \"bytes\": 24684, \"sha256\": \"8cb0ed38bf03526e758dbd5c353bcb730e1b260b7b42b145392c27a44f3edd0e\"}, {\"path\": \"answer.md\", \"bytes\": 1035, \"sha256\": \"9ecca4e97e95ba7ad418cf739447e9a92e2b7608fbc38db7cf69981723c1dd23\"}, {\"path\": \"audit.json\", \"bytes\": 3648, \"sha256\": \"21a14d402bac7fabdfc7cde78686600835f6300dbe8642ef20eccfe5996350fa\"}, {\"path\": \"compile-report.json\", \"bytes\": 3377, \"sha256\": \"22f4c4eaffbf3c615e0253323d7c0bbd5efe4a8e16b87750276936b771d83d25\"}, {\"path\": \"coverage.json\", \"bytes\": 783, \"sha256\": \"0c0297b8804d4c49f4bad931efca769da634ce3673d7b76206c0582b6eb8c5bf\"}, {\"path\": \"investigation.json\", \"bytes\": 2351, \"sha256\": \"faa836e41d0262ccce5accf20806a8b1506868410179dd1609ba292aebe1ca73\"}, {\"path\": \"mechanical-audit.json\", \"bytes\": 249, \"sha256\": \"95b9072077c5a4d641bf662e61d0f581a6bb1047fff8dc97497102a263e07a38\"}, {\"path\": \"paper-selection.json\", \"bytes\": 372, \"sha256\": \"5eafbf056651452e509753a84d08fa9a85043b526f0e3e837bd06adfb78863ea\"}, {\"path\": \"payload.json\", \"bytes\": 19242, \"sha256\": \"eac847b55723794de76ce5cf397187f26d0834dfc53520089e156807a7e2cb13\"}, {\"path\": \"peer-review.json\", \"bytes\": 4491, \"sha256\": \"c96b9af87d0f12be89e0190aed94d70498b081954d6c573623bac0adde97e968\"}, {\"path\": \"query-net.json\", \"bytes\": 51, \"sha256\": \"adfd7fee4312d2fe7efee089f118041f0d3a96e9f30292f89d766e38ee16fed1\"}, {\"path\": \"question-plan.json\", \"bytes\": 51, \"sha256\": \"adfd7fee4312d2fe7efee089f118041f0d3a96e9f30292f89d766e38ee16fed1\"}, {\"path\": \"research.yaml\", \"bytes\": 107, \"sha256\": \"1ad5a6c8097e69c3392e6cc5a8c118b27574d603f0487ecb0fd0ebf8f4a5e897\"}, {\"path\": \"reviewed-papers.json\", \"bytes\": 244, \"sha256\": \"7eb1aa8c9b04ce094657d5642671b9f15b2660eccefb3e8e9576a35bdd2da4f4\"}, {\"path\": \"run-spec.json\", \"bytes\": 435, \"sha256\": \"81b6f6ba82c8a331f22ea4291abc0ad6cb6e013c2a251839c04b5e60492414f3\"}, {\"path\": \"run.json\", \"bytes\": 1816, \"sha256\": \"9b5e76239f8283dcc57a0fbf978e166ce886537f1e81fd647391f83356aaca21\"}, {\"path\": \"selection.json\", \"bytes\": 53, \"sha256\": \"b249e0a66fd1b572b5e8b9db986195a5b65fb6f9b350ff2f740d8a66bf085020\"}, {\"path\": \"download-receipts/W1.json\", \"bytes\": 403, \"sha256\": \"931e7e71657abcfe8292d06ed175da86a0ba7d02707b4e201441061153e24004\"}, {\"path\": \"papers/W1.txt\", \"bytes\": 61, \"sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\"}, {\"path\": \"passages/W1.jsonl\", \"bytes\": 152, \"sha256\": \"c3f4ebf77d88ef321473c71c77314d2888901d51c76fcc4edd4b08300a85b3dd\"}, {\"path\": \"texts/W1.txt\", \"bytes\": 61, \"sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\"}], \"limitations\": [\"Compiled settings do not certify scientific interpretation, source completeness or search recall.\", \"The saved specification repeats settings; live models, discovery and engine versions can change.\"]}"
+      },
+      {
+        "name": "producer-research.json",
+        "content": "{\"claims\": [{\"id\": \"C1\", \"text\": \"A synthetic attributed finding.\", \"kind\": \"reported_finding\", \"uncertainty\": {\"class\": \"low\", \"score\": 1, \"rationale\": \"Synthetic scoped judgment.\"}, \"freshness\": {\"policy\": \"unknown\", \"as_of\": null, \"review_after\": null, \"triggers\": [], \"rationale\": \"No review horizon was recorded for this claim.\"}, \"evidence_ids\": [\"E1\"], \"study_result_ids\": [\"S1\"]}, {\"id\": \"C2\", \"text\": \"The synthetic fixture reports a second value that depends on the first.\", \"kind\": \"reported_finding\", \"uncertainty\": {\"class\": \"low\", \"score\": 1, \"rationale\": \"Synthetic scoped judgment.\"}, \"freshness\": {\"policy\": \"unknown\", \"as_of\": null, \"review_after\": null, \"triggers\": [], \"rationale\": \"No review horizon was recorded for this claim.\"}, \"evidence_ids\": [\"E1\"], \"study_result_ids\": [\"S1\"]}], \"evidence\": [{\"id\": \"E1\", \"passage_ids\": [\"W1-p0001\"], \"interpretation\": \"Synthetic reading.\", \"relation\": \"supports\", \"premise_claim_ids\": [], \"verbatims\": [{\"id\": \"W1-p0001\", \"reference_id\": \"W1\", \"page\": null, \"start\": 0, \"end\": 61, \"text\": \"Synthetic fixture observation. This is not research evidence.\"}], \"reference_ids\": [\"W1\"]}], \"study_results\": [{\"id\": \"S1\", \"reference_ids\": [\"W1\"], \"result_type\": \"measured\", \"fields\": {\"system\": null, \"intervention\": null, \"comparator\": null, \"conditions\": null, \"endpoint\": null, \"value\": {\"text\": \"Synthetic value\", \"passage_ids\": [\"W1-p0001\"], \"verbatims\": [{\"id\": \"W1-p0001\", \"reference_id\": \"W1\", \"page\": null, \"start\": 0, \"end\": 61, \"text\": \"Synthetic fixture observation. This is not research evidence.\"}]}, \"units\": null, \"sample_size\": null, \"reported_uncertainty\": null}, \"version_or_cohort_note\": \"Synthetic cohort only.\"}], \"references\": [{\"id\": \"W1\", \"title\": \"Synthetic source\", \"year\": 2026, \"authors\": [], \"url\": \"https://example.org/synthetic\", \"file\": \"papers/W1.txt\", \"text_file\": \"texts/W1.txt\", \"body_sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\", \"text_sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\"}], \"contradictions\": [], \"gaps\": [{\"id\": \"G1\", \"kind\": \"missing_data\", \"description\": \"Synthetic missing comparator.\", \"basis\": \"Scoped fixture.\", \"claim_ids\": [\"C1\"], \"evidence_ids\": [\"E1\"], \"needed_to_resolve\": \"A comparator.\"}], \"residue\": [{\"id\": \"R1\", \"observation\": \"A detail worth keeping.\", \"basis\": \"Scoped fixture.\", \"claim_ids\": [\"C1\"], \"evidence_ids\": [\"E1\"], \"why_it_matters\": \"Preserve it.\", \"scope_limit\": \"Synthetic.\"}], \"claim_links\": [{\"id\": \"L1\", \"from_claim_id\": \"C1\", \"to_claim_id\": \"C2\", \"kind\": \"dependency\", \"spec\": \"structural:moderate:outward\", \"reason\": \"Synthetic source-based dependency.\", \"uncertainty\": {\"class\": \"moderate\", \"score\": 2, \"rationale\": \"Synthetic.\"}, \"evidence_ids\": [\"E1\"]}], \"question_plan\": {\"question\": \"Synthetic fixture question?\"}, \"selection\": {\"selected_for_review_ids\": [\"W1\"]}, \"reviewed_papers\": [{\"work_id\": \"W1\", \"eligibility\": \"core\", \"passage_ids_read\": [\"W1-p0001\"], \"investigated_sections\": [\"synthetic methods\"], \"substantive_review_note\": \"Synthetic fixture only.\"}], \"coverage\": null, \"coverage_map\": null, \"accounting\": {\"sources_retrieved\": 1, \"review_records\": 1, \"substantively_reviewed_publications\": 1, \"core_publications\": 1, \"supporting_publications\": 0, \"minimum_papers\": 1, \"minimum_met\": true, \"scarcity_statement\": null, \"scarcity_independently_certified\": false, \"study_family_ids\": [], \"count_scope\": \"Recorded substantive source reading with criteria, fixed spans and notes; scientific roles and complete-paper status remain audited judgments.\"}, \"mechanical_audit\": {\"at\": \"2026-11-04T16:11:32.489608+00:00\", \"pass\": true, \"issues\": [], \"claim_blocking_issues\": [], \"scope\": \"Identity/span/hash/graph/record checks; does not certify scientific interpretation, relevance or population coverage.\"}, \"claim_review_checks\": [], \"executive_summary\": [], \"caveats\": [], \"next_questions\": [], \"withheld_claims\": [{\"claim\": {\"id\": \"C3\", \"text\": \"The synthetic fixture reports a third value that the audit did not support.\", \"kind\": \"reported_finding\", \"uncertainty\": {\"class\": \"low\", \"score\": 1, \"rationale\": \"Synthetic scoped judgment.\"}, \"freshness\": {\"policy\": \"unknown\", \"as_of\": null, \"review_after\": null, \"triggers\": [], \"rationale\": \"No review horizon was recorded for this claim.\"}, \"evidence_ids\": [\"E1\"], \"study_result_ids\": [\"S1\"]}, \"status\": \"withheld\", \"reason\": \"Synthetic audit: the excerpt does not state the third value.\", \"final_check\": {\"claim_id\": \"C3\", \"assessment\": \"unresolved\", \"reason\": \"Synthetic audit: the excerpt does not state the third value.\", \"passage_ids\": [\"W1-p0001\"], \"reference_ids\": [\"W1\"], \"context_checked\": [\"Synthetic methods/results.\"], \"issue_types\": [], \"uncertainty_review\": {\"recommended_class\": null, \"reason\": \"No uncertainty review was recorded.\", \"evidence_ids\": [], \"prior_claim_id\": null, \"prior_class\": null, \"prior_match_reason\": \"\"}, \"statement_sha256\": \"f69021c63c28552acd26d3112290927ad9fbf83bbb24c977055780fe25572c7a\", \"claim_snapshot_sha256\": \"594ab4ee6e7de95ec0b44985aee6b628e1a8b29358883651e28dbd2c57b0c0dc\"}, \"evidence\": [{\"id\": \"E1\", \"passage_ids\": [\"W1-p0001\"], \"interpretation\": \"Synthetic reading.\", \"relation\": \"supports\", \"premise_claim_ids\": [], \"verbatims\": [{\"id\": \"W1-p0001\", \"reference_id\": \"W1\", \"page\": null, \"start\": 0, \"end\": 61, \"text\": \"Synthetic fixture observation. This is not research evidence.\"}], \"reference_ids\": [\"W1\"]}]}], \"claim_revisions\": [], \"independent_audit\": {\"claim_checks\": [{\"claim_id\": \"C1\", \"assessment\": \"supported\", \"reason\": \"Synthetic inspected scope.\", \"passage_ids\": [\"W1-p0001\"], \"reference_ids\": [\"W1\"], \"context_checked\": [\"Synthetic methods/results.\"], \"issue_types\": [], \"uncertainty_review\": {\"recommended_class\": \"high\", \"reason\": \"Synthetic scope requires caution.\", \"evidence_ids\": [\"E1\"], \"prior_claim_id\": null, \"prior_class\": null, \"prior_match_reason\": \"No prior supplied.\"}, \"statement_sha256\": \"7d9ad7d1fd4e2bd7b39b1be5b8fc5f8c3b12a4eba80a3de9c1cbd52a38318c25\", \"claim_snapshot_sha256\": \"b1bc6f29ffc16e46fa4ae8a0e3f4951e2c860c47248ef55dbc3ee8488b69aa91\"}, {\"claim_id\": \"C2\", \"assessment\": \"supported\", \"reason\": \"Synthetic inspected scope.\", \"passage_ids\": [\"W1-p0001\"], \"reference_ids\": [\"W1\"], \"context_checked\": [\"Synthetic methods/results.\"], \"issue_types\": [], \"uncertainty_review\": {\"recommended_class\": null, \"reason\": \"No uncertainty review was recorded.\", \"evidence_ids\": [], \"prior_claim_id\": null, \"prior_class\": null, \"prior_match_reason\": \"\"}, \"statement_sha256\": \"9c6de75523286de13e001f02e024a095e48e3df899e9f4a298e1b9f016fd5c68\", \"claim_snapshot_sha256\": \"d9f55bdf9bab6f6d203dfbae19217ffa9249e9119f67081ef870a857bf89b9c7\"}, {\"claim_id\": \"C3\", \"assessment\": \"unresolved\", \"reason\": \"Synthetic audit: the excerpt does not state the third value.\", \"passage_ids\": [\"W1-p0001\"], \"reference_ids\": [\"W1\"], \"context_checked\": [\"Synthetic methods/results.\"], \"issue_types\": [], \"uncertainty_review\": {\"recommended_class\": null, \"reason\": \"No uncertainty review was recorded.\", \"evidence_ids\": [], \"prior_claim_id\": null, \"prior_class\": null, \"prior_match_reason\": \"\"}, \"statement_sha256\": \"f69021c63c28552acd26d3112290927ad9fbf83bbb24c977055780fe25572c7a\", \"claim_snapshot_sha256\": \"594ab4ee6e7de95ec0b44985aee6b628e1a8b29358883651e28dbd2c57b0c0dc\"}], \"evidence_checks\": [{\"evidence_id\": \"E1\", \"assessment\": \"independent\", \"reason\": \"Synthetic family review.\", \"reference_ids\": [\"W1\"], \"passage_ids\": [\"W1-p0001\"], \"study_family_ids\": [\"fixture-family\"], \"family_basis\": \"Synthetic study identity in the inspected record.\"}], \"findings\": [], \"scores\": {\"selection_defensibility\": {\"score\": 3, \"reason\": \"Fixture.\"}, \"question_relevance\": {\"score\": 3, \"reason\": \"Fixture.\"}, \"scientific_fidelity\": {\"score\": 3, \"reason\": \"Fixture.\"}, \"evidence_coverage\": {\"score\": 3, \"reason\": \"Fixture.\"}, \"information_value\": {\"score\": 3, \"reason\": \"Fixture.\"}}, \"source_reviewed_ids\": [\"W1\"], \"selection_assessment\": \"Fixture.\", \"strengths\": [], \"limitations\": [], \"audit_complete\": true, \"scope_note\": \"Synthetic only.\", \"validation_issues\": [], \"snapshot_sha256\": \"cfc03128de3079892f4ab36a27ad6d61c801971192b7a48e84d647a158a3832d\", \"standard_version\": 1}, \"verification\": {\"version\": 1, \"audit_basis\": {\"claims\": [{\"id\": \"C1\", \"text\": \"A synthetic attributed finding.\", \"kind\": \"reported_finding\", \"uncertainty\": {\"class\": \"low\", \"score\": 1, \"rationale\": \"Synthetic scoped judgment.\"}, \"freshness\": {\"policy\": \"unknown\", \"as_of\": null, \"review_after\": null, \"triggers\": [], \"rationale\": \"No review horizon was recorded for this claim.\"}, \"evidence_ids\": [\"E1\"], \"study_result_ids\": [\"S1\"]}, {\"id\": \"C2\", \"text\": \"The synthetic fixture reports a second value that depends on the first.\", \"kind\": \"reported_finding\", \"uncertainty\": {\"class\": \"low\", \"score\": 1, \"rationale\": \"Synthetic scoped judgment.\"}, \"freshness\": {\"policy\": \"unknown\", \"as_of\": null, \"review_after\": null, \"triggers\": [], \"rationale\": \"No review horizon was recorded for this claim.\"}, \"evidence_ids\": [\"E1\"], \"study_result_ids\": [\"S1\"]}, {\"id\": \"C3\", \"text\": \"The synthetic fixture reports a third value that the audit did not support.\", \"kind\": \"reported_finding\", \"uncertainty\": {\"class\": \"low\", \"score\": 1, \"rationale\": \"Synthetic scoped judgment.\"}, \"freshness\": {\"policy\": \"unknown\", \"as_of\": null, \"review_after\": null, \"triggers\": [], \"rationale\": \"No review horizon was recorded for this claim.\"}, \"evidence_ids\": [\"E1\"], \"study_result_ids\": [\"S1\"]}], \"evidence\": [{\"id\": \"E1\", \"passage_ids\": [\"W1-p0001\"], \"interpretation\": \"Synthetic reading.\", \"relation\": \"supports\", \"premise_claim_ids\": [], \"verbatims\": [{\"id\": \"W1-p0001\", \"reference_id\": \"W1\", \"page\": null, \"start\": 0, \"end\": 61, \"text\": \"Synthetic fixture observation. This is not research evidence.\"}], \"reference_ids\": [\"W1\"]}], \"study_results\": [{\"id\": \"S1\", \"reference_ids\": [\"W1\"], \"result_type\": \"measured\", \"fields\": {\"system\": null, \"intervention\": null, \"comparator\": null, \"conditions\": null, \"endpoint\": null, \"value\": {\"text\": \"Synthetic value\", \"passage_ids\": [\"W1-p0001\"], \"verbatims\": [{\"id\": \"W1-p0001\", \"reference_id\": \"W1\", \"page\": null, \"start\": 0, \"end\": 61, \"text\": \"Synthetic fixture observation. This is not research evidence.\"}]}, \"units\": null, \"sample_size\": null, \"reported_uncertainty\": null}, \"version_or_cohort_note\": \"Synthetic cohort only.\"}], \"references\": [{\"id\": \"W1\", \"title\": \"Synthetic source\", \"year\": 2026, \"authors\": [], \"url\": \"https://example.org/synthetic\", \"file\": \"papers/W1.txt\", \"text_file\": \"texts/W1.txt\", \"body_sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\", \"text_sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\"}], \"contradictions\": [], \"gaps\": [{\"id\": \"G1\", \"kind\": \"missing_data\", \"description\": \"Synthetic missing comparator.\", \"basis\": \"Scoped fixture.\", \"claim_ids\": [\"C1\"], \"evidence_ids\": [\"E1\"], \"needed_to_resolve\": \"A comparator.\"}], \"residue\": [{\"id\": \"R1\", \"observation\": \"A detail worth keeping.\", \"basis\": \"Scoped fixture.\", \"claim_ids\": [\"C1\"], \"evidence_ids\": [\"E1\"], \"why_it_matters\": \"Preserve it.\", \"scope_limit\": \"Synthetic.\"}], \"claim_links\": [{\"id\": \"L1\", \"from_claim_id\": \"C1\", \"to_claim_id\": \"C2\", \"kind\": \"dependency\", \"spec\": \"structural:moderate:outward\", \"reason\": \"Synthetic source-based dependency.\", \"uncertainty\": {\"class\": \"moderate\", \"score\": 2, \"rationale\": \"Synthetic.\"}, \"evidence_ids\": [\"E1\"]}], \"question_plan\": {\"question\": \"Synthetic fixture question?\"}, \"selection\": {\"selected_for_review_ids\": [\"W1\"]}, \"reviewed_papers\": [{\"work_id\": \"W1\", \"eligibility\": \"core\", \"passage_ids_read\": [\"W1-p0001\"], \"investigated_sections\": [\"synthetic methods\"], \"substantive_review_note\": \"Synthetic fixture only.\"}], \"coverage\": null, \"coverage_map\": null, \"accounting\": {\"sources_retrieved\": 1, \"review_records\": 1, \"substantively_reviewed_publications\": 1, \"core_publications\": 1, \"supporting_publications\": 0, \"minimum_papers\": 1, \"minimum_met\": true, \"scarcity_statement\": null, \"scarcity_independently_certified\": false, \"study_family_ids\": [], \"count_scope\": \"Recorded substantive source reading with criteria, fixed spans and notes; scientific roles and complete-paper status remain audited judgments.\"}, \"mechanical_audit\": {\"at\": \"2026-11-04T16:11:32.489608+00:00\", \"pass\": true, \"issues\": [], \"claim_blocking_issues\": [], \"scope\": \"Identity/span/hash/graph/record checks; does not certify scientific interpretation, relevance or population coverage.\"}, \"claim_review_checks\": []}, \"candidate_claims\": 3, \"supported_claims\": 2, \"withheld_claims\": 1, \"withheld_share\": 0.3333333333333333, \"correction_rounds\": 0, \"audit_complete\": true, \"failure\": null, \"run_issues\": []}, \"withheld_evidence\": [], \"history_manifest\": [], \"research_status\": \"verified_research_with_withheld_claims\"}"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "s1",
+      "kind": "publication",
+      "title": "Synthetic source",
+      "uri": "https://example.org/synthetic",
+      "date": "2026",
+      "locator": "{\"bundle_id\": \"RB-ffb8bfc7cc7442cc85deffec723d1544\", \"end\": 61, \"original_file\": \"papers/W1.txt\", \"original_sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\", \"page\": null, \"reference_id\": \"W1\", \"start\": 0, \"text_file\": \"texts/W1.txt\", \"text_sha256\": \"6580e518b7dcd23d03ca47310bf6bdcc4dee7bf8525b3b2ed8699a79b9d1d007\"}",
+      "excerpt": "Synthetic fixture observation. This is not research evidence.",
+      "access": "inspected"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "kind": "external",
+      "summary": "Synthetic reading.",
+      "source_ids": [
+        "s1"
+      ],
+      "independent": true,
+      "limitations": [
+        "Recorded evidence relation: supports",
+        "Audited study-family assessment: independent. Synthetic family review."
+      ],
+      "premise_claim_ids": []
+    }
+  ],
+  "claims": [
+    {
+      "id": "c1",
+      "class": "observed_fact",
+      "statement": "A synthetic attributed finding.",
+      "uncertainty": "low",
+      "evidence_ids": [
+        "e1"
+      ]
+    },
+    {
+      "id": "c2",
+      "class": "observed_fact",
+      "statement": "The synthetic fixture reports a second value that depends on the first.",
+      "uncertainty": "low",
+      "evidence_ids": [
+        "e1"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "x1",
+      "from": "c1",
+      "to": "c2",
+      "type": "dependency",
+      "spec": "structural:moderate:outward",
+      "reason": "Synthetic source-based dependency.",
+      "uncertainty": "medium",
+      "evidence_ids": [
+        "e1"
+      ]
+    }
+  ],
+  "questions": [],
+  "handoff": {
+    "summary": "Normalize this source contribution through Resolvent admission. Preserve provenance and retained residue. Explicitly accept, override or defer each assessed claim_metadata.uncertainty_review with a reason; for a matched existing claim, use recorded reassessment. A recommendation is not an applied change.",
+    "no_claims_reason": null,
+    "suggested_follow_up": []
+  },
+  "method_metadata": {
+    "producer": "producer",
+    "bundle_id": "RB-ffb8bfc7cc7442cc85deffec723d1544",
+    "bundle_version": 1,
+    "spec_sha256": "c9a1c4cdb9e194a3f272b2180d39bf81502532a9d5a8059792707f88839aaefe",
+    "connector": "resolvent",
+    "connector_version": 4,
+    "uncertainty_policy": "Original low uncertainty is retained only with explicitly audited independent, inspected, addressable supporting evidence; otherwise candidate uncertainty is at least medium. Source independence is not scientific certainty. Original judgments remain in claim_metadata.",
+    "destination_contract_revision": "7d7e2da29b97814a70b42bd7bf442ee455b3da09",
+    "id_map": {
+      "claims": {
+        "C1": "c1",
+        "C2": "c2"
+      },
+      "evidence": {
+        "E1": "e1"
+      },
+      "passages": {
+        "W1-p0001": "s1"
+      }
+    },
+    "claim_metadata": {
+      "c1": {
+        "original_kind": "reported_finding",
+        "uncertainty": {
+          "class": "low",
+          "score": 1,
+          "rationale": "Synthetic scoped judgment."
+        },
+        "uncertainty_review": {
+          "recommended_class": "high",
+          "reason": "Synthetic scope requires caution.",
+          "evidence_ids": [
+            "e1"
+          ],
+          "prior_claim_id": null,
+          "prior_class": null,
+          "prior_match_reason": "No prior supplied.",
+          "status": "assessed",
+          "change": "not_comparable",
+          "limitations": [],
+          "original_evidence_ids": [
+            "E1"
+          ],
+          "disposition": "requires_destination_review"
+        },
+        "freshness": {
+          "policy": "unknown",
+          "as_of": null,
+          "review_after": null,
+          "triggers": [],
+          "rationale": "No review horizon was recorded for this claim."
+        },
+        "final_verdict": "supported",
+        "final_check": {
+          "claim_id": "C1",
+          "assessment": "supported",
+          "reason": "Synthetic inspected scope.",
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "reference_ids": [
+            "W1"
+          ],
+          "context_checked": [
+            "Synthetic methods/results."
+          ],
+          "issue_types": [],
+          "uncertainty_review": {
+            "recommended_class": "high",
+            "reason": "Synthetic scope requires caution.",
+            "evidence_ids": [
+              "E1"
+            ],
+            "prior_claim_id": null,
+            "prior_class": null,
+            "prior_match_reason": "No prior supplied."
+          },
+          "statement_sha256": "7d9ad7d1fd4e2bd7b39b1be5b8fc5f8c3b12a4eba80a3de9c1cbd52a38318c25",
+          "claim_snapshot_sha256": "b1bc6f29ffc16e46fa4ae8a0e3f4951e2c860c47248ef55dbc3ee8488b69aa91"
+        },
+        "statement_sha256": "7d9ad7d1fd4e2bd7b39b1be5b8fc5f8c3b12a4eba80a3de9c1cbd52a38318c25",
+        "claim_snapshot_sha256": "b1bc6f29ffc16e46fa4ae8a0e3f4951e2c860c47248ef55dbc3ee8488b69aa91"
+      },
+      "c2": {
+        "original_kind": "reported_finding",
+        "uncertainty": {
+          "class": "low",
+          "score": 1,
+          "rationale": "Synthetic scoped judgment."
+        },
+        "uncertainty_review": {
+          "recommended_class": null,
+          "reason": "No uncertainty review was recorded.",
+          "evidence_ids": [],
+          "prior_claim_id": null,
+          "prior_class": null,
+          "prior_match_reason": "",
+          "status": "not_assessed",
+          "change": "not_comparable",
+          "limitations": [],
+          "original_evidence_ids": [],
+          "disposition": "requires_destination_review"
+        },
+        "freshness": {
+          "policy": "unknown",
+          "as_of": null,
+          "review_after": null,
+          "triggers": [],
+          "rationale": "No review horizon was recorded for this claim."
+        },
+        "final_verdict": "supported",
+        "final_check": {
+          "claim_id": "C2",
+          "assessment": "supported",
+          "reason": "Synthetic inspected scope.",
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "reference_ids": [
+            "W1"
+          ],
+          "context_checked": [
+            "Synthetic methods/results."
+          ],
+          "issue_types": [],
+          "uncertainty_review": {
+            "recommended_class": null,
+            "reason": "No uncertainty review was recorded.",
+            "evidence_ids": [],
+            "prior_claim_id": null,
+            "prior_class": null,
+            "prior_match_reason": ""
+          },
+          "statement_sha256": "9c6de75523286de13e001f02e024a095e48e3df899e9f4a298e1b9f016fd5c68",
+          "claim_snapshot_sha256": "d9f55bdf9bab6f6d203dfbae19217ffa9249e9119f67081ef870a857bf89b9c7"
+        },
+        "statement_sha256": "9c6de75523286de13e001f02e024a095e48e3df899e9f4a298e1b9f016fd5c68",
+        "claim_snapshot_sha256": "d9f55bdf9bab6f6d203dfbae19217ffa9249e9119f67081ef870a857bf89b9c7"
+      }
+    },
+    "evidence_relations": {
+      "e1": "supports"
+    },
+    "independent_audit": {
+      "claim_checks": [
+        {
+          "claim_id": "C1",
+          "assessment": "supported",
+          "reason": "Synthetic inspected scope.",
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "reference_ids": [
+            "W1"
+          ],
+          "context_checked": [
+            "Synthetic methods/results."
+          ],
+          "issue_types": [],
+          "uncertainty_review": {
+            "recommended_class": "high",
+            "reason": "Synthetic scope requires caution.",
+            "evidence_ids": [
+              "E1"
+            ],
+            "prior_claim_id": null,
+            "prior_class": null,
+            "prior_match_reason": "No prior supplied."
+          },
+          "statement_sha256": "7d9ad7d1fd4e2bd7b39b1be5b8fc5f8c3b12a4eba80a3de9c1cbd52a38318c25",
+          "claim_snapshot_sha256": "b1bc6f29ffc16e46fa4ae8a0e3f4951e2c860c47248ef55dbc3ee8488b69aa91"
+        },
+        {
+          "claim_id": "C2",
+          "assessment": "supported",
+          "reason": "Synthetic inspected scope.",
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "reference_ids": [
+            "W1"
+          ],
+          "context_checked": [
+            "Synthetic methods/results."
+          ],
+          "issue_types": [],
+          "uncertainty_review": {
+            "recommended_class": null,
+            "reason": "No uncertainty review was recorded.",
+            "evidence_ids": [],
+            "prior_claim_id": null,
+            "prior_class": null,
+            "prior_match_reason": ""
+          },
+          "statement_sha256": "9c6de75523286de13e001f02e024a095e48e3df899e9f4a298e1b9f016fd5c68",
+          "claim_snapshot_sha256": "d9f55bdf9bab6f6d203dfbae19217ffa9249e9119f67081ef870a857bf89b9c7"
+        },
+        {
+          "claim_id": "C3",
+          "assessment": "unresolved",
+          "reason": "Synthetic audit: the excerpt does not state the third value.",
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "reference_ids": [
+            "W1"
+          ],
+          "context_checked": [
+            "Synthetic methods/results."
+          ],
+          "issue_types": [],
+          "uncertainty_review": {
+            "recommended_class": null,
+            "reason": "No uncertainty review was recorded.",
+            "evidence_ids": [],
+            "prior_claim_id": null,
+            "prior_class": null,
+            "prior_match_reason": ""
+          },
+          "statement_sha256": "f69021c63c28552acd26d3112290927ad9fbf83bbb24c977055780fe25572c7a",
+          "claim_snapshot_sha256": "594ab4ee6e7de95ec0b44985aee6b628e1a8b29358883651e28dbd2c57b0c0dc"
+        }
+      ],
+      "evidence_checks": [
+        {
+          "evidence_id": "E1",
+          "assessment": "independent",
+          "reason": "Synthetic family review.",
+          "reference_ids": [
+            "W1"
+          ],
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "study_family_ids": [
+            "fixture-family"
+          ],
+          "family_basis": "Synthetic study identity in the inspected record."
+        }
+      ],
+      "findings": [],
+      "scores": {
+        "selection_defensibility": {
+          "score": 3,
+          "reason": "Fixture."
+        },
+        "question_relevance": {
+          "score": 3,
+          "reason": "Fixture."
+        },
+        "scientific_fidelity": {
+          "score": 3,
+          "reason": "Fixture."
+        },
+        "evidence_coverage": {
+          "score": 3,
+          "reason": "Fixture."
+        },
+        "information_value": {
+          "score": 3,
+          "reason": "Fixture."
+        }
+      },
+      "source_reviewed_ids": [
+        "W1"
+      ],
+      "selection_assessment": "Fixture.",
+      "strengths": [],
+      "limitations": [],
+      "audit_complete": true,
+      "scope_note": "Synthetic only.",
+      "validation_issues": [],
+      "snapshot_sha256": "cfc03128de3079892f4ab36a27ad6d61c801971192b7a48e84d647a158a3832d",
+      "standard_version": 1
+    },
+    "gaps": [
+      {
+        "id": "G1",
+        "kind": "missing_data",
+        "description": "Synthetic missing comparator.",
+        "basis": "Scoped fixture.",
+        "claim_ids": [
+          "C1"
+        ],
+        "evidence_ids": [
+          "E1"
+        ],
+        "needed_to_resolve": "A comparator."
+      }
+    ],
+    "residue": [
+      {
+        "id": "R1",
+        "observation": "A detail worth keeping.",
+        "basis": "Scoped fixture.",
+        "claim_ids": [
+          "C1"
+        ],
+        "evidence_ids": [
+          "E1"
+        ],
+        "why_it_matters": "Preserve it.",
+        "scope_limit": "Synthetic."
+      }
+    ],
+    "evidence_independence": {
+      "e1": {
+        "evidence_id": "E1",
+        "assessment": "independent",
+        "reason": "Synthetic family review.",
+        "reference_ids": [
+          "W1"
+        ],
+        "passage_ids": [
+          "W1-p0001"
+        ],
+        "study_family_ids": [
+          "fixture-family"
+        ],
+        "family_basis": "Synthetic study identity in the inspected record.",
+        "producer_evidence_id": "E1"
+      }
+    },
+    "study_results": [
+      {
+        "id": "S1",
+        "reference_ids": [
+          "W1"
+        ],
+        "result_type": "measured",
+        "fields": {
+          "system": null,
+          "intervention": null,
+          "comparator": null,
+          "conditions": null,
+          "endpoint": null,
+          "value": {
+            "text": "Synthetic value",
+            "passage_ids": [
+              "W1-p0001"
+            ],
+            "verbatims": [
+              {
+                "id": "W1-p0001",
+                "reference_id": "W1",
+                "page": null,
+                "start": 0,
+                "end": 61,
+                "text": "Synthetic fixture observation. This is not research evidence."
+              }
+            ]
+          },
+          "units": null,
+          "sample_size": null,
+          "reported_uncertainty": null
+        },
+        "version_or_cohort_note": "Synthetic cohort only.",
+        "claim_ids": [
+          "c1",
+          "c2"
+        ]
+      }
+    ],
+    "contradictions": [],
+    "withheld_claims": [
+      {
+        "claim": {
+          "id": "C3",
+          "text": "The synthetic fixture reports a third value that the audit did not support.",
+          "kind": "reported_finding",
+          "uncertainty": {
+            "class": "low",
+            "score": 1,
+            "rationale": "Synthetic scoped judgment."
+          },
+          "freshness": {
+            "policy": "unknown",
+            "as_of": null,
+            "review_after": null,
+            "triggers": [],
+            "rationale": "No review horizon was recorded for this claim."
+          },
+          "evidence_ids": [
+            "E1"
+          ],
+          "study_result_ids": [
+            "S1"
+          ]
+        },
+        "status": "withheld",
+        "reason": "Synthetic audit: the excerpt does not state the third value.",
+        "final_check": {
+          "claim_id": "C3",
+          "assessment": "unresolved",
+          "reason": "Synthetic audit: the excerpt does not state the third value.",
+          "passage_ids": [
+            "W1-p0001"
+          ],
+          "reference_ids": [
+            "W1"
+          ],
+          "context_checked": [
+            "Synthetic methods/results."
+          ],
+          "issue_types": [],
+          "uncertainty_review": {
+            "recommended_class": null,
+            "reason": "No uncertainty review was recorded.",
+            "evidence_ids": [],
+            "prior_claim_id": null,
+            "prior_class": null,
+            "prior_match_reason": ""
+          },
+          "statement_sha256": "f69021c63c28552acd26d3112290927ad9fbf83bbb24c977055780fe25572c7a",
+          "claim_snapshot_sha256": "594ab4ee6e7de95ec0b44985aee6b628e1a8b29358883651e28dbd2c57b0c0dc"
+        },
+        "evidence": [
+          {
+            "id": "E1",
+            "passage_ids": [
+              "W1-p0001"
+            ],
+            "interpretation": "Synthetic reading.",
+            "relation": "supports",
+            "premise_claim_ids": [],
+            "verbatims": [
+              {
+                "id": "W1-p0001",
+                "reference_id": "W1",
+                "page": null,
+                "start": 0,
+                "end": 61,
+                "text": "Synthetic fixture observation. This is not research evidence."
+              }
+            ],
+            "reference_ids": [
+              "W1"
+            ]
+          }
+        ]
+      }
+    ],
+    "withheld_evidence": [],
+    "claim_revisions": [],
+    "history_manifest": [],
+    "verification": {
+      "version": 1,
+      "candidate_claims": 3,
+      "supported_claims": 2,
+      "withheld_claims": 1,
+      "withheld_share": 0.3333333333333333,
+      "correction_rounds": 0,
+      "audit_complete": true,
+      "failure": null,
+      "run_issues": []
+    }
+  }
+}
