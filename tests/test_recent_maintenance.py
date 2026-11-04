@@ -453,6 +453,41 @@ class RecentTests(unittest.TestCase):
         with self.assertRaisesRegex(Invalid, 'ancestors'):
             query.recent(self.repo, at=NIGHT1, to=unrelated)
 
+    def test_the_documented_read_reproduces_a_widened_recovery_workset(self):
+        third = run('3', [('Synthetic river flow fell in the fixture spring.', 'high', {})])
+        self.admit(third, '2026-01-03T12:00:00Z')
+        added = ident(third, 'claims', 'c1')
+        # Nothing has completed and the night of 2026-01-03 was missed: 24 hours now start after A and B.
+        night = '2026-01-04T06:00:00.250000Z'  # datetime.now gives created_at microseconds in production.
+        self.assertEqual(recent_workset(self.repo, now=instant(night))['claim_ids'], [added])
+        record = recent_workset(self.repo, hours=48, now=instant(night))
+        self.assertEqual(record['claim_ids'], sorted([A, B, added]))
+        self.assertEqual((record['created_at'], record['window']['hours'], record['window']['from_revision']),
+                         (night, 48, self.first))
+        query, package = self.knowledge(record['base_commit'])
+        result = subprocess.run([sys.executable, str(ROOT / 'scripts/query_knowledge.py'), '--package', str(package),
+                                 'recent', '--repo', str(self.repo), '--at', record['created_at'],
+                                 '--to', record['base_commit'], '--hours', str(record['window']['hours'])],
+                                capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        response = json.loads(result.stdout)
+        self.assertEqual({key: response['window'][key] for key in WINDOW_FIELDS}, record['window'])
+        self.assertEqual([entry['id'] for entry in response['added']], record['claim_ids'])
+        self.assertEqual(response['decisions']['reviewed_claim_ids'], record['claim_ids'])
+        pending, base = self.pending(record), self.snapshot()
+        decision = dict(response['decisions'], model_operations=[], nightly_brief=texts(record),
+                        no_change_reason='Synthetic pass found no justified change.')
+        # Without the recorded hours the read narrows, and its reviewed_claim_ids cannot complete the workset.
+        narrow = query.recent(self.repo, at=record['created_at'], to=record['base_commit'])
+        self.assertEqual(narrow['decisions']['reviewed_claim_ids'], [added])
+        with self.assertRaisesRegex(Invalid, 'reviews every claim in its workset'):
+            plan_maintenance(pending, record['id'],
+                             dict(decision, reviewed_claim_ids=narrow['decisions']['reviewed_claim_ids']), ROOT)
+        changes = plan_maintenance(pending, record['id'], decision, ROOT)
+        self.assertIn('nightly-briefs/2026-01-04.md', changes)
+        self.propose(changes)
+        gate(self.repo, base)  # The gate re-derives the widened window from the recorded hours.
+
     def test_empty_windows_prepare_nothing(self):
         self.assertIsNone(recent_workset(self.repo, now=instant('2026-01-04T00:00:00Z')))
         query, _ = self.knowledge()

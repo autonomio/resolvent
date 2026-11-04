@@ -49,7 +49,7 @@
       "before_the_first_completed_recent_workset": "no_start_is_recorded_so_a_missed_or_unmerged_night_is_recovered_by_preparing_with_more_hours",
       "empty_window": "no_workset_no_pull_request_and_no_nightly_brief",
       "per_date": "one_completed_recent_pass_per_utc_date_of_created_at",
-      "input": "scripts/query_knowledge.py recent --at <workset created_at> --to <workset base_commit>: one complete response without paging, including shape and previous_brief",
+      "input": "scripts/query_knowledge.py recent --at <workset created_at> --to <workset base_commit> --hours <workset window.hours>: one complete response without paging, including shape and previous_brief",
       "review": "none: a recent pass merges on green CI alone, and the integrity gate is its only check",
       "replaces_hard_rules": [
         "review_new_claims_and_rotating_older_claims",

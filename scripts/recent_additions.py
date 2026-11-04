@@ -204,8 +204,9 @@ def shape(knowledge) -> dict:
 def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_limit=20) -> dict:
     """Every claim added in the window and what it must be compared with, in one response.
 
-    `to` ends the window at an ancestor of the package revision, such as a recent
-    workset's base_commit, so a later package still returns exactly that workset.
+    `to` ends the window at an ancestor of the package revision. With `at`, `to` and
+    `hours` set to a recent workset's created_at, base_commit and window.hours, the
+    window and added claims are exactly that workset's, even from a later package.
     """
     from scripts.query_knowledge import bound, tokens
     from scripts.nightly_brief import brief_path

@@ -187,15 +187,16 @@ input in one response:
 
 ```sh
 python scripts/build_knowledge.py --revision <main revision> --output .resolvent/knowledge
-python scripts/query_knowledge.py --package .resolvent/knowledge recent --at <created_at> --to <base_commit>
+python scripts/query_knowledge.py --package .resolvent/knowledge recent --at <created_at> --to <base_commit> --hours <window.hours>
 ```
 
-The response's `window` and `decisions.reviewed_claim_ids` match the workset. It
-lists every added claim with its support and the claims to compare it with, and
-carries the decisions-file inputs, so the pass needs no other read. The weekly
-and change-signal selection, review and deferral rules above do not apply to a
-recent workset; the merge rule above still does. Follow the `recent` mode of the
-`maintenance` contract:
+The three values come from the workset record, so the response's `window` and
+`decisions.reviewed_claim_ids` match the workset, also for a recovery workset
+prepared with more `hours`. It lists every added claim with its support and the
+claims to compare it with, and carries the decisions-file inputs, so the pass
+needs no other read. The weekly and change-signal selection, review and deferral
+rules above do not apply to a recent workset; the merge rule above still does.
+Follow the `recent` mode of the `maintenance` contract:
 
 - Compare each added claim with the rest of the model. Merge a duplicate, add a
   connection where it is justified, and record findings. No change is a valid result.
@@ -222,7 +223,7 @@ inputs, the operations and findings, and the pass's part of the nightly brief:
 ```json
 {
   "expected_model_sha256": "<decisions.expected_model_sha256>",
-  "reviewed_claim_ids": ["<every claim in the workset>"],
+  "reviewed_claim_ids": "<decisions.reviewed_claim_ids>",
   "model_operations": [],
   "findings": ["<what the pass found>"],
   "nightly_brief": {"what_moved": "### Q-…\n\n- C-… restates C-…: merged.", "course": "…"}

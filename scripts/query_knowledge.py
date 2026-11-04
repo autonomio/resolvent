@@ -507,7 +507,8 @@ def main() -> int:
     recent = sub.add_parser('recent')
     recent.add_argument('--repo', type=Path, default=Path('.'),
                         help='Local repository holding the package revision and its full first-parent history')
-    recent.add_argument('--hours', type=int, default=24, help='Window when no recent workset has completed')
+    recent.add_argument('--hours', type=int, default=24,
+                        help="Window when no recent workset has completed; a recent workset's window.hours reproduces it")
     recent.add_argument('--at', help="Timezone-qualified instant for --hours; a recent workset's created_at reproduces it")
     recent.add_argument('--to', help="Ancestor revision ending the window, such as a recent workset's base_commit")
     recent.add_argument('--overlap-limit', type=int, default=20, help='Claims related only by wording to keep per addition')

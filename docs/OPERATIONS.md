@@ -530,7 +530,7 @@ when members join; use an original member ID as the stable group address.
 JSON response. It has no paging and is the exception to the 32 KiB card bound:
 
 ```sh
-python scripts/query_knowledge.py --package .resolvent/knowledge recent --repo . --at <created_at> --to <base_commit>
+python scripts/query_knowledge.py --package .resolvent/knowledge recent --repo . --at <created_at> --to <base_commit> --hours <window.hours>
 ```
 
 `--repo` (default `.`) is a local repository holding the package revision and its
@@ -542,10 +542,12 @@ checkout, fetch or worktree read happens and nothing is written.
   `to_committed_at`, `new_source_ids` and `question_ids` (as recorded in the
   workset), plus `hours`, the evaluation instant `at` and its `cutoff`.
   The rule is the recent workset's own, evaluated as of `to_revision`. That is the
-  package revision unless `--to` names one of its ancestors. With `--at` set to a
-  workset's `created_at` and `--to` to its `base_commit`, the window and added
-  claims are that workset's exactly, even from a later package. Claims admitted
-  after `--to` remain comparison targets. Without `--at`, the instant is now.
+  package revision unless `--to` names one of its ancestors. With `--at`, `--to`
+  and `--hours` set to a workset's `created_at`, `base_commit` and `window.hours`,
+  the window and added claims are that workset's exactly, even from a later
+  package. As in preparation, `--hours` (default 24) moves the start only before
+  the first completed recent workset. Claims admitted after `--to` remain
+  comparison targets. Without `--at`, the instant is now.
 - `added`: each claim present at `to_revision` but absent from the window start, in
   ID order. Each entry carries the statement, class, temporal scope, uncertainty,
   state, valid time, evidence, source and question IDs, plus the full evidence,
