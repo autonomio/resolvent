@@ -782,10 +782,10 @@
       "sha256": "505497f545c6456915f61e0e1d713793702b67b5878b86c7d4c739e8c043a060"
     },
     "scripts/recent_additions.py": {
-      "bytes": 20507,
-      "git_blob": "42b1c8eb0dbafaf3b3ce372e39795f68997bf057",
+      "bytes": 20705,
+      "git_blob": "dbf35387db2c86b1545dee119fe274d4afd358cf",
       "mode": "100644",
-      "sha256": "783c8090477ffb3b8b5960470e3e7cb5e19ec40509d189e2731616fab0872b0d"
+      "sha256": "fa8e52b3c38b9df9e736e1af944d4ce2286ff669c512e91d199d3c508fe2a3f6"
     },
     "scripts/reconcile_plugin_assets.py": {
       "bytes": 2445,

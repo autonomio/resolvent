@@ -136,9 +136,11 @@ def verify_pass(root: Path, old: dict, current: dict, data_changes: set[str], re
     location = brief_path(record)
     fail(set(reports) == {location}, 'A completed recent pass adds exactly its nightly brief ' + location)
     try:
+        top = Path(git(root, 'rev-parse', '--show-toplevel').decode().strip())
         shallow = git(root, 'rev-parse', '--is-shallow-repository').decode().strip()
     except Invalid as error:
         raise Invalid('A recent pass is verified against the Git history of its checkout: ' + str(error)) from None
+    fail(top.is_dir() and top.samefile(root), 'A recent pass is verified against the Git history of its own checkout')
     fail(shallow == 'false', 'A recent pass is verified against complete Git history, not a shallow clone')
     maintenance = [item for path, item in current.items() if family(path) == 'maintenance']
     questions = [item for path, item in current.items() if family(path) == 'questions']
