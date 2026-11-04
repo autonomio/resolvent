@@ -579,7 +579,8 @@ python scripts/compiler.py --require-closure
 ```
 
 The writer validates before applying, captures per-record read digests and previous
-grades, and writes closure 1.1 or completed maintenance 1.2. Retry the same receipt
+grades, and writes closure 1.1 (1.2 with uncertainty decisions) or completed
+maintenance 1.2. Retry the same receipt
 and decisions for no changes; changed decisions cannot rewrite a closed receipt.
 CI checks read digests against the actual base, current predecessors, history
 branching, grouped cycles, exact canonical deltas and legacy provenance integrity.
@@ -588,3 +589,32 @@ requires fresh decisions. Compiler green status certifies structure, not judgmen
 Recent-change queries include provenance-only model operations. Existing recent,
 targeted and rotating maintenance can use these interfaces without new scheduling.
 No bulk migration, production-data rewrite or contribution protocol change is needed.
+
+### Audited uncertainty recommendations
+
+Core 1.4.0 / compiler 1.5.0 reads a contribution's per-candidate
+`method_metadata.claim_metadata` `uncertainty`, `uncertainty_review` and `freshness`
+without any producer runtime. Every assessed recommendation needs an admission
+decision (see `docs/AGENT_JOBS.md`); the writer lists any that are missing:
+
+```json
+{"uncertainty_reviews": {"c1": {"action": "override", "uncertainty": "medium",
+  "reason": "e1 reports one cohort; low needs independent inspected evidence."}}}
+```
+
+When an adopted grade differs from a merge target's grade, add a reassessment to
+`model_operations` with the run ID in `basis_ids`, and name its local ID as the
+decision's `reassessment`. The writer applies adopted grades directly only to new
+claims, checks each proposed prior against the base and writes closure 1.2
+`uncertainty_reviews`: candidate and claim IDs, recommended and adopted grades,
+decision, reason, linked reassessment and prior check. The compiler checks coverage,
+mappings and links; PR delta validation rechecks priors against the actual base and
+the materialized grades. A retry of a closed run remains a no-op.
+
+`query_knowledge.py assessments C-<id>` (`Knowledge.assessments`) reports each
+supplied grade with the writer's label, the recommendation and its canonical and
+original evidence IDs, prior check and verified change, producer audit status,
+limitations, destination decision and review horizon. Free text is previewed; the
+pinned run and closure keep the originals. An explicit decision resolves its supplied
+grade in current-assessment views; an undecided legacy recommendation is reported as
+a limitation. Review horizons never change uncertainty, lifecycle or valid time.

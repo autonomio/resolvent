@@ -41,6 +41,16 @@ also belongs in `follow_up_gaps`. Use actual findings, not the example's rationa
 For a zero-claim package use empty claims/connection_review maps and preserve the
 package's explanation. Do not create artificial assertions to make a run nonempty.
 
+When `method_metadata.claim_metadata` carries an assessed `uncertainty_review` for a
+candidate, add `"uncertainty_reviews": {"c1": {"action": "accept", "reason": "..."}}`
+for exactly those candidates. `accept` adopts the recommended grade (`moderate`
+means `medium`); `override` supplies a different `uncertainty`; `defer` keeps the
+supplied grade and needs a `follow_up_gaps` entry. Give an evidence-based reason.
+A new claim takes the adopted grade. A merged or other existing claim changes only
+through a `model_operations` reassessment that cites the run in `basis_ids` and is
+named by the decision's `reassessment` local ID. Low still requires independent
+inspected evidence. Unassessed reviews take no decision; they remain limitations.
+
 Run, in order:
 
 ```sh
@@ -63,8 +73,8 @@ merge are new contributions; do not rewrite the original provenance.
 ## Independent review
 
 Review evidence quality, completeness, atomicity, material scope, class, uncertainty,
-source independence as supplied, immediate connectors, closure dispositions and
-outstanding discovery. Review the supplied material and model judgments; research
+audited-uncertainty decisions, source independence as supplied, immediate connectors,
+closure dispositions and outstanding discovery. Review the supplied material and model judgments; research
 quality verification stays with the producer. Uncertainty may remain unresolved;
 known structural errors cannot.
 

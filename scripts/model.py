@@ -324,6 +324,7 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
         fail(set(q["claim_ids"]) <= set(claims), f"{q['id']}: unresolved question claim")
     submissions = idx.get("submission", {})
     closed = set()
+    from scripts.uncertainty_review import validate_closure
     for c in idx.get("closure", {}).values():
         sid = c["submission_id"]
         fail(sid in submissions, f"{c['id']}: missing submission")
@@ -361,6 +362,7 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
                 archive = idx.get(kind, {}).get(bid)
                 fail(archive is not None and archive["submission_id"] == sid and archive[kind] == payload,
                      f"{sid}: missing or inconsistent {kind} artifact")
+        validate_closure(c, p)
         closed.add(sid)
     if require_closure:
         fail(set(submissions) <= closed, "Awaiting admission agent: contributions need a materialized closure before merge: " + ", ".join(sorted(set(submissions)-closed)))
@@ -471,3 +473,10 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
                  'Claims remain permanent; do not create claim-retirement transitions')
             if previous and previous['uncertainty'] != record['uncertainty']:
                 fail(record['id'] in new_assessments, 'Uncertainty changes require an explicit reassessment')
+    from scripts.uncertainty_review import validate_admission
+    proposed = indexes(current)
+    for path in sorted(data_changes):
+        if path in current and path not in old and family(path) == 'closure':
+            receipt = current[path]
+            validate_admission(receipt, proposed['submission'][receipt['submission_id']],
+                               old_claims, proposed.get('claims', {}))

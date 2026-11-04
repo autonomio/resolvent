@@ -4,7 +4,8 @@
     "schema_version": {
       "enum": [
         "1.0",
-        "1.1"
+        "1.1",
+        "1.2"
       ]
     },
     "id": {
@@ -301,6 +302,116 @@
     "model_decisions_sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "uncertainty_reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "claim_id",
+          "recommended_uncertainty",
+          "decision",
+          "uncertainty",
+          "reason",
+          "reassessment",
+          "prior"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          },
+          "claim_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^C-[0-9a-f]{32}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recommended_uncertainty": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "decision": {
+            "enum": [
+              "accept",
+              "override",
+              "defer"
+            ]
+          },
+          "uncertainty": {
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              null
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reassessment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prior": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "claim_id",
+                  "status",
+                  "uncertainty"
+                ],
+                "properties": {
+                  "claim_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "status": {
+                    "enum": [
+                      "comparable",
+                      "missing",
+                      "stale",
+                      "scope_differs",
+                      "no_match_reason"
+                    ]
+                  },
+                  "uncertainty": {
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      null
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
     }
   },
   "required": [
@@ -343,7 +454,10 @@
       "then": {
         "properties": {
           "schema_version": {
-            "const": "1.1"
+            "enum": [
+              "1.1",
+              "1.2"
+            ]
           }
         },
         "required": [
@@ -351,6 +465,27 @@
           "model_base_sha256",
           "model_decisions_sha256"
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "1.2"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "uncertainty_reviews"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "uncertainty_reviews"
+          ]
+        }
       }
     }
   ]

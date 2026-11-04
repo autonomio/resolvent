@@ -197,7 +197,7 @@ are unchanged.
 
 ## Recorded comparison and reassessment
 
-Admission closure 1.1 and maintenance 1.2 may contain typed `model_operations`.
+Admission closure 1.1/1.2 and maintenance 1.2 may contain typed `model_operations`.
 Their permanent address is the receipt ID plus `#` plus local operation ID. Results
 name canonical subjects, supplied basis IDs, a reason and writer-captured read
 digests. These are externally supplied judgments, not independent observations.
@@ -232,3 +232,33 @@ explicit reassessment, appear as disputed. No averaging or automatic uncertainty
 change occurs. New exact claim reuse requires matching uncertainty as well as
 statement, class and temporal scope. Otherwise preserve a separate claim; an
 external comparison may group it. History remains retrievable after reassessment.
+
+## Audited uncertainty recommendations (closure 1.2)
+
+A contribution's `method_metadata.claim_metadata[candidate]` may preserve the
+writer's original `uncertainty`, an auditor's `uncertainty_review` and a `freshness`
+review horizon. The review's recommended class, reason, evidence IDs, proposed
+prior claim, prior grade and match reason are a separate model judgment, not an
+independent observation, and change nothing by themselves. Labels stay ordinal;
+`moderate` maps to `medium`.
+
+Admission records one `uncertainty_reviews` decision per assessed recommendation:
+`accept` adopts it, `override` adopts another grade and `defer` keeps the supplied
+grade with a follow-up gap. Each keeps its reason and candidate/claim mapping. A
+new claim takes the adopted grade. An existing claim, including a merge target,
+changes only through its linked recorded reassessment citing the run, so a merge
+cannot silently keep or replace a grade. Low uncertainty still needs the claim's
+own independent inspected evidence. Meaning-changing corrections need a new ID.
+
+A proposed prior is a destination claim ID, never a mapped candidate ID. Admission
+checks it against the actual base revision as `comparable`, `missing`, `stale`,
+`scope_differs` or `no_match_reason`, and CI rechecks that base. A comparable check
+covers recorded grade and scope only; sameness remains the auditor's proposal unless
+admission merges the claims. Unassessed or malformed reviews, unavailable evidence,
+duplicate raw audit rows (even with `audit_complete=true`) and incomplete audits stay
+explicit limitations, without decisions or comparisons. Legacy closures without
+decisions remain readable; new admissions cannot omit them.
+
+A review horizon (`scheduled`, `event_driven`, `historical` or `unknown`) prompts
+reassessment only. A passed date is not falsification, uncertainty decay, retirement
+or valid time. Automatic expiry actions are outside this profile.

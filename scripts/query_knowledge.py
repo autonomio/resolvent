@@ -16,6 +16,7 @@ from scripts.build_knowledge import ROOT, json_bytes, projection, sha256
 from scripts.model import CANONICAL_ROOTS, Invalid, digest, family, safe_relative, unique_pairs, validate_state
 from scripts.temporal import applicability, point
 from scripts.model_operations import current_assessments, equivalence_groups, model_digest, operation_records
+from scripts.uncertainty_review import adopted, report as review_report
 
 
 def read_json(contents: bytes) -> dict:
@@ -100,13 +101,14 @@ class Knowledge:
             if receipt.get('id','').startswith('BC-'):
                 run=runs[receipt['submission_id']]
                 candidates={r['id']:r for r in run['claims']}
+                reviewed=review_report(run,receipt)
                 for disposition in receipt['claim_dispositions']:
                     cid=disposition['claim_id']
                     if cid is not None:
                         candidate=candidates[disposition['candidate_id']]
                         self.supplied_assessments[cid].append({'id':run['id']+'#'+candidate['id'],
                             'kind':'supplied_assessment','uncertainty':candidate['uncertainty'],
-                            'disposition':disposition['disposition']})
+                            'disposition':disposition['disposition'],**reviewed.get(candidate['id'],{})})
         self.by_id = {record_id: (group, record) for group, records in self.records.items()
                        for record_id, record in records.items()}
         self.rebuild_index()
@@ -210,9 +212,10 @@ class Knowledge:
                         'assessment':self.current_assessments.get(cid)} for cid in members]
             for cid in members:
                 if cid not in self.current_assessments:
-                    ratings.extend({'claim_id':cid,'uncertainty':item['uncertainty'],'assessment':item['id']}
+                    # An explicit admission decision on a supplied grade is its destination result.
+                    ratings.extend({'claim_id':cid,'uncertainty':adopted(item),'assessment':item['id']}
                         for item in self.supplied_assessments[cid]
-                        if item['uncertainty'] != self.records['claims'][cid]['uncertainty'])
+                        if adopted(item) != self.records['claims'][cid]['uncertainty'])
             values = {item['uncertainty'] for item in ratings}
             result['current_assessment'] = {'status':'agreed' if len(values)==1 else 'disputed',
                     'uncertainty':next(iter(values)) if len(values)==1 else None,
