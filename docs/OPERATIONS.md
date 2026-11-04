@@ -350,8 +350,8 @@ still prepares a weekly workset on request.
 
 The record is maintenance profile 1.3. Its `window` records the start rule, the
 previous recent workset (if any), the start revision and its committer time, the
-base revision's committer time, the hours used, the sources the window added and
-the questions present at its end that hold an added claim. Completed recent
+base revision's committer time, the hours used, and the sources and questions the
+window added (read from Git trees, never from record contents). Completed recent
 worksets count as reviewed coverage but do not advance the weekly rotation cursor.
 Agents read the whole input with the `recent` read below and follow the `recent`
 mode of the maintenance contract and `docs/AGENT_JOBS.md`.

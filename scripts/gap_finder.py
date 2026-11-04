@@ -25,7 +25,7 @@ def recent_workset(root: Path, hours: int = 24, now: datetime | None = None) -> 
         raise Invalid('Commit the world data before preparing a recent workset')
     idx = indexes(load_state(root))
     maintenance = idx.get('maintenance', {}).values()
-    span, added = selection(root, 'HEAD', maintenance, idx.get('questions', {}).values(), hours=hours, at=now)
+    span, added = selection(root, 'HEAD', maintenance, hours=hours, at=now)
     added = sorted(value for value in added if value.startswith('C-'))
     record = {'schema_version':'1.3','id':'M-'+uuid.uuid4().hex,'status':'pending','base_commit':span['to_revision'],
               'created_at':span['at'],'claim_ids':added,'reviewed_claim_ids':[],'touched_files':[], 'findings':[],

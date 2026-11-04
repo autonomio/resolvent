@@ -200,10 +200,9 @@ are unchanged.
 Maintenance profile 1.3 adds a required `window` to a recent workset: its start
 rule (`last_completed_recent_workset` or `hours`), the previous recent workset, the
 start revision and its committer time (both null at the empty model), the base
-revision's committer time, the hours used, the sources the window added
-(`new_source_ids`) and the questions present at its end that hold an added claim
-(`question_ids`). Its claims are those at `base_commit` absent from the start
-revision's tree. The window is preparation metadata taken from Git history, not
+revision's committer time, the hours used, and the sources and questions the
+window added (`new_source_ids`, `question_ids`). Its claims, sources and questions
+are those at `base_commit` absent from the start revision's tree. The window is preparation metadata taken from Git history, not
 claim valid time, evidence or an independent clock. Profile 1.3 cannot carry a
 change-signal trigger or `subject_ids` and remains 1.3 when completed. A completed
 1.3 record has reviewed every claim in its workset. Earlier profiles are unchanged.

@@ -239,8 +239,8 @@ model. There is one per completed recent pass and one per date.
 
 `world_control.py` writes the file. It generates the numbers from the completed
 record: the window's revisions and their times, claims added, claims merged,
-connections added, grades changed, questions touched and new sources. The pass
-writes the rest:
+connections added, grades changed, questions touched (the questions the window
+added) and new sources. The pass writes the rest:
 
 - `what_moved`, under "What moved": per question (use `###` headings), in plain
   language, what the new claims add, confirm or contradict, what merged, and what

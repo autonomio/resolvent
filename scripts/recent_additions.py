@@ -78,21 +78,19 @@ def recorded_ids(repo: Path, revision: str | None) -> set[str]:
             if (match := RECORD_PATH.fullmatch(name.decode('utf-8', 'replace')))}
 
 
-def selection(repo: Path, revision: str, maintenance, questions, *, hours: int = 24, at=None) -> tuple[dict, set[str]]:
-    """The window as of `revision` and every record ID it added, from Git objects only.
+def selection(repo: Path, revision: str, maintenance, *, hours: int = 24, at=None) -> tuple[dict, set[str]]:
+    """The window as of `revision` and every record ID it added, from Git trees only.
 
-    Only maintenance and question records present at `revision` count, so a later state
-    reproduces the same selection. The window also records the sources it added and the
-    questions present at its end that hold an added claim.
+    Only maintenance records present at `revision` count, so a later state reproduces the
+    same selection. The window also records the sources and questions it added; no record
+    content is read, so later edits cannot change a recorded window.
     """
     commit = git(repo, 'rev-parse', '--verify', '--end-of-options', revision + '^{commit}').decode().strip()
     present = recorded_ids(repo, commit)
     span = window(repo, commit, [record for record in maintenance if record['id'] in present], hours=hours, at=at)
     added = present - recorded_ids(repo, span['from_revision'])
-    claims = {value for value in added if value.startswith('C-')}
     span.update(new_source_ids=sorted(value for value in added if value.startswith('S-')),
-                question_ids=sorted(question['id'] for question in questions
-                                    if question['id'] in present and claims.intersection(question['claim_ids'])))
+                question_ids=sorted(value for value in added if value.startswith('Q-')))
     return span, added
 
 
@@ -146,8 +144,7 @@ def verify_pass(root: Path, old: dict, current: dict, data_changes: set[str], re
     fail(top.is_dir() and top.samefile(root), 'A recent pass is verified against the Git history of its own checkout')
     fail(shallow == 'false', 'A recent pass is verified against complete Git history, not a shallow clone')
     maintenance = [item for path, item in current.items() if family(path) == 'maintenance']
-    questions = [item for path, item in current.items() if family(path) == 'questions']
-    span, added = selection(root, record['base_commit'], maintenance, questions,
+    span, added = selection(root, record['base_commit'], maintenance,
                             hours=record['window']['hours'], at=record['created_at'])
     fail(span['to_revision'] == record['base_commit'] and record['window'] == {key: span[key] for key in WINDOW_FIELDS}
          and record['claim_ids'] == sorted(value for value in added if value.startswith('C-')),
@@ -156,7 +153,7 @@ def verify_pass(root: Path, old: dict, current: dict, data_changes: set[str], re
         git(root, 'merge-base', '--is-ancestor', record['base_commit'], 'HEAD')
     except Invalid:
         raise Invalid("A recent workset's base_commit must be in the history of the proposed change") from None
-    operations = record['model_operations']
+    operations = record.get('model_operations', [])
     reassessed = {subject for op in operations if op['kind'] == 'reassessment' for subject in op['subject_ids']}
     linked = {op['record']['id'] for op in operations if op['kind'] == 'linkage'}
     for path in sorted(data_changes - {passes[0]}):
@@ -225,7 +222,7 @@ def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_lim
         except Invalid:
             raise Invalid('The window must end at the package revision or one of its ancestors') from None
     maintenance = [item for path, item in provenance.items() if family(path) == 'maintenance']
-    span, in_window = selection(repo, end, maintenance, records['questions'].values(), hours=hours, at=at)
+    span, in_window = selection(repo, end, maintenance, hours=hours, at=at)
     added = sorted(cid for cid in claims if cid in in_window)
     previous_brief = None
     if span['previous_workset_id'] is not None:

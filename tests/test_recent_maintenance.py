@@ -314,6 +314,8 @@ class RecentTests(unittest.TestCase):
             ('needs an added claim', changes, rewrite(model_operations=completed['model_operations'] + [old_pair]), []),
             ('only by reassessing', changes, {'claims/' + X + '.yaml': dict(changes['claims/' + X + '.yaml'],
                                                                             statement='Synthetic reworded claim.')}, []),
+            ('uncertainty differs', changes, {'claims/' + X + '.yaml': dict(changes['claims/' + X + '.yaml'],
+                                                                            uncertainty='medium')}, []),
             ('results of its recorded operations', changes,
              dict(rewrite(touched_files=sorted(completed['touched_files'] + [evidence])),
                   **{evidence: dict(pending[evidence], summary='Synthetic edit outside the pass.')}), []),
@@ -438,10 +440,13 @@ class RecentTests(unittest.TestCase):
         entry = next(entry for entry in response['added'] if entry['id'] == A)
         target = next(target for target in entry['compare_with'] if target['id'] == ident(later, 'claims', 'c1'))
         self.assertFalse(target['added_in_window'])
-        state = self.pending(record)
+        state, base = self.pending(record), self.snapshot()
         decision = dict(response['decisions'], model_operations=[], nightly_brief=texts(record),
                         no_change_reason='Synthetic pass found no justified change.')
-        self.assertIn('maintenance/' + record['id'] + '.yaml', plan_maintenance(state, record['id'], decision, ROOT))
+        changes = plan_maintenance(state, record['id'], decision, ROOT)
+        self.assertEqual(sorted(changes), sorted(['maintenance/' + record['id'] + '.yaml', BRIEF]))
+        self.propose(changes)
+        gate(self.repo, base)  # A no-change pass on a branch updated from a newer main.
         unrelated = subprocess.check_output(['git', '-C', str(self.repo), '-c', 'user.name=Synthetic test', '-c',
                                              'user.email=test@example.invalid', 'commit-tree', self.git('write-tree'),
                                              '-m', 'Unrelated history'], text=True).strip()

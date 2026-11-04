@@ -428,10 +428,10 @@
       "sha256": "9fc116d5528601c60ad9eac32e2d4b709059240408f3d3e5c8ad655880862aff"
     },
     "docs/AGENT_JOBS.md": {
-      "bytes": 18180,
-      "git_blob": "7604604ece5e1d6900309719d47326b1cb7efabe",
+      "bytes": 18213,
+      "git_blob": "1743afb2f78b9febffd598358df1cae25e3bad05",
       "mode": "100644",
-      "sha256": "0a17c1f42307e891a2c5b56cc942c76d0c4653aea7e434f68275c1f8d9db857d"
+      "sha256": "9f59a9240a852af8f16e51dc24a311f439c50fabc8a09da8681cb862cb9520ff"
     },
     "docs/CLAUDE_SETUP.md": {
       "bytes": 4828,
@@ -452,16 +452,16 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 52234,
-      "git_blob": "91e1df34225a4bc8cff5325358a55d4d7012c255",
+      "bytes": 52240,
+      "git_blob": "ab9fb2c5be1a3c0c521a45a40d1e77a4c749a246",
       "mode": "100644",
-      "sha256": "36fd69f9b699e613a58af5f8f6366c3c3d8dcf0313320fca6c69b3208832b062"
+      "sha256": "481711bb0dfb084a00f6168ba2ccfb9b9c39f945ef19e57ef50601ef72930e36"
     },
     "docs/Ontology.md": {
-      "bytes": 18125,
-      "git_blob": "bef326ecd315841c8c3e3b486ef79d9bfdeff1f8",
+      "bytes": 18103,
+      "git_blob": "6b8335836bba4de9f2392639f032ef6559f4cf43",
       "mode": "100644",
-      "sha256": "80ae21c4e459c3098593ad3629f9a3701536c2a398e05a9e3bea20b8732989ba"
+      "sha256": "678d74af8281deeeb7bc1b3a2f60ed1b0cb0aa537e0b976ac2f5a2b3b29110ab"
     },
     "docs/PLUGIN_DESIGN.md": {
       "bytes": 13922,
@@ -554,10 +554,10 @@
       "sha256": "1a301bde74ac4774bb3f4d050485cba8362baba2079a42d309cd9990bb5788b5"
     },
     "docs/contracts/activity/model_operations.json": {
-      "bytes": 5023,
-      "git_blob": "8aa14287aa5438af9715095da9c67a62a0e4a954",
+      "bytes": 5020,
+      "git_blob": "4d6b2c54c69cc1d562ba64f9b3340bd1f7d36793",
       "mode": "100644",
-      "sha256": "cd29a5b4940b724d55a9e8b58623c3473f8026c943229290f04aecce833e25ad"
+      "sha256": "8456dbb8ba495a7efb8c09cb9cf4bbdb946ecec1505a7f512b524f6dac31a957"
     },
     "docs/contracts/activity/research_brief_creation.json": {
       "bytes": 2130,
@@ -722,10 +722,10 @@
       "sha256": "d521a337351347f5ce4680d520ae9126051d319f3f23201a78b5d625baf6900d"
     },
     "scripts/gap_finder.py": {
-      "bytes": 4715,
-      "git_blob": "43cf8aa35bcddf6afee88cf3f70ef6307752d216",
+      "bytes": 4680,
+      "git_blob": "c13411f680ca375a6b05993011ef9873a30b459b",
       "mode": "100644",
-      "sha256": "3cbc36ba02326f3be5b078dcea690267fd9ec7149e69cb5f68f9490422b62de8"
+      "sha256": "868c9725e21daf544b289a60aed94b3a5065a13093db830c7cc4913f20688f1b"
     },
     "scripts/model.py": {
       "bytes": 27231,
@@ -782,10 +782,10 @@
       "sha256": "7cbf55010bb0dd94be1585f8d95bec5565b638a9906609d17f7d38e63532bafb"
     },
     "scripts/recent_additions.py": {
-      "bytes": 20944,
-      "git_blob": "484280ccc1115f5fed7cf43a040603a42470a8e3",
+      "bytes": 20655,
+      "git_blob": "66044a1c6a265af26b0edc0f40ad835297c16881",
       "mode": "100644",
-      "sha256": "36ce227ccc2d70325bd0ab6b7fd3ade54875938d5d750094c4f2a4829db37e1f"
+      "sha256": "fffe2c8362bfc9dcd942b8acf31fe2635bbf39b34bac946664ae1ebe5d6c6bf4"
     },
     "scripts/reconcile_plugin_assets.py": {
       "bytes": 2445,
@@ -1172,10 +1172,10 @@
       "sha256": "bd56bda925c69e97ec87623dc5ab84ec6c097c97a445569c29c4ce2c7972e7f1"
     },
     "tests/test_recent_maintenance.py": {
-      "bytes": 36369,
-      "git_blob": "303be827eb2fe357862ba5cd24fae50208a0a907",
+      "bytes": 36780,
+      "git_blob": "053ef1c51d5f945ff0f7cef2500b50bf28274cb2",
       "mode": "100644",
-      "sha256": "1a9a1444cdd81d227189781e8518e13aee55bbb6b9dd376d22781735d9f91e43"
+      "sha256": "e44a001602e63596da93ae893106710cd143fa826bbcd88b868b3349f3d73a26"
     },
     "tests/test_release_asset_recovery.py": {
       "bytes": 2007,
