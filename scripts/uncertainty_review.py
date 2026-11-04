@@ -198,7 +198,7 @@ def validate_admission(closure, p, before, after):
         fail(after[r['claim_id']]['uncertainty'] == expected,
              f"{sid}: {r['claim_id']} uncertainty differs from its recorded decision")
         fail((r['reassessment'] is not None) == (old is not None and old['uncertainty'] != expected),
-             f"{sid}: change an existing claim's grade only through its linked reassessment")
+             f"{sid}: link a reassessment exactly when a decision changes an existing claim's grade")
 
 
 def change(recommended, check):

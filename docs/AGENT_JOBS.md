@@ -46,10 +46,12 @@ candidate, add `"uncertainty_reviews": {"c1": {"action": "accept", "reason": "..
 for exactly those candidates. `accept` adopts the recommended grade (`moderate`
 means `medium`); `override` supplies a different `uncertainty`; `defer` keeps the
 supplied grade and needs a `follow_up_gaps` entry. Give an evidence-based reason.
-A new claim takes the adopted grade. A merged or other existing claim changes only
-through a `model_operations` reassessment that cites the run in `basis_ids` and is
-named by the decision's `reassessment` local ID. Low still requires independent
-inspected evidence. Unassessed reviews take no decision; they remain limitations.
+A new claim takes the adopted grade, which exact reuse also compares. A merged
+claim changes only through a `model_operations` reassessment that cites the run in
+`basis_ids` and is named by the decision's `reassessment` local ID. A proposed prior
+kept as a separate claim changes only through its own recorded reassessment citing
+the run. Low still requires independent inspected evidence. Unassessed reviews take
+no decision; they remain limitations.
 
 Run, in order:
 

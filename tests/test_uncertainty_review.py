@@ -184,6 +184,13 @@ class UncertaintyReviewTests(unittest.TestCase):
         deferred = copy.deepcopy(state); deferred.update(plan_admission(state, p['id'], d, ROOT))
         self.assertEqual(deferred['claims/' + target + '.yaml']['uncertainty'], 'medium')
         self.assertEqual(receipt(deferred, p)['uncertainty_reviews'][0]['decision'], 'defer')
+        # A prior kept as a separate claim changes only through its own recorded reassessment.
+        d = decide(p); d['connection_review']['c1']['considered_claim_ids'] = [target]
+        d.update(expected_model_sha256=model_digest(state), model_operations=[reassess(target, p)])
+        separate = copy.deepcopy(state); separate.update(plan_admission(state, p['id'], d, ROOT))
+        delta(base, separate)
+        self.assertEqual(receipt(separate, p)['claim_dispositions'][0]['disposition'], 'created')
+        self.assertEqual({separate['claims/' + c + '.yaml']['uncertainty'] for c in (target, canonical_id(p['id'], 'claims', 'c1'))}, {'high'})
 
     def test_prior_checks_use_the_current_revision_and_never_map_candidate_ids(self):
         base, target = existing()

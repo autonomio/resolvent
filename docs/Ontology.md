@@ -245,10 +245,11 @@ independent observation, and change nothing by themselves. Labels stay ordinal;
 Admission records one `uncertainty_reviews` decision per assessed recommendation:
 `accept` adopts it, `override` adopts another grade and `defer` keeps the supplied
 grade with a follow-up gap. Each keeps its reason and candidate/claim mapping. A
-new claim takes the adopted grade. An existing claim, including a merge target,
-changes only through its linked recorded reassessment citing the run, so a merge
-cannot silently keep or replace a grade. Low uncertainty still needs the claim's
-own independent inspected evidence. Meaning-changing corrections need a new ID.
+new claim takes the adopted grade, which exact reuse compares. An existing claim,
+including a merge target, changes only through a recorded reassessment citing the
+run, linked from the decision for a merge, so a merge cannot silently keep or
+replace a grade. Low uncertainty still needs the claim's own independent inspected
+evidence. Meaning-changing corrections need a new ID.
 
 A proposed prior is a destination claim ID, never a mapped candidate ID. Admission
 checks it against the actual base revision as `comparable`, `missing`, `stale`,

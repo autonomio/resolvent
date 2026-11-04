@@ -428,10 +428,10 @@
       "sha256": "9fc116d5528601c60ad9eac32e2d4b709059240408f3d3e5c8ad655880862aff"
     },
     "docs/AGENT_JOBS.md": {
-      "bytes": 8386,
-      "git_blob": "4d941ba85abd6231350df0f1d2e4291a905b7e8b",
+      "bytes": 8510,
+      "git_blob": "cb6244df331c9b1bb5bf61a747d621ca3c620c49",
       "mode": "100644",
-      "sha256": "0abb447c29f8b2e13d56b4a65cefc37595cf785d885c4a4e50a5d7c6bc4bcf81"
+      "sha256": "13ba7f4f07e36673b517e492029051a2a93a83911c938d6db3d9e9a2d97ad551"
     },
     "docs/CLAUDE_SETUP.md": {
       "bytes": 4828,
@@ -458,10 +458,10 @@
       "sha256": "156fe1118eea34453e7b05c7ac117c83ec08a261ab795cb52fb8cf8fdbd3f3b0"
     },
     "docs/Ontology.md": {
-      "bytes": 16352,
-      "git_blob": "013d005a3c8302bb0960d96f782c66ac3daa3777",
+      "bytes": 16409,
+      "git_blob": "1c6113e6897296d70f9d4b30b3a9eaab2ea4d668",
       "mode": "100644",
-      "sha256": "7b7a4f90da5f34bc4f644f15a305cfd7d0648c5e95587f090b6826f34316d324"
+      "sha256": "fb5bbdfd14cb1b7effc747e71b5efc833db3430a4519b658ee9644de872bd9b1"
     },
     "docs/PLUGIN_DESIGN.md": {
       "bytes": 13922,
@@ -812,10 +812,10 @@
       "sha256": "82eb58e0dfc07769039f9fe7160d7fea44221ecb06e17679a656a82e7275c347"
     },
     "scripts/uncertainty_review.py": {
-      "bytes": 17203,
-      "git_blob": "de062776a17bab603fd107dfe001fe34d9b66b1c",
+      "bytes": 17211,
+      "git_blob": "4eb1948760472954d634d1e81542ce77b4ad64ba",
       "mode": "100644",
-      "sha256": "b3f600a79f9edec8bc4dbe18d861f3ae00b85ffd2703d9bd15a77018914d0504"
+      "sha256": "e7202aed98cfbbd28ad7d6fabb35d33a7d106a5d9d1de9c8f4301c3240f3376f"
     },
     "scripts/workflow_mcp/README.md": {
       "bytes": 4961,
@@ -1184,10 +1184,10 @@
       "sha256": "e0c57913dd0d1cd8cd574eb2a0d1854454fe3eeb185cf1929542599c5c986e24"
     },
     "tests/test_uncertainty_review.py": {
-      "bytes": 19086,
-      "git_blob": "e8339823e899e51eaa423426dba7c39227a277f1",
+      "bytes": 19738,
+      "git_blob": "c1630a76212760a258208eaf63a2b33c0eb1b8b2",
       "mode": "100644",
-      "sha256": "7c7e43a93bbfdc6e6f624191707c2d1693352709ed06d2b76c49d8542445f3d6"
+      "sha256": "a73b0c669ff9978ec9769d323676b4a0dfbb7d592067923f58540fbaf9518d7b"
     },
     "tests/test_workflow.py": {
       "bytes": 10543,
