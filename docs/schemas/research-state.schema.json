@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Resolvent portable question research state 1.0",
+  "title": "Resolvent portable question research state 1.1",
   "type": "object",
   "required": [
     "schema_version",
@@ -29,7 +29,7 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"const": "1.1"},
     "kind": {"const": "resolvent.research-state"},
     "repository": {"type": "string", "minLength": 1, "maxLength": 2048},
     "build": {
@@ -112,18 +112,8 @@
           "url": {},
           "year": {},
           "source_kind": {},
-          "id": {"type": "string"},
-          "stages": {
-            "type": "object",
-            "required": ["discovered", "cited", "retrieved", "substantively_reviewed"],
-            "additionalProperties": false,
-            "properties": {
-              "discovered": {"enum": ["recorded_reference", "recorded_source"]},
-              "cited": {"enum": ["recorded_evidence_link", "producer_reported", "unknown"]},
-              "retrieved": {"enum": ["inspected_passage_only", "not_retrieved", "producer_reported", "unknown"]},
-              "substantively_reviewed": {"enum": ["producer_reported", "unknown"]}
-            }
-          },
+          "id": {"type": "string", "minLength": 1},
+          "stages": {"$ref": "#/$defs/stages"},
           "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/origin"}},
           "full_text_status": {},
           "preview_marker_detected": {}
@@ -157,7 +147,7 @@
     },
     "review_coverage": {
       "type": "object",
-      "required": ["submissions", "other_reviews", "interpretation"],
+      "required": ["submissions", "unidentified_references", "other_reviews", "interpretation"],
       "additionalProperties": false,
       "properties": {
         "submissions": {
@@ -171,6 +161,28 @@
               "status": {"enum": ["preserved_producer_report", "unknown", "lineage_only"]},
               "artifact": {"type": "string"},
               "reason": {"type": "string"}
+            }
+          }
+        },
+        "unidentified_references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["stages", "provenance"],
+            "additionalProperties": false,
+            "properties": {
+              "title": {},
+              "doi": {},
+              "url": {},
+              "year": {},
+              "source_kind": {},
+              "stages": {
+                "$ref": "#/$defs/stages",
+                "properties": {"substantively_reviewed": {"const": "unknown"}}
+              },
+              "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/origin"}},
+              "full_text_status": {},
+              "preview_marker_detected": {}
             }
           }
         },
@@ -260,6 +272,17 @@
   "$defs": {
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "strings": {"type": "array", "items": {"type": "string"}},
+    "stages": {
+      "type": "object",
+      "required": ["discovered", "cited", "retrieved", "substantively_reviewed"],
+      "additionalProperties": false,
+      "properties": {
+        "discovered": {"enum": ["recorded_reference", "recorded_source"]},
+        "cited": {"enum": ["recorded_evidence_link", "producer_reported", "unknown"]},
+        "retrieved": {"enum": ["inspected_passage_only", "not_retrieved", "producer_reported", "unknown"]},
+        "substantively_reviewed": {"enum": ["producer_reported", "unknown"]}
+      }
+    },
     "origin": {
       "type": "object",
       "required": ["basis"],

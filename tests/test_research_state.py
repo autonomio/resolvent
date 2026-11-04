@@ -1,4 +1,5 @@
 """Synthetic question histories only; never fetch or seed a real world model."""
+import copy
 import hashlib
 import json
 import subprocess
@@ -13,6 +14,9 @@ from scripts.research_state import research_artifact
 from scripts.world_control import canonical_id, plan_admission
 from test_model import ROOT, admitted, contribution, decisions, state_for
 from test_model_operations import QueryFixture, ids
+
+SCHEMA = json.loads((ROOT/'docs/schemas/research-state.schema.json').read_text())
+UNUSABLE_IDS = (('absent', {}), ('null', {'id': None}), ('number', {'id': 42}), ('list', {'id': ['x']}), ('empty', {'id': ''}))
 
 
 def research():
@@ -31,6 +35,12 @@ def proposal(token='1'):
     p = contribution(token=token*32)
     p['method_metadata'] = {'external': {'question': 'external-question-9'}}
     p['result']['artifacts'] = [{'name': 'canary-research.json', 'content': json.dumps(research(), ensure_ascii=False)}]
+    return p
+
+
+def reporting(payload, token='1'):
+    p = proposal(token)
+    p['result']['artifacts'][0]['content'] = json.dumps(payload)
     return p
 
 
@@ -63,6 +73,115 @@ class ResearchStateTests(unittest.TestCase):
         self.assertFalse(result['coverage']['exhaustive'])
         self.assertNotIn('producer_material', result)
         result['claims'].clear(); self.assertTrue(q.records['claims'])
+
+    def checked_export(self, payload):
+        result = self.export(self.query(admitted(reporting(payload))))
+        jsonschema.validate(result, SCHEMA)  # Disclosure must not break the published contract.
+        return result
+
+    def test_reference_without_usable_id_is_disclosed_and_leaves_the_run_intact(self):
+        clean = self.checked_export(research())
+        self.assertEqual(clean['review_coverage']['unidentified_references'], [])
+        display = {'title': 'Synthetic unidentified publication', 'doi': '10.example/no-id',
+                   'url': 'https://example.invalid/no-id', 'year': 2026, 'source_kind': 'journal',
+                   'full_text_status': 'abstract_only', 'preview_marker_detected': False}
+        for name, identity in UNUSABLE_IDS:
+            with self.subTest(id=name):
+                payload = research()
+                payload['references'].append(dict(display, abstract='Unexported reference body.', **identity))
+                result = self.checked_export(payload)
+                entry, = result['review_coverage']['unidentified_references']
+                # Display fields only: no unusable raw ID and no reference body.
+                self.assertEqual(set(entry), set(display) | {'stages', 'provenance'})
+                self.assertEqual({k: entry[k] for k in display}, display)
+                self.assertEqual(entry['stages'], {'discovered': 'recorded_reference', 'cited': 'unknown',
+                                                   'retrieved': 'unknown', 'substantively_reviewed': 'unknown'})
+                origin, = entry['provenance']
+                self.assertEqual(origin['submission_id'], proposal()['id'])
+                self.assertTrue(origin['basis'].endswith('/content#/references/1'), origin['basis'])
+                for section in ('references', 'reviewed_papers', 'contradictions', 'gaps'):
+                    self.assertEqual(result[section], clean[section], section)
+                self.assertEqual(result['review_coverage']['submissions'], clean['review_coverage']['submissions'])
+                self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'preserved_producer_report')
+
+    def test_reference_with_no_identity_fields_at_all_is_still_disclosed(self):
+        result = self.checked_export({'references': [{'note': 'Synthetic row.'}, {'note': 'Another row.'}],
+                                      'reviewed_papers': []})
+        self.assertEqual(result['references'], [])
+        entry, = result['review_coverage']['unidentified_references']
+        self.assertEqual(set(entry), {'stages', 'provenance'})
+        self.assertEqual([origin['basis'].rsplit('#/', 1)[1] for origin in entry['provenance']],
+                         ['references/0', 'references/1'])
+        self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'preserved_producer_report')
+
+    def test_review_without_usable_work_id_is_never_lost_or_classified_twice(self):
+        for name, identity in UNUSABLE_IDS:
+            with self.subTest(work_id=name):
+                payload = research()
+                payload['references'].append(dict(identity))
+                row = dict(payload['reviewed_papers'][0], note='Synthetic second review.')
+                del row['work_id']
+                row.update({'work_id': identity['id']} if identity else {})
+                payload['reviewed_papers'].append(row)
+                if identity.get('id') == '':  # Selection cannot make an empty ID a usable identity.
+                    payload['selection']['selected_for_review_ids'].append('')
+                result = self.checked_export(payload)
+                self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'preserved_producer_report')
+                self.assertEqual([r['work_id'] for r in result['reviewed_papers']], ['paper-one'])
+                other, = result['review_coverage']['other_reviews']
+                self.assertEqual(other.get('work_id', 'absent'), identity.get('id', 'absent'))
+                origin, = other['provenance']
+                self.assertEqual(origin['status'], 'unmatched_reference')
+                self.assertEqual(len(result['review_coverage']['unidentified_references']), 1)
+
+    def test_unidentified_reference_never_joins_by_doi_or_url(self):
+        payload = research(); known = payload['references'][0]; review = payload['reviewed_papers'][0]
+        payload['references'].append({k: known[k] for k in ('doi', 'url', 'fresh_download_at', 'full_text_status')})
+        payload['reviewed_papers'] += [dict(review, work_id=known['doi']), dict(review, work_id=known['url'])]
+        payload['selection']['selected_for_review_ids'] += [known['doi'], known['url']]
+        result = self.checked_export(payload)
+        entry, = result['review_coverage']['unidentified_references']
+        self.assertEqual(entry['stages'], {'discovered': 'recorded_reference', 'cited': 'unknown',
+                                           'retrieved': 'producer_reported', 'substantively_reviewed': 'unknown'})
+        self.assertEqual([r['id'] for r in result['references']], ['paper-one'])
+        self.assertEqual(len(result['references'][0]['provenance']), 1)
+        self.assertEqual([r['work_id'] for r in result['reviewed_papers']], ['paper-one'])
+        self.assertEqual({r['work_id'] for r in result['review_coverage']['other_reviews']}, {known['doi'], known['url']})
+
+    def test_identical_unidentified_references_keep_every_origin_within_and_across_runs(self):
+        row = {'title': 'Synthetic unidentified publication', 'doi': '10.example/no-id'}
+        payload = research(); payload['references'] += [dict(row), dict(row, id=None)]
+        state = admitted(reporting(payload)); p = reporting(payload, '2')
+        state.update(state_for(p)); state.update(plan_admission(state, p['id'], decisions(p), ROOT))
+        result = self.export(self.query(state))
+        jsonschema.validate(result, SCHEMA)
+        entry, = result['review_coverage']['unidentified_references']
+        self.assertEqual(sorted((o['submission_id'], o['basis'].rsplit('#/', 1)[1]) for o in entry['provenance']),
+                         sorted((run, 'references/' + i) for run in (proposal()['id'], p['id']) for i in '12'))
+
+    def test_schema_keeps_usable_ids_and_unknown_coverage_contract(self):
+        payload = research(); payload['references'].append({'doi': '10.example/no-id'})
+        result = self.checked_export(payload)
+        def broken(change):
+            value = copy.deepcopy(result); change(value)
+            with self.assertRaises(jsonschema.ValidationError):
+                jsonschema.validate(value, SCHEMA)
+        broken(lambda v: v['references'][0].update(id=''))
+        broken(lambda v: v['review_coverage'].pop('unidentified_references'))
+        broken(lambda v: v['review_coverage']['unidentified_references'][0].update(id=42))
+        broken(lambda v: v['review_coverage']['unidentified_references'][0].pop('provenance'))
+        broken(lambda v: v['review_coverage']['unidentified_references'][0]['stages'].update(substantively_reviewed='producer_reported'))
+
+    def test_published_format_version_sites_agree(self):
+        contract = json.loads((ROOT/'docs/contracts/activity/model_operations.json').read_text())
+        version = SCHEMA['properties']['schema_version']['const']
+        self.assertTrue(SCHEMA['title'].endswith(' ' + version))
+        self.assertEqual(contract['formats']['research_state'], version)
+        q = self.query(admitted(proposal()))
+        self.assertEqual(self.export(q)['schema_version'], version)
+        page = q.research_state('external-question-9', repository='example/world',
+                                reference_pointer='/method_metadata/external/question')
+        self.assertEqual(page['research_state_schema'], version)
 
     def test_canonical_question_uses_context_and_keeps_support_chains(self):
         p = proposal(); p['questions'] = [{'id': 'q1', 'question': 'Synthetic question?', 'claim_ids': ['c1']}]
