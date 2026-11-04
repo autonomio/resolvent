@@ -1,5 +1,5 @@
 {
-  "core_version": "1.3.5",
+  "core_version": "1.3.6",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -452,10 +452,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 31652,
-      "git_blob": "3248a35303e2ee80480a58eb81f48df44209dfc9",
+      "bytes": 35978,
+      "git_blob": "c082c2f7a75c6247f7136ba8b3cb8c2928999d1a",
       "mode": "100644",
-      "sha256": "4cd20840d46ad6464f25174140204e93e7ee784c74659f93591b171db1dfc61d"
+      "sha256": "8beb2eba5e85988534c1e62f6ad4b7fc64dfb1e41360918fd87bb803b249f60f"
     },
     "docs/Ontology.md": {
       "bytes": 14416,
@@ -554,10 +554,10 @@
       "sha256": "edcec77bdce0aff52fd2c3de4bc60ead9ca97b3eb2102d423ea8fa8011bf47c7"
     },
     "docs/contracts/activity/model_operations.json": {
-      "bytes": 3205,
-      "git_blob": "8335c3e6d88ad93066e8f47a0b7a46936307e836",
+      "bytes": 3919,
+      "git_blob": "a98925f108a9e942d95619df6fc8060d51dd25b1",
       "mode": "100644",
-      "sha256": "2f9ff5d43f9e82405dd10628545c81de8927e69637495184f804f5d46fb25566"
+      "sha256": "5830758ab1d8f994aed6c6136c6638582fef2f78a8b9e42950db584a0d305782"
     },
     "docs/contracts/activity/research_brief_creation.json": {
       "bytes": 2130,
@@ -630,6 +630,12 @@
       "git_blob": "d5c5c05076149d4074ff44f8eedbcc9802d7d912",
       "mode": "100644",
       "sha256": "6b0bb0df9be90923bc275ec41b8302cccf043b6e2f98bee046671fce95e9fa0a"
+    },
+    "docs/schemas/research-state.schema.json": {
+      "bytes": 5354,
+      "git_blob": "73487e854992adbb3cf21e29c1d4bab8bdde5207",
+      "mode": "100644",
+      "sha256": "08cf793e35a6e71f423706a1d353407966b67619cb78c8fc0641eff9df0ac018"
     },
     "docs/schemas/sources.schema.json": {
       "bytes": 2083,
@@ -728,10 +734,10 @@
       "sha256": "3c81d68f8aec91af900fe17687958fc7d1736ae0665bdb1930b50f72f6df2031"
     },
     "scripts/model_context.py": {
-      "bytes": 9169,
-      "git_blob": "20c46d3c8d12152b784ea69bf7dac4de275c1ed1",
+      "bytes": 9723,
+      "git_blob": "ac41b92c80e62ab18dae4084f7ae0be10c13b10d",
       "mode": "100644",
-      "sha256": "e66bdf481745cbbb0eadcd60d189f6ab36dfdaf884b4779b43987b206d905a5e"
+      "sha256": "2d0561cc233dcdb806e3951e0ca874e88803741c830c25acd927fd92d39cbe00"
     },
     "scripts/model_operations.py": {
       "bytes": 15995,
@@ -764,16 +770,22 @@
       "sha256": "b521a67b205666d8c73482da4227d3eaeb51a2ba31ec656d5321e16c5c363dbf"
     },
     "scripts/query_knowledge.py": {
-      "bytes": 28128,
-      "git_blob": "414259e51365cae1b5205463e34df0cba8902858",
+      "bytes": 29006,
+      "git_blob": "2f8ebe7681a4f6fc00668de6a1296d778bdc1d06",
       "mode": "100644",
-      "sha256": "9b7998cc202af664745c6644cd801b15aefa857137b853594d9939c77e9564b6"
+      "sha256": "cc7c8cd5d5a5c085849d75038a14a10d35fa12899ac5e122967167b6e1f6dacb"
     },
     "scripts/reconcile_plugin_assets.py": {
       "bytes": 2445,
       "git_blob": "a069a94c5bf3e3e3983c470cd03418f0084e5821",
       "mode": "100644",
       "sha256": "4f4e8f17614f040e868666b2e1c0cf8235b239865944e52ace0f4bc9efa2ff9d"
+    },
+    "scripts/research_state.py": {
+      "bytes": 19127,
+      "git_blob": "bc920187eef8cedb44ec6fd347894a8be5d482a5",
+      "mode": "100644",
+      "sha256": "911b375e46bf0e49c49b40f22e49fdd408a521e57fc7a62f63dd17a033556eeb"
     },
     "scripts/signal_contract.py": {
       "bytes": 2591,
@@ -1140,6 +1152,12 @@
       "git_blob": "afbb50c96a1ff66337ac88e823c47360ad78a748",
       "mode": "100644",
       "sha256": "c9c06f723ba67f1b3fb9f5f957f4f36e2fb85fe94723eb42a95a2e4bb73b5ea6"
+    },
+    "tests/test_research_state.py": {
+      "bytes": 14724,
+      "git_blob": "b2c588505cfa8e233f9b5eaa95827167689f635e",
+      "mode": "100644",
+      "sha256": "4ff9b3c1bf21e4584b5ad76a6369984e4447397aa45ab08ca68f5dca18664936"
     },
     "tests/test_signal_maintenance.py": {
       "bytes": 11670,

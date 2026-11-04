@@ -454,6 +454,71 @@ member IDs and legacy states, and expose differing assessments as disputed.
 Every original record remains directly addressable. The representative can change
 when members join; use an original member ID as the stable group address.
 
+### Per-question research-state export
+
+`Knowledge.research_state(reference, repository=..., reference_pointer=None)` and
+the `research-state` CLI expose portable schema 1.0 in
+`docs/schemas/research-state.schema.json`. Use a closed package built from the
+selected admitted/reviewed revision. Package validation checks structure; it does
+not certify maintainer approval. The repository identity is supplied by the caller
+from its selected destination, not guessed from the package or an external page.
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge research-state Q-<id> --repository owner/world
+python scripts/query_knowledge.py --package .resolvent/knowledge research-state external-question-9 --repository owner/world --reference-pointer /method_metadata/external/question --complete > .resolvent/research-state.json
+```
+
+For an external question without a Q record, supply the JSON pointer to its
+existing reference in preserved RUN submissions. Matching is exact and includes
+all matching submissions at the pinned revision. The pointer is a local field
+address, never a URL to fetch. For example, a producer that already stored a
+reference under `method_metadata.portal_context.question_ref` can select
+`/method_metadata/portal_context/question_ref`; no Portal service is needed or
+consulted. An absent reference fails instead of inventing a question binding.
+Each preserved brief's question text remains separately attributed.
+
+Selection reuses context neighbourhoods for the question and its seed claims,
+then retains evidence, source ancestry and premise support chains. It does not
+walk every graph neighbourhood or infer semantic relevance. The portable object
+keeps native canonical records and current assessment/dispute views separate from
+immutable producer submissions, closure dispositions and maintenance receipts.
+Rejected/deferred candidates, recorded gaps, contradictions, source passages,
+access limitations and original IDs remain visible in those records. No new
+contradiction is inferred. Scope omissions and unknown paper coverage are explicit;
+the export never claims to cover all research on a question.
+
+Publication observations retain native source identities and the reference/review
+records in preserved `canary-research.json` artifacts. The existing
+`canary.references` version 1 extension is decoded locally with a checked
+reconstruction checksum and a conservative 32 MiB decoding budget; no Canary installation,
+provider, credentials or filesystem/URL reference resolution is required. Other,
+missing or malformed formats retain their raw submissions and report unknown
+coverage. Observations remain per submission; DOI, URL and hash equality never
+collapse histories or establish independent evidence.
+
+The four stage fields distinguish recorded discovery/citation, inspected passages,
+reported acquisition and reported substantive review. A positive substantive
+review label requires a producer-selected core/supporting record with nonempty
+read-passage IDs, investigated sections and a substantive note, and no recorded
+preview warning. Its meaning is `producer_reported`, not independent validation
+of the paper or research. Partial, uncertain and unmatched reviews remain intact;
+a citation, source hash or inspected excerpt alone never establishes completed
+review. No record means unknown, not that review never happened.
+
+Default responses use the existing passage transport: at most 32 KiB of encoded
+JSON, `text`, `total_chars`, `offset`, `next_offset`, `truncated` and a digest of
+the complete serialized state. Keep repository, selector and package fixed;
+concatenate page text by character offset, verify `state_sha256`, then parse JSON.
+`--max-bytes` can lower the transport cap to 1 KiB. `--complete` (Python
+`complete=True`) explicitly returns the full portable object for local file or
+programmatic use; it can be larger than a downstream consumer's input limit.
+Transport completion does not remove the documented selection omissions.
+
+Compatibility: this adds a local core read only. The compiled package format,
+submission protocol, canonical admission and generic plugin's existing operations
+are unchanged. The public workflow MCP still receives no repository data or chat
+content. No plugin ZIP, manifest or live-workflow release is needed.
+
 To accompany admission, add `expected_model_sha256` from the reader and a
 `model_operations` list to the existing decisions. Local operation IDs match
 `[a-z][a-z0-9_-]{0,63}` and are unique within the receipt. Each decision supplies

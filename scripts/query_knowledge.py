@@ -165,6 +165,10 @@ class Knowledge:
         ids['sources'] = self.source_ancestors(ids['sources'])
         for cid in ids['claims']:
             ids['questions'].update(self.knowledge['reverse_links']['claims'][cid]['question_ids'])
+        return ids, self.provenance_for(ids)
+
+    def provenance_for(self, ids: dict) -> dict:
+        """Preserved receipts/runs for an explicitly selected canonical neighbourhood."""
         paths = {f'{kind}/{item_id}.yaml' for kind, values in ids.items() for item_id in values}
         provenance = self.knowledge['provenance']
         selected, runs = {}, set()
@@ -188,7 +192,7 @@ class Knowledge:
         for path, item in provenance.items():
             if item.get('submission_id') in runs or (family(path) == 'submission' and item['id'] in runs):
                 selected[path] = item
-        return ids, selected
+        return selected
 
     def view(self, record_id: str, level: int, related_limit: int, related_offset: int) -> dict:
         if record_id not in self.by_id:
@@ -428,6 +432,10 @@ class Knowledge:
         from scripts.model_context import context
         return context(self,record_id,**options)
 
+    def research_state(self, reference, **options):
+        from scripts.research_state import research_state
+        return research_state(self, reference, **options)
+
     def passage(self, record_id, **options):
         from scripts.model_context import passage
         return passage(self,record_id,**options)
@@ -480,6 +488,13 @@ def main() -> int:
     context = sub.add_parser('context')
     context.add_argument('record_id')
     context.add_argument('--purpose',choices=('comparison','linkage','reassessment'),default='comparison')
+    research = sub.add_parser('research-state')
+    research.add_argument('reference')
+    research.add_argument('--repository', required=True)
+    research.add_argument('--reference-pointer', help='Persisted submission JSON pointer for an external question reference')
+    research.add_argument('--complete', action='store_true', help='Explicit full portable object instead of bounded JSON text pages')
+    research.add_argument('--offset', type=int, default=0)
+    research.add_argument('--max-bytes', type=int, default=32768)
     assessment = sub.add_parser('assessments')
     assessment.add_argument('record_id')
     change=sub.add_parser('changes')
