@@ -486,54 +486,53 @@ embedded JSON strings. Compiled values alone normalize field order and can make
 those checksums unverifiable; without original objects that coverage stays unknown.
 No selected-revision code is executed and no source, URI or missing object is fetched.
 
-Selection reuses question context and the admitted claims named by matched runs,
-retaining evidence, source ancestry and premise support chains. Context supplies
-relationships within those question claims; other graph neighbours are omitted
-explicitly. It does not infer semantic relevance. The portable object keeps native
-canonical records and current assessment/dispute views separate from views of
-preserved producer submissions, closure dispositions and maintenance receipts.
-Rejected/deferred candidates, recorded gaps, contradictions, source passages,
-access limitations and original IDs remain visible in those records. No new
-contradiction is inferred. Scope omissions and unknown paper coverage are explicit;
-the export never claims to cover all research on a question.
+The continuation view exposes native `claims`, `evidence`, `sources`, `graph`
+and `questions` arrays, with original IDs, source passages and current assessment
+views. Selection retains only the question's admitted claims and their complete
+evidence/premise/source support chains. Context supplies relationships within
+those claims. Other graph neighbours and unused producer sources are omitted
+explicitly. No relevance or new contradiction is inferred.
 
-Publication observations retain native source identities and the reference/review
-records in preserved `canary-research.json` artifacts. The existing
-`canary.references` version 1 extension is decoded locally with a checked
-reconstruction checksum and a conservative 32 MiB decoding budget; no Canary installation,
-provider, credentials or filesystem/URL reference resolution is required. Other,
-missing or malformed formats retain their raw submissions and report unknown
-coverage. Observations remain per submission; DOI, URL and hash equality never
-collapse histories or establish independent evidence.
+`references` contains publication identities and recorded discovery, citation,
+retrieval and review stages. `reviewed_papers` contains only documented,
+producer-selected core/supporting reviews with read-passage IDs, investigated
+sections, a substantive note and no recorded preview warning. Other review records,
+access limitations and unknown coverage stay under `review_coverage`. These are
+producer declarations; source inspection, matching hashes and citation alone do
+not establish substantive review or independent evidence. References without
+review records remain unknown, not never-reviewed.
 
-Each `producer_material` entry contains a `record` view, the normalized original
-`record_sha256` and explicit field `omissions`. For successfully decoded producer
-reports, duplicate display/encoding metadata and embedded artifact payloads are
-omitted from the view; their JSON pointers and normalized value digests identify
-the originals in the same pinned package. Native proposals, sources, dispositions,
-access limits and extracted review/findings records remain included. Unknown
-formats keep their original content. These omissions avoid copying entire producer
-UI bundles into question context. `--complete` assembles the portable view, not
-the omitted extension payloads. In producer `basis` strings, the pointer after a
-second `#` addresses the decoded embedded JSON document.
+Only submissions explicitly bound to the selected question contribute paper-review
+history, contradictions, gaps, caveats and next questions. Parent-lineage metadata
+is retained as `lineage_only`; it never imports another question's paper reviews.
+`rejected_deferred_findings` preserves proposal statements, dispositions, evidence
+and source-access records separately from admitted claims. Source excerpts for
+those unadmitted proposals remain at their pinned origins rather than being copied
+into continuation context. Canonical supporting passages remain included.
 
-The four stage fields distinguish recorded discovery/citation, inspected passages,
-reported acquisition and reported substantive review. A positive substantive
-review label requires a producer-selected core/supporting record with nonempty
-read-passage IDs, investigated sections and a substantive note, and no recorded
-preview warning. Its meaning is `producer_reported`, not independent validation
-of the paper or research. Partial, uncertain and unmatched reviews remain intact;
-a citation, source hash or inspected excerpt alone never establishes completed
-review. No record means unknown, not that review never happened.
+The existing `canary-research.json` and `canary.references` version 1 extension are
+read locally with a checked reconstruction checksum and a conservative 32 MiB
+decoding budget. No Canary installation, provider, credentials or filesystem/URL
+reference resolution is required. Missing, malformed or unsupported reports yield
+unknown coverage with pinned provenance. In producer `basis` strings, a pointer
+after a second `#` addresses the decoded embedded JSON document.
+
+Exact repeats of the selected reference, review and gap display fields share one
+display entry with every occurrence's provenance. Differing coverage and review
+notes remain separate. This compacts repeated data; it neither equates canonical
+records nor establishes independent observations. `provenance` retains submission
+and receipt IDs, paths, original input-file hashes and selected record IDs. Full
+RUN/receipt bodies, producer UI/encoding payloads, file inventories and download
+metadata are omitted. The same pinned repository objects retain those originals.
 
 Default responses use the existing passage transport: at most 32 KiB of encoded
 JSON, `text`, `total_chars`, `offset`, `next_offset`, `truncated` and a digest of
-the complete serialized state. Keep repository, selector and package fixed;
+the complete serialized view. Keep repository, selector and package fixed;
 concatenate page text by character offset, verify `state_sha256`, then parse JSON.
 `--max-bytes` can lower the transport cap to 1 KiB. `--complete` (Python
-`complete=True`) explicitly returns the full portable object for local file or
-programmatic use; it can be larger than a downstream consumer's input limit.
-Transport completion does not remove the documented selection omissions.
+`complete=True`) explicitly returns this complete continuation view for a local
+file or consumer. It does not include omitted archive data or remove selection
+omissions, and consumers still enforce their own input limits.
 
 Compatibility: this adds a local core read only. The compiled package format,
 submission protocol, canonical admission and generic plugin's existing operations

@@ -152,27 +152,6 @@ def context_ids(knowledge, identity):
         offset = page['next_offset']
 
 
-def portable_provenance(history, decoded_runs):
-    """Keep research records, with explicit digests for omitted extension payloads."""
-    result = {}
-    for path, original in history.items():
-        record, omissions = copy.deepcopy(original), []
-        rid = original.get('id') if family(path) == 'submission' else original.get('submission_id')
-        def omit(container, key, pointer):
-            value = container.pop(key)
-            omissions.append({'pointer': pointer, 'value_sha256': digest(value),
-                              'reason': 'Producer extension payload omitted; pinned original remains available.'})
-        if rid in decoded_runs:
-            metadata = record.get('method_metadata', {})
-            for key in ('canary_view', 'canary_encoding'):
-                if key in metadata:
-                    omit(metadata, key, '/method_metadata/' + key)
-            for i, artifact in enumerate(record.get('result', {}).get('artifacts', [])):
-                omit(artifact, 'content', '/result/artifacts/' + str(i) + '/content')
-        result[path] = {'record': record, 'record_sha256': digest(original), 'omissions': omissions}
-    return result
-
-
 def export_state(knowledge, reference, *, repository, reference_pointer=None, source_repo=None):
     if not isinstance(repository, str) or not repository.strip() or len(repository) > 2048:
         raise Invalid('Supply the selected repository identity (not inferred from package data)')
@@ -186,6 +165,8 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
         if reference not in knowledge.records['questions']:
             raise Invalid('Select a canonical question, or provide its persisted reference pointer')
         selected.update(context_ids(knowledge, reference))
+        question_paths = {knowledge.knowledge['record_paths'][qid] for qid in knowledge.groups[reference]}
+        direct_runs.update(rid for rid, receipt in receipts.items() if question_paths.intersection(receipt['touched_files']))
         selection_kind = 'canonical_question'
     else:
         # Validate syntax even in an empty model. Absent fields simply do not match.
@@ -205,7 +186,7 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
                 receipt = receipts[rid]
                 selected.update(d['claim_id'] for d in receipt['claim_dispositions'] if d['claim_id'])
                 selected.update(knowledge.state[p]['id'] for p in receipt['touched_files']
-                                if family(p) in CANONICAL_ROOTS)
+                                if family(p) == 'questions')
         if not direct_runs:
             raise Invalid('No preserved submission matches this exact external question reference')
         selection_kind = 'persisted_external_reference'
@@ -253,6 +234,8 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
     if source_repo is not None:
         from scripts.query_knowledge import read_json
         for rid, run in list(contributing.items()):
+            if rid not in direct_runs:
+                continue
             path = runs[rid][0]
             object_ref = knowledge.build['source_revision'] + ':' + path
             size = git(Path(source_repo), 'cat-file', '-s', object_ref).strip()
@@ -266,25 +249,16 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
                 raise Invalid('Original producer JSON differs from the compiled values')
             contributing[rid] = original
             history[path] = original
-    papers, coverage, findings, decoded_runs = [], [], [], set()
+    papers, coverage, findings = [], [], []
     question_texts = ([{'id': reference, 'text': knowledge.records['questions'][reference]['question'],
                        'basis': knowledge.knowledge['record_paths'][reference]}] if reference_pointer is None else
         [{'id': rid, 'text': runs[rid][1]['brief']['question'], 'basis': runs[rid][0] + '#/brief/question'}
          for rid in sorted(direct_runs) if runs[rid][1]['brief'] is not None])
-    for sid in sorted(grouped['sources']):
-        source = knowledge.records['sources'][sid]
-        if source['kind'] != 'publication':
-            continue
-        uri = source['uri'] or ''
-        doi = next((uri[len(prefix):] for prefix in ('https://doi.org/', 'http://doi.org/', 'doi:') if uri.startswith(prefix)), None)
-        cited = any(sid in knowledge.records['evidence'][eid]['source_ids'] for eid in grouped['evidence'])
-        papers.append({'submission_id': None, 'basis': knowledge.knowledge['record_paths'][sid],
-            'paper_id': sid, 'doi': doi, 'url': source['uri'], 'reference': source, 'review_records': [],
-            'stages': {'discovered': 'recorded_source', 'cited': 'recorded_evidence_link' if cited else 'unknown',
-                       'retrieved': 'inspected_passage_only' if source['access'] == 'inspected' else 'not_retrieved',
-                       'substantively_reviewed': 'unknown'},
-            'limitations': ['Native source inspection does not establish a full-paper or substantive review.']})
     for rid, run in sorted(contributing.items()):
+        if rid not in direct_runs:
+            coverage.append({'submission_id': rid, 'status': 'lineage_only',
+                             'reason': 'Scientific payload outside the explicitly selected question is omitted.'})
+            continue
         try:
             index, artifact = research_artifact(run)
             anchor = runs[rid][0] + '#/result/artifacts/' + str(index) + '/content'
@@ -317,6 +291,7 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
                     'doi': ref.get('doi') if isinstance(ref.get('doi'), str) else None,
                     'url': ref.get('url') if isinstance(ref.get('url'), str) else None,
                     'reference': ref, 'review_records': related,
+                    'review_basis': [anchor + '#/reviewed_papers/' + str(j) for j, row in enumerate(reviews) if row.get('work_id') == ref.get('id') and ref.get('id')],
                     'stages': {'discovered': 'recorded_reference',
                         'cited': 'producer_reported' if any(r.get('incorporated_in_output') is True for r in related) else 'unknown',
                         'retrieved': 'producer_reported' if isinstance(ref.get('fresh_download_at'), str) and ref['fresh_download_at'] and not preview else 'unknown',
@@ -329,27 +304,120 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
             coverage.append({'submission_id': rid, 'status': 'preserved_producer_report',
                              'artifact': anchor, 'unmatched_review_records': orphan})
             papers.extend(run_papers)
-            decoded_runs.add(rid)
             findings.append({'submission_id': rid, 'basis': anchor,
                              'fields': {key: artifact[key] for key in ('contradictions', 'gaps', 'caveats', 'residue', 'next_questions', 'scope_note') if key in artifact}})
         except (ValueError, Invalid, KeyError, IndexError, TypeError, RecursionError, OverflowError):
             coverage.append({'submission_id': rid, 'status': 'unknown',
-                             'reason': 'Missing, unsupported or invalid preserved research artifact; raw submission retained.'})
+                             'reason': 'Missing, unsupported or invalid preserved research artifact; original is available at the pinned provenance path.'})
+    return continuation_view(knowledge, reference, repository, reference_pointer, source_repo,
+                             selection_kind, direct_runs, grouped, history, contributing,
+                             question_texts, papers, coverage, findings)
+
+
+def aggregate(store, record, origin):
+    """Compact exact duplicate display records, retaining every occurrence's origin."""
+    key = digest(record)
+    if key not in store:
+        store[key] = dict(copy.deepcopy(record), provenance=[])
+    if origin not in store[key]['provenance']:
+        store[key]['provenance'].append(origin)
+
+
+def continuation_view(knowledge, reference, repository, reference_pointer, source_repo,
+                      selection_kind, direct_runs, grouped, history, contributing,
+                      question_texts, papers, coverage, findings):
+    references, reviewed, other_reviews = {}, {}, {}
+    for paper in papers:
+        ref = paper['reference']
+        origin = {'submission_id': paper['submission_id'], 'basis': paper['basis']}
+        if isinstance(ref.get('id'), str):
+            identity = {k: ref[k] for k in ('id', 'title', 'doi', 'url', 'year', 'source_kind', 'full_text_status', 'preview_marker_detected') if k in ref}
+            aggregate(references, dict(identity, stages=paper['stages']), origin)
+        for row, basis in zip(paper['review_records'], paper['review_basis']):
+            review_origin = {'submission_id': paper['submission_id'], 'basis': basis}
+            record = {k: row[k] for k in ('work_id', 'eligibility', 'reason', 'investigated_sections',
+                'passage_ids_read', 'substantive_review_note', 'related_study_ids') if k in row}
+            documented = (paper['stages']['substantively_reviewed'] == 'producer_reported'
+                and row.get('eligibility') in ('core', 'supporting')
+                and isinstance(row.get('passage_ids_read'), list) and row['passage_ids_read']
+                and all(isinstance(v, str) and v for v in row['passage_ids_read'])
+                and isinstance(row.get('investigated_sections'), list) and row['investigated_sections']
+                and all(isinstance(v, str) and v for v in row['investigated_sections'])
+                and isinstance(row.get('substantive_review_note'), str) and row['substantive_review_note'].strip())
+            aggregate(reviewed if documented else other_reviews, record, review_origin)
+    for report in coverage:
+        for record in report.pop('unmatched_review_records', []):
+            aggregate(other_reviews, {k: record[k] for k in ('work_id', 'eligibility', 'reason',
+                'investigated_sections', 'passage_ids_read', 'substantive_review_note') if k in record},
+                {'submission_id': report['submission_id'], 'basis': report['artifact'], 'status': 'unmatched_reference'})
+    sections = {k: {} for k in ('contradictions', 'gaps', 'caveats', 'next_questions')}
+    for item in findings:
+        for kind, value in item['fields'].items():
+            target = 'gaps' if kind == 'residue' else 'caveats' if kind == 'scope_note' else kind
+            if target not in sections:
+                continue
+            values = value if isinstance(value, list) else [value]
+            for record in values:
+                aggregate(sections[target], {'record': record},
+                          {'submission_id': item['submission_id'], 'basis': item['basis'] + '#/' + kind})
+    submissions, receipts, proposals = [], [], []
+    selected_ids = set().union(*grouped.values())
+    for rid, run in sorted(contributing.items()):
+        path = 'input-artefacts/' + rid + '.json'
+        submissions.append({k: run[k] for k in ('id', 'input_method', 'created_at', 'researcher', 'parent_run_id')}
+            | {'path': path, 'sha256': knowledge.input_hashes[path]})
+        if rid not in direct_runs:
+            continue
+        for field, values in (('/origin/limitations', run['origin']['limitations']),
+                              ('/result/limitations', run['result']['limitations']),
+                              ('/handoff/suggested_follow_up', run['handoff']['suggested_follow_up'])):
+            target = 'gaps' if 'follow_up' in field else 'caveats'
+            for record in values:
+                aggregate(sections[target], {'record': record}, {'submission_id': rid, 'basis': path + '#' + field})
+    for path, receipt in sorted(history.items()):
+        if family(path) not in ('closure', 'maintenance'):
+            continue
+        record_ids = sorted({knowledge.state[p]['id'] for p in receipt.get('touched_files', [])
+                             if family(p) in CANONICAL_ROOTS and p in knowledge.state and knowledge.state[p]['id'] in selected_ids})
+        meta = {k: receipt[k] for k in ('id', 'submission_id', 'completed_at', 'created_at') if k in receipt}
+        receipts.append(dict(meta, path=path, sha256=knowledge.input_hashes[path], record_ids=record_ids))
+        gap_fields = ('follow_up_gaps', 'deferred') if family(path) == 'maintenance' or receipt.get('submission_id') in direct_runs else ()
+        for field in gap_fields:
+            for record in receipt.get(field, []):
+                aggregate(sections['gaps'], {'record': record}, {'basis': path + '#/' + field})
+        if family(path) == 'closure' and receipt['submission_id'] in direct_runs:
+            dispositions = [d for d in receipt['claim_dispositions'] if d['disposition'] in ('rejected', 'deferred')]
+            if dispositions:
+                run = contributing[receipt['submission_id']]
+                claims = [c for c in run['claims'] if c['id'] in {d['candidate_id'] for d in dispositions}]
+                eids = {eid for c in claims for eid in c['evidence_ids']}
+                evidence = [e for e in run['evidence'] if e['id'] in eids]
+                sids = {sid for e in evidence for sid in e['source_ids']}
+                proposals.append({'submission_id': run['id'], 'basis': path,
+                    'dispositions': dispositions, 'claims': claims, 'evidence': evidence,
+                    'sources': [{k: v[k] for k in ('id', 'kind', 'title', 'uri', 'locator', 'access')} for v in run['sources'] if v['id'] in sids]})
     return copy.deepcopy({'schema_version': '1.0', 'kind': 'resolvent.research-state',
         'repository': repository, 'build': dict(knowledge.build), 'model_sha256': knowledge.model_sha256,
         'question': {'reference': reference, 'recorded_texts': question_texts},
         'selection': {'kind': selection_kind, 'reference': reference, 'reference_pointer': reference_pointer,
                       'matched_submission_ids': sorted(direct_runs), 'rule': 'question_claims_and_support_chains'},
-        'canonical': {kind: {i: knowledge.records[kind][i] for i in sorted(grouped[kind])} for kind in CANONICAL_ROOTS},
+        **{kind: [knowledge.records[kind][i] for i in sorted(grouped[kind])] for kind in CANONICAL_ROOTS},
         'assessments': {cid: knowledge.view(cid, 0, 100, 0)['current_assessment'] for cid in sorted(grouped['claims'])},
-        'producer_material': portable_provenance(history, decoded_runs), 'contributing_submission_ids': sorted(contributing),
-        'publications': papers, 'review_coverage': coverage, 'producer_findings': findings,
-        'coverage': {'exhaustive': False, 'omissions': ['Graph neighbours outside the question claims, omitted producer extension fields and material absent from the selected revision.',
+        'references': list(references.values()), 'reviewed_papers': list(reviewed.values()),
+        'review_coverage': {'submissions': coverage, 'other_reviews': list(other_reviews.values()),
+            'interpretation': 'reviewed_papers contains producer-reported substantive coverage only. Other reviews remain partial or uncertain; research validity and independence are not established by this export.'},
+        'rejected_deferred_findings': proposals, 'provenance': {'submissions': submissions, 'receipts': receipts},
+        **{kind: list(values.values()) for kind, values in sections.items()},
+        'coverage': {'exhaustive': False, 'omissions': [
+            'Graph neighbours outside the question claims and material absent from the selected revision.',
+            'Full producer submissions, display/encoding payloads, file inventories, download metadata and rejected-proposal source excerpts are omitted; pinned provenance identifies the originals.',
+            'Exact duplicate reference, review and gap display records are combined with all occurrence origins; this establishes no independent evidence.',
             'No semantic contradiction discovery or verification of producer research was performed.'],
             'omitted_record_counts': {kind: len(knowledge.records[kind]) - len(grouped[kind]) for kind in CANONICAL_ROOTS},
+            'review_scope': 'explicit_question_submissions_only',
             'producer_material_input': 'original_git_json' if source_repo is not None else 'compiled_json_values',
             'unknown_paper_coverage': 'Absence of a review record never means a paper was not reviewed.',
-            'source_identity': 'Original source IDs, URIs, locators, access and hashes remain in canonical/producer records; hashes do not establish independence.'}})
+            'source_identity': 'Native source IDs, URIs, locators, passages and access are retained; inspection and hashes do not establish substantive review or independence.'}})
 
 
 def research_state(knowledge, reference, *, repository, reference_pointer=None, source_repo=None, complete=False, offset=0, max_bytes=32768):

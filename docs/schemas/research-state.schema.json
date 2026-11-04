@@ -2,14 +2,40 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Resolvent portable question research state 1.0",
   "type": "object",
-  "required": ["schema_version", "kind", "repository", "build", "model_sha256", "question", "selection", "canonical", "assessments", "producer_material", "contributing_submission_ids", "publications", "review_coverage", "producer_findings", "coverage"],
+  "required": [
+    "schema_version",
+    "kind",
+    "repository",
+    "build",
+    "model_sha256",
+    "question",
+    "selection",
+    "assessments",
+    "coverage",
+    "claims",
+    "evidence",
+    "sources",
+    "graph",
+    "questions",
+    "references",
+    "reviewed_papers",
+    "review_coverage",
+    "provenance",
+    "rejected_deferred_findings",
+    "contradictions",
+    "gaps",
+    "caveats",
+    "next_questions"
+  ],
   "additionalProperties": false,
   "properties": {
     "schema_version": {"const": "1.0"},
     "kind": {"const": "resolvent.research-state"},
     "repository": {"type": "string", "minLength": 1, "maxLength": 2048},
     "build": {
-      "type": "object", "required": ["source_revision", "manifest_sha256", "input_tree_sha256"], "additionalProperties": false,
+      "type": "object",
+      "required": ["source_revision", "manifest_sha256", "input_tree_sha256"],
+      "additionalProperties": false,
       "properties": {
         "source_revision": {"type": "string", "pattern": "^([0-9a-f]{40}|[0-9a-f]{64})$"},
         "manifest_sha256": {"$ref": "#/$defs/digest"},
@@ -18,86 +44,237 @@
     },
     "model_sha256": {"$ref": "#/$defs/digest"},
     "question": {
-      "type": "object", "required": ["reference", "recorded_texts"], "additionalProperties": false,
+      "type": "object",
+      "required": ["reference", "recorded_texts"],
+      "additionalProperties": false,
       "properties": {
         "reference": {"type": "string", "minLength": 1},
-        "recorded_texts": {"type": "array", "items": {
-          "type": "object", "required": ["id", "text", "basis"], "additionalProperties": false,
-          "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "basis": {"type": "string"}}
-        }}
+        "recorded_texts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "text", "basis"],
+            "additionalProperties": false,
+            "properties": {"id": {"type": "string"}, "text": {"type": "string"}, "basis": {"type": "string"}}
+          }
+        }
       }
     },
     "selection": {
-      "type": "object", "required": ["kind", "reference", "reference_pointer", "matched_submission_ids", "rule"], "additionalProperties": false,
+      "type": "object",
+      "required": ["kind", "reference", "reference_pointer", "matched_submission_ids", "rule"],
+      "additionalProperties": false,
       "properties": {
         "kind": {"enum": ["canonical_question", "persisted_external_reference"]},
-        "reference": {"type": "string"}, "reference_pointer": {"type": ["string", "null"]},
+        "reference": {"type": "string"},
+        "reference_pointer": {"type": ["string", "null"]},
         "matched_submission_ids": {"$ref": "#/$defs/strings"},
         "rule": {"const": "question_claims_and_support_chains"}
       }
     },
-    "canonical": {
-      "type": "object", "required": ["claims", "evidence", "sources", "graph", "questions"], "additionalProperties": false,
-      "properties": {
-        "claims": {"$ref": "#/$defs/records"}, "evidence": {"$ref": "#/$defs/records"},
-        "sources": {"$ref": "#/$defs/records"}, "graph": {"$ref": "#/$defs/records"}, "questions": {"$ref": "#/$defs/records"}
-      }
-    },
     "assessments": {"type": "object", "additionalProperties": {"type": "object"}},
-    "producer_material": {"type": "object", "additionalProperties": {
-      "type": "object", "required": ["record", "record_sha256", "omissions"], "additionalProperties": false,
-      "properties": {
-        "record": {"type": "object"}, "record_sha256": {"$ref": "#/$defs/digest"},
-        "omissions": {"type": "array", "items": {
-          "type": "object", "required": ["pointer", "value_sha256", "reason"], "additionalProperties": false,
-          "properties": {"pointer": {"type": "string"}, "value_sha256": {"$ref": "#/$defs/digest"}, "reason": {"type": "string"}}
-        }}
-      }
-    }},
-    "contributing_submission_ids": {"$ref": "#/$defs/strings"},
-    "publications": {"type": "array", "items": {
-      "type": "object", "required": ["submission_id", "basis", "paper_id", "doi", "url", "reference", "review_records", "stages", "limitations"], "additionalProperties": false,
-      "properties": {
-        "submission_id": {"type": ["string", "null"]}, "basis": {"type": "string"},
-        "paper_id": {"type": ["string", "null"]}, "doi": {"type": ["string", "null"]}, "url": {"type": ["string", "null"]},
-        "reference": {"type": "object"}, "review_records": {"type": "array", "items": {"type": "object"}},
-        "stages": {
-          "type": "object", "required": ["discovered", "cited", "retrieved", "substantively_reviewed"], "additionalProperties": false,
-          "properties": {
-            "discovered": {"enum": ["recorded_reference", "recorded_source"]},
-            "cited": {"enum": ["recorded_evidence_link", "producer_reported", "unknown"]},
-            "retrieved": {"enum": ["inspected_passage_only", "not_retrieved", "producer_reported", "unknown"]},
-            "substantively_reviewed": {"enum": ["producer_reported", "unknown"]}
-          }
-        },
-        "limitations": {"$ref": "#/$defs/strings"}
-      }
-    }},
-    "review_coverage": {"type": "array", "items": {
-      "type": "object", "required": ["submission_id", "status"], "additionalProperties": false,
-      "properties": {
-        "submission_id": {"type": "string"}, "status": {"enum": ["preserved_producer_report", "unknown"]},
-        "artifact": {"type": "string"}, "unmatched_review_records": {"type": "array", "items": {"type": "object"}},
-        "reason": {"type": "string"}
-      }
-    }},
-    "producer_findings": {"type": "array", "items": {
-      "type": "object", "required": ["submission_id", "basis", "fields"], "additionalProperties": false,
-      "properties": {"submission_id": {"type": "string"}, "basis": {"type": "string"}, "fields": {"type": "object"}}
-    }},
     "coverage": {
-      "type": "object", "required": ["exhaustive", "omissions", "omitted_record_counts", "producer_material_input", "unknown_paper_coverage", "source_identity"], "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "exhaustive",
+        "omissions",
+        "omitted_record_counts",
+        "producer_material_input",
+        "unknown_paper_coverage",
+        "source_identity",
+        "review_scope"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "exhaustive": {"const": false}, "omissions": {"$ref": "#/$defs/strings"},
+        "exhaustive": {"const": false},
+        "omissions": {"$ref": "#/$defs/strings"},
         "omitted_record_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
         "producer_material_input": {"enum": ["original_git_json", "compiled_json_values"]},
-        "unknown_paper_coverage": {"type": "string"}, "source_identity": {"type": "string"}
+        "unknown_paper_coverage": {"type": "string"},
+        "source_identity": {"type": "string"},
+        "review_scope": {"const": "explicit_question_submissions_only"}
       }
-    }
+    },
+    "claims": {"$ref": "#/$defs/records"},
+    "evidence": {"$ref": "#/$defs/records"},
+    "sources": {"$ref": "#/$defs/records"},
+    "graph": {"$ref": "#/$defs/records"},
+    "questions": {"$ref": "#/$defs/records"},
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "stages", "provenance"],
+        "additionalProperties": false,
+        "properties": {
+          "title": {},
+          "doi": {},
+          "url": {},
+          "year": {},
+          "source_kind": {},
+          "id": {"type": "string"},
+          "stages": {
+            "type": "object",
+            "required": ["discovered", "cited", "retrieved", "substantively_reviewed"],
+            "additionalProperties": false,
+            "properties": {
+              "discovered": {"enum": ["recorded_reference", "recorded_source"]},
+              "cited": {"enum": ["recorded_evidence_link", "producer_reported", "unknown"]},
+              "retrieved": {"enum": ["inspected_passage_only", "not_retrieved", "producer_reported", "unknown"]},
+              "substantively_reviewed": {"enum": ["producer_reported", "unknown"]}
+            }
+          },
+          "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/origin"}},
+          "full_text_status": {},
+          "preview_marker_detected": {}
+        }
+      }
+    },
+    "reviewed_papers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "provenance",
+          "work_id",
+          "eligibility",
+          "investigated_sections",
+          "passage_ids_read",
+          "substantive_review_note"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "work_id": {"type": "string"},
+          "eligibility": {"enum": ["core", "supporting"]},
+          "reason": {},
+          "investigated_sections": {"type": "array", "items": {"type": "string"}},
+          "passage_ids_read": {"type": "array", "items": {"type": "string"}},
+          "substantive_review_note": {"type": "string", "minLength": 1},
+          "related_study_ids": {},
+          "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/origin"}}
+        }
+      }
+    },
+    "review_coverage": {
+      "type": "object",
+      "required": ["submissions", "other_reviews", "interpretation"],
+      "additionalProperties": false,
+      "properties": {
+        "submissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["submission_id", "status"],
+            "additionalProperties": false,
+            "properties": {
+              "submission_id": {"type": "string"},
+              "status": {"enum": ["preserved_producer_report", "unknown", "lineage_only"]},
+              "artifact": {"type": "string"},
+              "reason": {"type": "string"}
+            }
+          }
+        },
+        "other_reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["provenance"],
+            "additionalProperties": false,
+            "properties": {
+              "work_id": {},
+              "eligibility": {},
+              "reason": {},
+              "investigated_sections": {},
+              "passage_ids_read": {},
+              "substantive_review_note": {},
+              "related_study_ids": {},
+              "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/origin"}}
+            }
+          }
+        },
+        "interpretation": {"type": "string"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["submissions", "receipts"],
+      "additionalProperties": false,
+      "properties": {
+        "submissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "input_method", "created_at", "researcher", "parent_run_id", "path", "sha256"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {"type": "string"},
+              "input_method": {"type": "string"},
+              "created_at": {"type": "string"},
+              "researcher": {"type": "string"},
+              "path": {"type": "string"},
+              "parent_run_id": {"type": ["string", "null"]},
+              "sha256": {"$ref": "#/$defs/digest"}
+            }
+          }
+        },
+        "receipts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "path", "sha256", "record_ids"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {"type": "string"},
+              "path": {"type": "string"},
+              "submission_id": {"type": "string"},
+              "completed_at": {"type": "string"},
+              "created_at": {"type": "string"},
+              "sha256": {"$ref": "#/$defs/digest"},
+              "record_ids": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        }
+      }
+    },
+    "rejected_deferred_findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["submission_id", "basis", "dispositions", "claims", "evidence", "sources"],
+        "additionalProperties": false,
+        "properties": {
+          "submission_id": {"type": "string"},
+          "basis": {"type": "string"},
+          "dispositions": {"type": "array", "items": {"type": "object"}},
+          "claims": {"$ref": "#/$defs/records"},
+          "evidence": {"$ref": "#/$defs/records"},
+          "sources": {"$ref": "#/$defs/records"}
+        }
+      }
+    },
+    "contradictions": {"$ref": "#/$defs/findings"},
+    "gaps": {"$ref": "#/$defs/findings"},
+    "caveats": {"$ref": "#/$defs/findings"},
+    "next_questions": {"$ref": "#/$defs/findings"}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "strings": {"type": "array", "items": {"type": "string"}},
-    "records": {"type": "object", "additionalProperties": {"type": "object", "required": ["id"]}}
+    "origin": {
+      "type": "object",
+      "required": ["basis"],
+      "properties": {"basis": {"type": "string"}, "submission_id": {"type": ["string", "null"]}, "status": {"type": "string"}},
+      "additionalProperties": false
+    },
+    "records": {"type": "array", "items": {"type": "object", "required": ["id"]}},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record", "provenance"],
+        "additionalProperties": false,
+        "properties": {"record": {}, "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/origin"}}}
+      }
+    }
   }
 }
