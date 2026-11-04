@@ -305,6 +305,37 @@ source URLs, and does not mutate canonical claims. Empty model = no-op. Complete
 close an existing maintenance PR before the next one is created. Review summaries
 and deferrals remain in immutable maintenance records.
 
+### Nightly recent mode
+
+Set the Actions repository variable `RESOLVENT_MAINTENANCE_SCHEDULE` to `nightly`
+to prepare one recent workset a day (04:47 UTC) instead of the weekly selection.
+The weekly Monday run then does nothing, and **Run workflow** prepares a recent
+workset too. Unset, or any other value, keeps the weekly/manual behavior above.
+The same token, permissions, concurrency group, branch prefix and one-open-PR
+rule apply. While nightly is selected the weekly rotation does not run, including
+its role as the change-signal backstop; `python scripts/gap_finder.py --write`
+still prepares a weekly workset on request.
+
+`python scripts/gap_finder.py --recent --write` prepares the same record locally:
+
+- `claim_ids` are exactly the claims at `HEAD` that are absent from the window
+  start's tree, with no never-reviewed claims and no rotating sample.
+- The window starts at the `base_commit` of the last completed recent workset on
+  `HEAD`'s first-parent history. Without one, it starts at the last first-parent
+  revision committed at or before 24 hours (`--hours`) before preparation, or at
+  the empty model when history is younger. A late or failed night therefore loses
+  nothing, and the window never reaches back past the last completed one.
+- When nothing was added, nothing is written and the workflow opens no PR.
+- It reads committed Git objects and recorded committer times only. Uncommitted
+  world data and shallow clones fail; the workflow fetches full history.
+
+The record is maintenance profile 1.3. Its `window` records the start rule, the
+previous recent workset (if any), the start revision and its committer time, the
+base revision's committer time and the hours used. Completed recent worksets count
+as reviewed coverage but do not advance the weekly rotation cursor. Agents read
+the whole input with the `recent` read below and follow the `recent` mode of the
+maintenance contract and `docs/AGENT_JOBS.md`.
+
 ## Change-signal maintenance
 
 After adopting this governance, a repository owner can enable the native trigger
@@ -454,6 +485,65 @@ member IDs and legacy states, and expose differing assessments as disputed.
 Every original record remains directly addressable. The representative can change
 when members join; use an original member ID as the stable group address.
 
+### Recent-additions read
+
+`Knowledge.recent(repo, hours=24, at=None, to=None, overlap_limit=20)` and the
+`recent` CLI return the whole input of a recent maintenance pass as one complete
+JSON response. It has no paging and is the exception to the 32 KiB card bound:
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge recent --repo . --at <created_at> --to <base_commit>
+```
+
+`--repo` (default `.`) is a local repository holding the package revision and its
+complete first-parent history. Only Git objects and committer times are read; no
+checkout, fetch or worktree read happens and nothing is written.
+
+- `window`: `start` rule, `previous_workset_id`, `from_revision` and
+  `from_committed_at` (null at the empty model), `to_revision` and
+  `to_committed_at`, plus `hours`, the evaluation instant `at` and its `cutoff`.
+  The rule is the recent workset's own, evaluated as of `to_revision`. That is the
+  package revision unless `--to` names one of its ancestors. With `--at` set to a
+  workset's `created_at` and `--to` to its `base_commit`, the window and added
+  claims are that workset's exactly, even from a later package. Claims admitted
+  after `--to` remain comparison targets. Without `--at`, the instant is now.
+- `added`: each claim present at `to_revision` but absent from the window start, in
+  ID order. Each entry carries the statement, class, temporal scope, uncertainty,
+  state, valid time, evidence, source and question IDs, plus the full evidence,
+  source (with declared ancestors) and question records. `added_in_window_ids`
+  lists those that are also new. It also lists the run admissions, incident
+  connectors and comparisons.
+- `compare_with` (per added claim): every other active claim that shares a source,
+  belongs to the same question, or overlaps in wording, with `reasons` saying which
+  apply. A shared source is the same record, a record in the same accepted
+  equivalence group, a declared ancestor, or the same declared content SHA-256. A
+  shared question is the same record or an equivalent one. Each entry carries the
+  statement, class, temporal scope, uncertainty, state, evidence and source IDs,
+  group members, current assessment and `added_in_window`, and `links`: connectors
+  between the two with their record digests, comparisons with whether each is
+  current, and premise evidence linking them. Shared sources and questions are
+  never capped. Claims related only by wording are ranked by the Jaccard overlap of
+  distinct statement words, then by shared-word count, then by ID. The first
+  `--overlap-limit` (default 20, 0 to 1000) are kept, and `wording_overlap.omitted`
+  counts the rest.
+- `decisions`: `expected_model_sha256` and `reviewed_claim_ids` for the decisions
+  file. Current comparison IDs (`supersedes`), current assessments (`predecessors`)
+  and connector digests (`previous_sha256`) are in the entries, so a pass needs no
+  other read.
+
+Keyword overlap and shared metadata are comparison cues, not identity, support,
+truth or semantic similarity. Semantic matching is not performed. A claim with no
+cue is not shown to be unrelated.
+
+Compatibility: core 1.4.0 / compiler 1.5.0 adds maintenance profile 1.3, maintenance
+contract 1.3 and model-operations contract 1.2. Existing profiles and records still
+validate unchanged, and a world behaves as before until it adopts this core and sets
+the variable. The writer newly accepts only the equivalent-partner reassessment
+described below. Submission protocol 1.2, canonical record formats, compiled package
+format 1.0 and query envelope 1.1 are unchanged. The generic plugin performs
+contributions only and never prepares or runs maintenance, and no packaged file
+changes, so no plugin package or live-workflow release is needed.
+
 ### Per-question research-state export
 
 `Knowledge.research_state(reference, repository=..., reference_pointer=None)` and
@@ -560,7 +650,10 @@ To accompany admission, add `expected_model_sha256` from the reader and a
 `kind`, `subject_ids`, `basis_ids` and `reason`, plus the kind-specific fields in
 `docs/contracts/activity/model_operations.json`. Subjects must intersect the
 selected contribution or workset; reassessment targets must all be selected,
-already admitted claims. At most 200 operations belong in one receipt.
+already admitted claims. In maintenance, an `equivalent` comparison of a workset
+claim in the same decisions also selects its existing partner for reassessment,
+so a merge that joins different grades can settle them. At most 200 operations
+belong in one receipt.
 
 Comparison requires two same-kind records and `outcome`, with `supersedes: null`
 for the first decision. Correct a decision by naming the current pair reference;

@@ -227,16 +227,22 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
     fail(decisions['expected_model_sha256'] == model_digest(state), 'Stale model snapshot')
     selected = set(record['claim_ids']) | set(record.get('subject_ids',[]))
     fail(isinstance(decisions['model_operations'],list), 'Model operations must be a list')
+    joined = set()
     for op in decisions['model_operations']:
-        fail(isinstance(op,dict) and isinstance(op.get('subject_ids'),list) and all(isinstance(v,str) for v in op['subject_ids']) and
-             set(op['subject_ids']).intersection(selected), 'Operation is outside the selected maintenance workset')
+        fail(isinstance(op,dict) and isinstance(op.get('subject_ids'),list) and all(isinstance(v,str) for v in op['subject_ids']),
+             'Operation is outside the selected maintenance workset')
+        if op.get('kind') == 'comparison' and op.get('outcome') == 'equivalent' and set(op['subject_ids']) & selected:
+            joined.update(op['subject_ids'])  # A merge may settle differing grades of its existing partner.
+    for op in decisions['model_operations']:
         if op.get('kind') == 'reassessment':
-            fail(set(op['subject_ids']) <= selected, 'Reassessment is outside the selected maintenance workset')
+            fail(set(op['subject_ids']) <= selected | joined, 'Reassessment is outside the selected maintenance workset')
+        else:
+            fail(set(op['subject_ids']) & selected, 'Operation is outside the selected maintenance workset')
     after = copy.deepcopy(state)
     operations, changes = apply_operations(after, decisions['model_operations'])
     changes={path:record for path,record in changes.items() if state.get(path)!=record}
     result = copy.deepcopy(record)
-    result.update(schema_version='1.2', status='completed', model_operations=operations,
+    result.update(schema_version='1.3' if 'window' in record else '1.2', status='completed', model_operations=operations,
                   model_base_sha256=decisions['expected_model_sha256'], model_decisions_sha256=digest(decisions),
                   reviewed_claim_ids=decisions['reviewed_claim_ids'], touched_files=sorted(changes),
                   findings=decisions.get('findings', list(dict.fromkeys(op['reason'] for op in operations))),

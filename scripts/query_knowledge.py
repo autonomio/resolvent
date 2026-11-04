@@ -437,6 +437,10 @@ class Knowledge:
         from scripts.research_state import research_state
         return research_state(self, reference, **options)
 
+    def recent(self, repo=Path('.'), **options):
+        from scripts.recent_additions import recent
+        return recent(self, repo, **options)
+
     def passage(self, record_id, **options):
         from scripts.model_context import passage
         return passage(self,record_id,**options)
@@ -497,6 +501,13 @@ def main() -> int:
     research.add_argument('--complete', action='store_true', help='Explicit full portable object instead of bounded JSON text pages')
     research.add_argument('--offset', type=int, default=0)
     research.add_argument('--max-bytes', type=int, default=32768)
+    recent = sub.add_parser('recent')
+    recent.add_argument('--repo', type=Path, default=Path('.'),
+                        help='Local repository holding the package revision and its full first-parent history')
+    recent.add_argument('--hours', type=int, default=24, help='Window when no recent workset has completed')
+    recent.add_argument('--at', help="Timezone-qualified instant for --hours; a recent workset's created_at reproduces it")
+    recent.add_argument('--to', help="Ancestor revision ending the window, such as a recent workset's base_commit")
+    recent.add_argument('--overlap-limit', type=int, default=20, help='Claims related only by wording to keep per addition')
     assessment = sub.add_parser('assessments')
     assessment.add_argument('record_id')
     change=sub.add_parser('changes')

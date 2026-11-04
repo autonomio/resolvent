@@ -79,8 +79,10 @@ route constraints, closure coverage and immutability. It does not establish trut
 ## Maintenance
 
 A weekly/manual workflow opens one pending `maintenance/M-*.yaml` workset PR.
-A workset combines never-reviewed claims with a rotating sample of the whole model.
-Empty repositories do not open maintenance PRs. The run is bounded, not exhaustive.
+By default a workset combines never-reviewed claims with a rotating sample of the
+whole model. Empty repositories do not open maintenance PRs. The run is bounded,
+not exhaustive. An owner-selected nightly schedule replaces this selection with
+the recent mode below.
 
 An owner-enabled change-signal workflow can use the same lane for a bounded affected
 claim set instead. Read `change_signals.json` and the workset's optional `trigger` as
@@ -103,6 +105,39 @@ Run the compiler and request independent review.
 
 `python scripts/gap_finder.py --write` prepares a workset for a manual agent run too.
 It is a candidate selector, not a relationship-inference algorithm.
+
+### Recent mode
+
+With the Actions variable `RESOLVENT_MAINTENANCE_SCHEDULE=nightly`, the workflow
+prepares one recent workset a day (`python scripts/gap_finder.py --recent --write`).
+Its record carries a `window`, and its `claim_ids` are exactly the claims added
+in that window. When nothing was added, there is no workset and no PR. Build the
+package at the main revision the workset branch contains (its `base_commit`, or
+a later one if the branch was updated), then read the whole input in one response:
+
+```sh
+python scripts/build_knowledge.py --revision <main revision> --output .resolvent/knowledge
+python scripts/query_knowledge.py --package .resolvent/knowledge recent --at <created_at> --to <base_commit>
+```
+
+The response's `window` and `decisions.reviewed_claim_ids` match the workset. It
+lists every added claim with its support and the claims to compare it with, and
+carries the decisions-file inputs, so the pass needs no other read. The weekly
+and change-signal rules above do not apply to a recent workset. Instead, follow
+the `recent` mode of the `maintenance` contract:
+
+- Compare each added claim with the rest of the model. Merge a duplicate, add a
+  connection where it is justified, and record findings. No change is a valid result.
+- A merge is a `comparison` with `outcome: equivalent`. Both claims stay and form
+  one group. Equivalence needs the same class and temporal scope; record `overlap`
+  or `distinct` otherwise. A connection is a `linkage`.
+- Existing claims are comparison targets only: no old-to-old review, no rotating
+  review and no wider search.
+- No research, no fetching of sources, and no change to any claim for another reason.
+- Uncertainty changes only when a merge joins different grades, which read as
+  disputed until a `reassessment`. The writer accepts that reassessment for the
+  existing claim named in an equivalent comparison in the same delta, as well as
+  for the workset's own claims.
 
 ## Model operations available to external agents
 

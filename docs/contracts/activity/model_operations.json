@@ -1,9 +1,9 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "kind": "model_tooling",
   "authority": "Externally supplied model judgments through existing independently reviewed PRs",
   "input_protocol": "1.2 unchanged",
-  "formats": {"query": "1.1", "research_state": "1.1", "admission_closure": "1.1", "maintenance": "1.2"},
+  "formats": {"query": "1.1", "research_state": "1.1", "admission_closure": "1.1", "maintenance": "1.3"},
   "read_interface": "scripts/query_knowledge.py: Knowledge and local CLI",
   "reads": {
     "candidates": "Keyword-overlap candidates or paginated enumeration by canonical kind; selection reasons, never semantic identity",
@@ -12,9 +12,10 @@
     "passage": "Native text field or complete record/operation JSON in byte-bounded character ranges",
     "assessments": "Immutable supplied grades and reassessments, with explicit current result",
     "changes": "Canonical changes between pinned packages plus new model operations",
-    "lineage": "Existing source/evidence lineage cues as paginated cards; lineage-flag expands members"
+    "lineage": "Existing source/evidence lineage cues as paginated cards; lineage-flag expands members",
+    "recent": "Whole recent-maintenance input in one response: window, every added claim with its support, and compare_with targets by shared source, shared question or capped keyword overlap, with existing links and decision references"
   },
-  "read_bounds": {"default_items": 20, "maximum_items": 100, "maximum_bytes": 32768, "continuation": "next_offset at the same pinned build"},
+  "read_bounds": {"default_items": 20, "maximum_items": 100, "maximum_bytes": 32768, "continuation": "next_offset at the same pinned build", "complete_reads": ["recent"]},
   "research_state_interface": {"schema": "docs/schemas/research-state.schema.json", "selector": "canonical Q ID, or exact preserved external reference plus submission JSON pointer", "repository": "caller-supplied selected repository identity", "pagination": "character offsets in serialized portable JSON; same build, selection and state_sha256", "complete": "explicit local full object; no pagination cap", "research_validity": "preserved producer declarations only; missing or unsupported coverage is unknown"},
   "write_interface": "scripts/world_control.py RUN-ID-or-M-ID --decisions FILE [--apply]; default dry run",
   "common_supplied_fields": ["id", "kind", "subject_ids", "basis_ids", "reason"],
@@ -36,6 +37,7 @@
     "exact_claim_reuse_requires_equal_class_temporal_scope_and_uncertainty",
     "first_reassessment_continues_actual_base_grade_subsequent_reassessment_continues_current_head",
     "one_reassessment_per_claim_per_delta_no_history_branches",
+    "maintenance_reassessment_covers_workset_claims_and_existing_claims_named_in_an_equivalent_comparison_in_the_same_delta",
     "differing_current_or_unreassessed_legacy_supplied_grades_are_disputed",
     "read_digests_rechecked_against_actual_base_on_delta_validation",
     "retry_same_receipt_and_decisions_is_no_op",

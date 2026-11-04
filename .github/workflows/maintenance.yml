@@ -3,6 +3,7 @@ name: Prepare maintenance PR
 on:
   schedule:
     - cron: '23 6 * * 1'
+    - cron: '47 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -16,14 +17,21 @@ concurrency:
 
 jobs:
   prepare:
+    # Weekly rotation unless RESOLVENT_MAINTENANCE_SCHEDULE=nightly selects the recent window instead.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.schedule == '23 6 * * 1' && vars.RESOLVENT_MAINTENANCE_SCHEDULE != 'nightly') ||
+      (github.event.schedule == '47 4 * * *' && vars.RESOLVENT_MAINTENANCE_SCHEDULE == 'nightly')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.RESOLVENT_AUTOMATION_TOKEN || github.token }}
+      MODE: ${{ vars.RESOLVENT_MAINTENANCE_SCHEDULE == 'nightly' && 'recent' || 'weekly' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
+          fetch-depth: 0
           token: ${{ secrets.RESOLVENT_AUTOMATION_TOKEN || github.token }}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -43,10 +51,20 @@ jobs:
             echo 'An open maintenance PR already exists; no duplicate created.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          python scripts/gap_finder.py --write
+          if [ "$MODE" = recent ]; then
+            python scripts/gap_finder.py --recent --write
+            EMPTY='No claims were added in the recent window: no maintenance needed.'
+            TITLE='maintain world model: recent additions review'
+            BODY='Recent mode. Existing repository agents: follow AGENTS.md and the recent mode in docs/AGENT_JOBS.md. Compare only the added claims with the rest of the model, reading the whole input with the recent call. Complete the maintenance record, run the compiler, and request independent review. This PR is not ready to merge while the workset is pending.'
+          else
+            python scripts/gap_finder.py --write
+            EMPTY='Empty model: no maintenance needed.'
+            TITLE='maintain world model: bounded connection review'
+            BODY='Existing repository agents: follow AGENTS.md and docs/AGENT_JOBS.md. Complete the maintenance record, propose justified changes, run the compiler, and request independent review. This PR is not ready to merge while the workset is pending.'
+          fi
           FILE=$(git ls-files --others --exclude-standard maintenance/ | head -n 1)
           if [ -z "$FILE" ]; then
-            echo 'Empty model: no maintenance needed.' >> "$GITHUB_STEP_SUMMARY"
+            echo "$EMPTY" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           ID=$(basename "$FILE" .yaml)
@@ -57,9 +75,7 @@ jobs:
           git add -- "$FILE"
           git commit -m "maintenance: prepare $ID"
           git push origin "$BRANCH"
-          PR=$(gh pr create --base main --head "$BRANCH" \
-            --title 'maintain world model: bounded connection review' \
-            --body "Workset: $FILE. Existing repository agents: follow AGENTS.md and docs/AGENT_JOBS.md. Complete the maintenance record, propose justified changes, run the compiler, and request independent review. This PR is not ready to merge while the workset is pending.")
+          PR=$(gh pr create --base main --head "$BRANCH" --title "$TITLE" --body "Workset: $FILE. $BODY")
           echo "Maintenance workset PR: $PR" >> "$GITHUB_STEP_SUMMARY"
           # Explicit dispatch covers GitHub's suppression of token-authored PR events.
           gh workflow run validate.yml --ref "$BRANCH"

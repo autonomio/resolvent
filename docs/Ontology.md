@@ -195,6 +195,17 @@ independent review; the pending record cannot merge. Completed records retain th
 existing immutability rule. Contribution protocol 1.2 and canonical record formats
 are unchanged.
 
+## Recent maintenance windows
+
+Maintenance profile 1.3 adds a required `window` to a recent workset: its start
+rule (`last_completed_recent_workset` or `hours`), the previous recent workset, the
+start revision and its committer time (both null at the empty model), the base
+revision's committer time and the hours used. Its claims are those at `base_commit`
+absent from the start revision's tree. The window is preparation metadata taken
+from Git history, not claim valid time, evidence or an independent clock. Profile
+1.3 cannot carry a change-signal trigger and remains 1.3 when completed. Earlier
+profiles are unchanged.
+
 ## Recorded comparison and reassessment
 
 Admission closure 1.1 and maintenance 1.2 may contain typed `model_operations`.

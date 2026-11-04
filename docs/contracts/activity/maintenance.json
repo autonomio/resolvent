@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "activity_type": "maintenance",
   "authority": "scheduled, explicitly invoked or owner-enabled change-signal repository agent; changes through PR",
   "hard_rules": [
@@ -28,5 +28,50 @@
     "complete_maintenance_record",
     "run_compiler",
     "request_independent_review"
-  ]
+  ],
+  "modes": {
+    "weekly": {
+      "selection": "never_reviewed_claims_plus_rotating_sample_of_the_whole_model",
+      "rules": "hard_rules and procedure_steps"
+    },
+    "change_signal": {
+      "selection": "bounded_affected_claims_recorded_with_a_trigger",
+      "rules": "hard_rules and procedure_steps"
+    },
+    "recent": {
+      "enabled_by": "Actions variable RESOLVENT_MAINTENANCE_SCHEDULE=nightly, or scripts/gap_finder.py --recent",
+      "record": "maintenance 1.3 with window",
+      "selection": "exactly_the_claims_added_after_the_window_start_and_nothing_else",
+      "window_start": "base_commit_of_the_last_completed_recent_workset_else_the_last_first_parent_revision_24_hours_before_preparation",
+      "empty_window": "no_workset_and_no_pull_request",
+      "input": "scripts/query_knowledge.py recent --at <workset created_at> --to <workset base_commit>: one complete response without paging",
+      "replaces_hard_rules": [
+        "review_new_claims_and_rotating_older_claims",
+        "search_outside_existing_graph_neighbours",
+        "consider_old_to_old_relationships",
+        "reassess_existing_relationships"
+      ],
+      "hard_rules": [
+        "compare_each_added_claim_with_the_rest_of_the_model",
+        "merge_a_duplicate_with_an_equivalent_comparison_keeping_both_claims",
+        "equivalence_requires_the_same_class_and_temporal_scope_otherwise_overlap_or_distinct",
+        "add_a_justified_connection_with_a_linkage",
+        "record_findings_no_change_is_a_valid_result",
+        "existing_claims_are_comparison_targets_only",
+        "no_old_to_old_review_rotating_review_or_wider_search",
+        "no_research_source_fetching_or_claim_change_for_another_reason",
+        "uncertainty_changes_only_by_reassessment_when_an_equivalent_comparison_joins_different_grades"
+      ],
+      "procedure_steps": [
+        "read_workset",
+        "build_package_at_base_commit",
+        "read_recent_input",
+        "compare_added_claims",
+        "record_operations_and_findings",
+        "complete_maintenance_record",
+        "run_compiler",
+        "request_independent_review"
+      ]
+    }
+  }
 }
