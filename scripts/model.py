@@ -476,5 +476,9 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
                  'Claims remain permanent; do not create claim-retirement transitions')
             if previous and previous['uncertainty'] != record['uncertainty']:
                 fail(record['id'] in new_assessments, 'Uncertainty changes require an explicit reassessment')
+    from scripts.model_operations import check_merges
+    check_merges(old, current)
+    from scripts.verified_admission import validate_verified_delta
+    validate_verified_delta(base, old, current, data_changes)
     from scripts.recent_additions import verify_pass
     verify_pass(root, old, current, data_changes, {p: (before.get(p), after.get(p)) for p in reports})

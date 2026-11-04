@@ -415,3 +415,32 @@ rebuilt together. Workflow 1.0.3 makes the selected world's approved core limit
 authoritative for existing clients too. Older worlds retain their own limit
 until normal core adoption. The already submitted plugin 1.4.0 ZIPs retain their
 original bytes; this change does not replace or cancel that public review.
+
+## Producer uncertainty metadata compatibility (core 1.4.0)
+
+Core 1.4.0 / compiler 1.5.0 reports preserved producer uncertainty metadata in the
+repository-local assessment read and adds a maintenance rule for merging reviewed
+claims of differing grades. Admission decisions, closure formats and submission
+protocol 1.2 are unchanged: the metadata travels in the existing free-form
+`method_metadata`, and admission uses the exported grade. Fixed client protocol
+1.0, the public workflow MCP, plugin 1.4.1 distributions and live workflow 1.0.3
+stay byte-for-byte unchanged. The installed admission procedure needs no new
+decision, and it already runs the selected world's own writer and compiler, which
+explain a refused merge. Workflow 1.0.3 already directs adopted worlds to their
+current contracts. Worlds before core 1.4.0 keep their rules until normal core
+adoption. No package, portal resubmission or live-workflow release is required.
+
+## Verified contribution compatibility (core 1.5.0)
+
+Core 1.5.0 / compiler 1.6.0 adds an opt-in mechanical admission for
+`source_material` contributions carrying a version 1 producer verification receipt
+(`world_control.py --verified`) and the matching PR delta check. A world turns it on
+with `verified_contributions: true` in `resolvent.yaml`; with it off, nothing
+changes. Submission protocol 1.2, the closure formats, fixed client protocol 1.0,
+the public workflow MCP, plugin 1.4.1 distributions and live workflow 1.0.3 stay
+byte-for-byte unchanged. The plugin's `--decisions` writer interface is unchanged,
+and chat capture never creates producer verification receipts, so its admission
+procedure is unaffected. In an opted-in world, a receipt-bearing contribution
+admitted with agent decisions fails CI with a message naming `--verified`, which the
+selected world's live `docs/AGENT_JOBS.md` documents. No package or live-workflow
+release is required.

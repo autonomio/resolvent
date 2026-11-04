@@ -200,6 +200,48 @@ def current_assessments(ops):
     return current
 
 
+def check_merges(before, after):
+    """A merge of reviewed claims with differing grades records every grade through reassessment.
+
+    A new current `equivalent` claim comparison merges groups. When the merged claims
+    held different grades and any carries a producer `uncertainty_review`, the merge
+    belongs to maintenance, which reassesses every merged claim in the same delta: the
+    writer captures each old and incoming grade, the basis cites each reviewing run,
+    and repetition or model agreement never raises confidence. Other merges keep the
+    existing visible-dispute behavior.
+    """
+    from scripts.uncertainty_review import ORDER, reviewed_claims
+    old, ops = operation_records(before), operation_records(after)
+    added = {ref: op for ref, op in ops.items() if ref not in old}
+    replaced = {op['supersedes'] for op in ops.values() if op['kind'] == 'comparison' and op['supersedes']}
+    idx = indexes(after)
+    claims, base = idx.get('claims', {}), indexes(before).get('claims', {})
+    merges = [ref for ref, op in sorted(added.items()) if op['kind'] == 'comparison' and op['outcome'] == 'equivalent'
+              and ref not in replaced and op['subject_ids'][0] in claims]
+    if not merges:
+        return
+    groups, reviewed = equivalence_groups(after, ops=ops), reviewed_claims(idx)
+    assessed = {subject: op for op in added.values() if op['kind'] == 'reassessment' for subject in op['subject_ids']}
+    for ref in merges:
+        members = groups[added[ref]['subject_ids'][0]]
+        grades = {m: (base.get(m) or claims[m])['uncertainty'] for m in members}
+        if len(set(grades.values())) == 1 or not set(reviewed) & set(members):
+            continue
+        fail(ref.startswith('M-'), 'Merge reviewed claims with differing grades in maintenance, reassessing every merged claim')
+        best = min(ORDER[value] for value in grades.values())
+        independent = {e['id'] for e in idx.get('evidence', {}).values()
+                       if e['independent'] and set(e['claim_ids']) & set(members)}
+        for member in members:
+            op = assessed.get(member)
+            fail(op is not None, 'A merge of differing grades reassesses every merged claim: ' + member)
+            outcome = ORDER[op['uncertainty']]
+            fail(outcome >= best, 'A merge never ends more confident than the most confident merged grade')
+            fail(outcome >= ORDER[grades[member]] or bool(independent & set(op['basis_ids'])),
+                 'Lower uncertainty in a merge needs cited independent inspected evidence of the merged claims')
+            fail(reviewed.get(member, set()) <= set(op['basis_ids']),
+                 'A merge cites each run whose uncertainty review covers a merged claim: ' + member)
+
+
 def apply_operations(state, operations, *, read_state=None):
     """Apply supplied judgments to an in-memory proposal, preserving all original IDs."""
     fail(isinstance(operations, list) and len(operations) <= 200, 'At most 200 model operations per record')

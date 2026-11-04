@@ -1,5 +1,5 @@
 {
-  "version": "1.3",
+  "version": "1.4",
   "activity_type": "maintenance",
   "authority": "scheduled, explicitly invoked or owner-enabled change-signal repository agent; changes through PR",
   "hard_rules": [
@@ -18,7 +18,10 @@
     "research_validity_belongs_to_input_producer",
     "external_agents_own_behaviors_and_execution",
     "claim_uncertainty_changes_require_recorded_reassessment",
-    "preserve_claims_without_new_retirement_transitions"
+    "preserve_claims_without_new_retirement_transitions",
+    "merging_reviewed_claims_with_differing_grades_reassesses_every_merged_claim_citing_each_reviewing_run",
+    "merges_never_end_more_confident_than_the_most_confident_merged_grade",
+    "merges_lower_uncertainty_only_with_cited_independent_inspected_evidence"
   ],
   "procedure_steps": [
     "read_workset",
@@ -89,7 +92,7 @@
         "the_workset_is_exactly_the_window_git_history_gives_for_its_base_commit_and_created_at",
         "every_claim_in_the_workset_is_reviewed",
         "every_operation_has_an_added_claim_as_a_subject",
-        "a_reassessment_names_only_an_added_claim_or_its_equivalent_to_settle_an_equivalent_comparison_that_joined_different_grades",
+        "a_reassessment_names_only_a_claim_of_a_group_an_equivalent_comparison_of_an_added_claim_formed_when_its_grades_differed",
         "the_change_holds_only_the_record_its_nightly_brief_and_the_results_of_its_recorded_operations",
         "a_claim_changes_only_its_grade",
         "the_brief_numbers_and_headings_match_the_record_every_what_moved_statement_cites_a_claim_id_and_every_cited_id_exists",

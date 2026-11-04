@@ -341,6 +341,32 @@ class RecentTests(unittest.TestCase):
         with self.assertRaisesRegex(Invalid, 'immutable'):
             gate(self.repo, merged)
 
+    def test_a_merge_into_an_existing_group_settles_the_whole_group(self):
+        weekly = weekly_workset(self.repo)
+        state = self.pending(weekly)
+        grouped = {'id': 'xy', 'kind': 'comparison', 'subject_ids': [X, Y], 'basis_ids': [X, Y], 'outcome': 'equivalent',
+                   'supersedes': None, 'reason': 'Synthetic: an earlier grouping of different grades.'}
+        changes = plan_maintenance(state, weekly['id'], dict(expected_model_sha256=model_digest(state),
+                                   model_operations=[grouped], reviewed_claim_ids=weekly['claim_ids']), ROOT)
+        write_state(self.repo, changes)
+        self.commit('2026-01-02T13:00:00Z')
+        record, query, response = self.prepared()
+        self.assertEqual(record['claim_ids'], sorted([A, B]))
+        merge = self.operations(response)[0]
+        settle = {'id': 'settle', 'kind': 'reassessment', 'subject_ids': [X, Y], 'basis_ids': [X, Y, A],
+                  'uncertainty': 'high', 'predecessors': {X: None, Y: None},
+                  'reason': 'Synthetic: settle every grade of the group the merge formed.'}
+        pending, base = self.pending(record), self.snapshot()
+        decision = dict(response['decisions'], model_operations=[merge, settle], nightly_brief=TEXTS)
+        # Y is not named by the merge, but the merge joins its group, whose grades differ.
+        changes = plan_maintenance(pending, record['id'], decision, ROOT)
+        self.assertIn('- Grades changed: 1', changes[BRIEF])
+        self.propose(changes)
+        gate(self.repo, base)
+        with self.assertRaisesRegex(Invalid, 'reassesses only'):
+            plan_maintenance(pending, record['id'], dict(decision, model_operations=[merge, dict(
+                settle, subject_ids=[X, Y, B], predecessors={X: None, Y: None, B: None})]), ROOT)
+
     def test_a_recent_pass_reviews_every_addition_and_only_it_writes_a_brief(self):
         record, query, response = self.prepared()
         pending = self.pending(record)

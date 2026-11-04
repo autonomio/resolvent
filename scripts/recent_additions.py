@@ -11,6 +11,7 @@ import re
 
 from scripts.build_knowledge import git
 from scripts.model import CANONICAL_ROOTS, Invalid, digest, fail, family, indexes
+from scripts.model_operations import equivalence_groups
 from scripts.temporal import point, temporal_scope
 
 RECORD_PATH = re.compile(r'(?:claims|evidence|sources|graph|questions|maintenance)/([CESRQM]-[0-9a-f]{32})\.yaml')
@@ -95,20 +96,22 @@ def selection(repo: Path, revision: str, maintenance, questions, *, hours: int =
     return span, added
 
 
-def pass_scope(record: dict, operations: list, claims: dict) -> None:
+def pass_scope(record: dict, operations: list, claims: dict, groups: dict) -> None:
     """Recent-mode rules: every operation has an added claim, and grades move only to settle a merge.
 
-    A reassessment may name an added claim or the claim it was found equivalent to in the
-    same pass, and only when that equivalent pair had different grades before the pass.
+    A reassessment may name only a claim of a group that an `equivalent` comparison of an
+    added claim forms in this pass, and only when that group's grades differed before the
+    pass. `claims` are the base claims and `groups` the equivalence groups after the pass.
     """
     added = set(record['claim_ids'])
     settles = set()
     for op in operations:
         subjects = op['subject_ids']
         if (op.get('kind') == 'comparison' and op.get('outcome') == 'equivalent' and added.intersection(subjects)
-                and len(subjects) == 2 and all(subject in claims for subject in subjects)
-                and claims[subjects[0]]['uncertainty'] != claims[subjects[1]]['uncertainty']):
-            settles.update(subjects)
+                and all(subject in claims for subject in subjects)):
+            members = set(groups.get(subjects[0], subjects))
+            if len({claims[member]['uncertainty'] for member in members if member in claims}) > 1:
+                settles.update(members)
     for op in operations:
         if op.get('kind') == 'reassessment':
             fail(set(op['subject_ids']) <= settles, 'A recent pass reassesses only an added claim or its equivalent, '
@@ -165,7 +168,7 @@ def verify_pass(root: Path, old: dict, current: dict, data_changes: set[str], re
             fail(family(path) == 'graph' and after is not None and after['id'] in linked,
                  'A recent pass changes only its maintenance record, its nightly brief and the results of its '
                  'recorded operations: ' + path)
-    pass_scope(record, operations, indexes(old).get('claims', {}))
+    pass_scope(record, operations, indexes(old).get('claims', {}), equivalence_groups(current))
     try:
         text = reports[location][1].decode('utf-8').replace('\r\n', '\n')
     except UnicodeError:

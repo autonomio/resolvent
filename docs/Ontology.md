@@ -255,3 +255,37 @@ explicit reassessment, appear as disputed. No averaging or automatic uncertainty
 change occurs. New exact claim reuse requires matching uncertainty as well as
 statement, class and temporal scope. Otherwise preserve a separate claim; an
 external comparison may group it. History remains retrievable after reassessment.
+
+## Producer uncertainty metadata
+
+A contribution's `method_metadata.claim_metadata[candidate]` may preserve the
+writer's original `uncertainty`, an auditor's `uncertainty_review` and a
+`freshness` review horizon. Admission uses the candidate's exported `uncertainty`
+as supplied and records no decision about this metadata. It stays in the immutable
+contribution as separate model judgments, not independent observations. Labels are
+ordinal, never probabilities; `moderate` means `medium`.
+
+Grades can conflict only when claims merge. Admission merges still need equal
+grades, and admission cannot group a reviewed claim with a claim of another grade,
+so that merge moves to maintenance. There, an `equivalent` comparison joining
+reviewed claims of differing grades needs a reassessment of every claim in the
+merged group in the same record. The writer captures each old and incoming grade,
+the basis cites the evidence and every run whose review covers a merged claim, and
+each new grade is the outcome. No merged claim may end more confident than the most
+confident merged grade, and lower uncertainty needs cited independent inspected
+evidence of the merged claims, so repeated publications and model agreement never
+promote confidence. `low` still needs that claim's own independent evidence; a
+member that cannot hold the outcome keeps its own recorded grade and the group reads
+disputed. Merges without producer reviews keep the behaviour above.
+
+Assessment reads show each supplied grade beside the writer's label, the auditor's
+recommendation and evidence, and the review horizon. A proposed prior is a
+destination claim ID, never a mapped candidate ID. It is compared with the read
+revision only when it is an active claim with the auditor's recorded grade, the same
+class and temporal scope, and a match reason; sameness remains the auditor's
+proposal. Missing, legacy or malformed reviews, missing or unavailable evidence,
+duplicate raw audit rows (even with `audit_complete=true`), incomplete audits and
+failed prior checks stay explicit limitations, never comparisons. A review horizon (`scheduled`,
+`event_driven`, `historical` or `unknown`) prompts reassessment only. A passed date
+is not falsification, uncertainty decay, retirement or valid time; automatic expiry
+actions are outside this profile.
