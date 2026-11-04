@@ -1202,10 +1202,10 @@
       "sha256": "bfffa35ad461b878109c393248e83651c953d648142f5b56eccb948c97d4f427"
     },
     "tests/test_verified_admission.py": {
-      "bytes": 17480,
-      "git_blob": "f08706c5ec95074af19ed5f24c12caf5e478ae87",
+      "bytes": 17497,
+      "git_blob": "405e47e4ef57fffc3e4e489d80ca04f9828e0543",
       "mode": "100644",
-      "sha256": "fae6830a3e0d81ae94f67058f8c65592f303491cd944672ce4a843759858d05c"
+      "sha256": "37617e7f8b026a72ad13d1ed52fe8c15a33c7668218af3bc11de8e085cb724ac"
     },
     "tests/test_workflow.py": {
       "bytes": 10543,

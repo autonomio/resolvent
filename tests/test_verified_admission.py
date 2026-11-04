@@ -234,7 +234,7 @@ class VerifiedAdmissionTests(unittest.TestCase):
                 validate_delta(Path(b), Path(a), state)
 
     def test_the_opt_in_is_an_explicit_resolvent_yaml_setting(self):
-        self.assertFalse(enabled(ROOT))  # The template ships with it off.
+        # Only temporary worlds: these tests ship to every world, whatever its own setting.
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.assertFalse(enabled(root))
