@@ -10,6 +10,8 @@ never probabilities; `moderate` means `medium`.
 """
 from __future__ import annotations
 
+import json
+
 from scripts.temporal import temporal_scope
 
 FIELDS = {'uncertainty', 'uncertainty_review', 'freshness'}
@@ -17,7 +19,7 @@ GRADES = {'low': 'low', 'moderate': 'medium', 'medium': 'medium', 'high': 'high'
 ORDER = {'low': 0, 'medium': 1, 'high': 2}
 CHANGES = ('increased', 'decreased', 'unchanged', 'not_comparable')
 HORIZONS = ('scheduled', 'event_driven', 'historical', 'unknown')
-PREVIEW, ITEMS = 240, 20
+PREVIEW, ITEMS = 240, 20  # Preview characters and encoded bytes per string; entries per list.
 HORIZON_NOTE = ('A review horizon prompts reassessment only. A passed date is not falsification, '
                 'uncertainty decay, retirement or valid time.')
 LONG_NOTE = 'Long producer values are previewed here; the contribution preserves them unchanged.'
@@ -42,12 +44,26 @@ def text(record, key):
     return value if isinstance(value, str) else ''
 
 
+def clip(value):
+    """At most PREVIEW characters and PREVIEW JSON-encoded bytes, so one report always fits a bounded page."""
+    value = value[:PREVIEW]
+    if len(json.dumps(value, ensure_ascii=False).encode()) <= PREVIEW + 2:
+        return value
+    size = 0
+    for end, char in enumerate(value):
+        size += len(json.dumps(char, ensure_ascii=False).encode()) - 2
+        if size > PREVIEW:
+            return value[:end]
+    return value
+
+
 def strings(value, notes):
     """Previewed producer strings for bounded reads; `notes` records any shortening."""
     values = [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
-    if len(values) > ITEMS or any(len(item) > PREVIEW for item in values):
+    shown = [clip(item) for item in values[:ITEMS]]
+    if len(values) > ITEMS or shown != values[:ITEMS]:
         notes.append(LONG_NOTE)
-    return [item[:PREVIEW] for item in values[:ITEMS]]
+    return shown
 
 
 def audit_rows(meta):
@@ -90,9 +106,9 @@ def change(recommended, check):
 def writer(value):
     """The writer's original label beside its ordinal destination equivalent."""
     label = value.get('class') if isinstance(value, dict) else value
-    result = {'label': label[:PREVIEW] if isinstance(label, str) else None, 'uncertainty': grade(label)}
+    result = {'label': clip(label) if isinstance(label, str) else None, 'uncertainty': grade(label)}
     if isinstance(value, dict) and isinstance(value.get('rationale'), str):
-        result['rationale_preview'] = value['rationale'][:PREVIEW]
+        result['rationale_preview'] = clip(value['rationale'])
     return result
 
 
@@ -101,10 +117,10 @@ def horizon(value):
     value = value if isinstance(value, dict) else {}
     policy = value['policy'] if value.get('policy') in HORIZONS else 'unknown'
     notes = [] if policy == value.get('policy') else ['Missing or unsupported review horizon; recorded as unknown.']
-    result = {'policy': policy, 'as_of': text(value, 'as_of')[:PREVIEW] or None,
-              'review_after': text(value, 'review_after')[:PREVIEW] or None,
+    result = {'policy': policy, 'as_of': clip(text(value, 'as_of')) or None,
+              'review_after': clip(text(value, 'review_after')) or None,
               'triggers': strings(value.get('triggers'), notes),
-              'rationale_preview': text(value, 'rationale')[:PREVIEW],
+              'rationale_preview': clip(text(value, 'rationale')),
               'interpretation': HORIZON_NOTE, 'limitations': notes}
     if policy == 'scheduled' and result['review_after'] is None:
         notes.append('A scheduled review horizon has no review date.')
@@ -162,9 +178,9 @@ def report(run, claims):
         if len(checks) > 1:
             verdict = 'ambiguous'
         elif checks:
-            verdict = text(checks[0], 'assessment')[:PREVIEW] or None
+            verdict = clip(text(checks[0], 'assessment')) or None
         found = {'status': 'assessed' if recommended else 'not_assessed', 'recommended_uncertainty': recommended,
-                 'reason_preview': text(raw, 'reason')[:PREVIEW],
+                 'reason_preview': clip(text(raw, 'reason')),
                  'evidence_ids': strings([canonical_id(run['id'], 'evidence', e) for e in basis], notes) if recommended else [],
                  'original_evidence_ids': strings(raw.get('original_evidence_ids'), notes),
                  'producer_audit': audit, 'audit_verdict': verdict, 'prior': None}
@@ -173,8 +189,8 @@ def report(run, claims):
             # A proposed prior is a destination ID; it is never mapped like a local candidate ID.
             reported, reason = grade(raw.get('prior_class')), text(raw, 'prior_match_reason')
             check = prior_check(identity, reported, reason, c, claims)
-            found['prior'] = {'claim_id': identity[:PREVIEW], 'auditor_uncertainty': reported,
-                              'match_reason_preview': reason[:PREVIEW], 'destination': check,
+            found['prior'] = {'claim_id': clip(identity), 'auditor_uncertainty': reported,
+                              'match_reason_preview': clip(reason), 'destination': check,
                               'uncertainty_change': change(recommended, check),
                               'producer_uncertainty_change': raw.get('change') if raw.get('change') in CHANGES else None}
             if check['status'] != 'comparable':

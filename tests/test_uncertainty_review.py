@@ -1,10 +1,12 @@
 """Synthetic audited-uncertainty handoffs only; no research, producer runtime or real world data."""
 from __future__ import annotations
 import copy
+import json
 from pathlib import Path
 import tempfile
 import unittest
 
+from scripts.build_knowledge import json_bytes
 from scripts.model import Invalid, validate_delta, validate_state
 from scripts.model_operations import model_digest
 from scripts.uncertainty_review import AUDIT_NOTES, HORIZON_NOTE, LONG_NOTE, PRIOR_NOTES
@@ -131,18 +133,27 @@ class UncertaintyReviewTests(unittest.TestCase):
         horizon = item['review_horizon']
         self.assertEqual((horizon['policy'], horizon['review_after'], horizon['interpretation'], horizon['limitations']),
                          ('scheduled', '2021-01-01', HORIZON_NOTE, []))
-        p = handoff('6', evidence_ids=[f'e{n}' for n in range(1, 27)])
+        # Worst-case producer text: every string long and escape-heavy, every list long.
+        heavy = '\x01' * 1000
+        p = handoff('6', evidence_ids=[f'e{n}' for n in range(1, 27)], reason=heavy, prior_claim_id=heavy,
+                    prior_match_reason=heavy, original_evidence_ids=[heavy] * 30,
+                    limitations=[f'Synthetic producer note {n}: ' + heavy for n in range(30)])
         p['evidence'] += [dict(p['evidence'][0], id=f'e{n}') for n in range(2, 27)]
         p['claims'][0]['evidence_ids'] = [e['id'] for e in p['evidence']]
         entry = p['method_metadata']['claim_metadata']['c1']
-        entry['freshness'] = {'policy': 'expires_automatically'}
-        entry['uncertainty_review']['limitations'] = [f'Synthetic producer note {n}: ' + 'x' * 400 for n in range(30)]
-        item = self.supplied(admit({}, p), p)
+        entry['uncertainty'] = {'class': heavy, 'rationale': '\U0001F642' * 1000}
+        entry['freshness'] = {'policy': 'expires_automatically', 'as_of': heavy, 'review_after': heavy,
+                              'triggers': [f'{n}{heavy}' for n in range(30)], 'rationale': heavy}
+        page = self.query(admit({}, p)).assessments(claim_id(p))
+        self.assertLessEqual(len(json_bytes(page)), 32768)
+        item = page['items'][0]
         self.assertEqual(item['review_horizon']['policy'], 'unknown')
         self.assertIn('Missing or unsupported review horizon; recorded as unknown.', item['review_horizon']['limitations'])
         # Long producer values are bounded for paged reads; the contribution keeps them unchanged.
         notes = item['uncertainty_review']['limitations']
-        self.assertEqual((len(notes), notes[-1], max(len(note) for note in notes)), (21, LONG_NOTE, 240))
+        self.assertIn(LONG_NOTE, notes)
+        self.assertEqual(sum(note.startswith('Synthetic producer note') for note in notes), 20)
+        self.assertLessEqual(max(len(json.dumps(note, ensure_ascii=False).encode()) - 2 for note in notes), 240)
         self.assertEqual(len(item['uncertainty_review']['evidence_ids']), 20)
 
     def test_prior_checks_use_the_read_revision_and_never_map_candidate_ids(self):
