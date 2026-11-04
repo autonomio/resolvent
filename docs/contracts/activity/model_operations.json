@@ -3,7 +3,7 @@
   "kind": "model_tooling",
   "authority": "Externally supplied model judgments through existing independently reviewed PRs",
   "input_protocol": "1.2 unchanged",
-  "formats": {"query": "1.1", "research_state": "1.0", "admission_closure": "1.1", "maintenance": "1.2"},
+  "formats": {"query": "1.1", "research_state": "1.1", "admission_closure": "1.1", "maintenance": "1.2"},
   "read_interface": "scripts/query_knowledge.py: Knowledge and local CLI",
   "reads": {
     "candidates": "Keyword-overlap candidates or paginated enumeration by canonical kind; selection reasons, never semantic identity",

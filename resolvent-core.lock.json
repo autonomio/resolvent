@@ -452,10 +452,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 39961,
-      "git_blob": "08d1eddd5e61cca067946d1bd800946d98de8445",
+      "bytes": 40948,
+      "git_blob": "4461eca1fd4a4011fe7d38999a077dcd9eebb3d0",
       "mode": "100644",
-      "sha256": "77305a8d3ac710eddb214da8774d4adaf022f1d637cc50c159de0b9bc55c4b17"
+      "sha256": "17a7079d4f03667bcf6073adc3aecfcec801caf539aa30ab994c5091222bcc64"
     },
     "docs/Ontology.md": {
       "bytes": 16721,
@@ -555,9 +555,9 @@
     },
     "docs/contracts/activity/model_operations.json": {
       "bytes": 4345,
-      "git_blob": "8c78cec547eb853de52e51cc817d0e1b0012cc84",
+      "git_blob": "1f101585438b5db203f2f8307d6d1b40015d1b1e",
       "mode": "100644",
-      "sha256": "3144bdfd280b6c072ab52cdb88355281e1a188c6c2d95c3059795317c42898aa"
+      "sha256": "e016e01da8e0c94a95f6fbb80de0fd0f7cd8e609ae8d9a467b114fa4862b8c08"
     },
     "docs/contracts/activity/research_brief_creation.json": {
       "bytes": 2130,
@@ -632,10 +632,10 @@
       "sha256": "6b0bb0df9be90923bc275ec41b8302cccf043b6e2f98bee046671fce95e9fa0a"
     },
     "docs/schemas/research-state.schema.json": {
-      "bytes": 9808,
-      "git_blob": "e504eda78aa835460ce7b779bd02043e323e218b",
+      "bytes": 10587,
+      "git_blob": "c6dfea118e62910af8d067d8a5c3d460345e08c6",
       "mode": "100644",
-      "sha256": "5a231bdebb0596fc9171c2582cdc04c171940389d72fbe6a75ee7f48428e5dd5"
+      "sha256": "df282c9656f7375598cc9e16d2275a33fdd624aca8b72c89e220d2c76a0bd4ee"
     },
     "docs/schemas/sources.schema.json": {
       "bytes": 2083,
@@ -782,10 +782,10 @@
       "sha256": "4f4e8f17614f040e868666b2e1c0cf8235b239865944e52ace0f4bc9efa2ff9d"
     },
     "scripts/research_state.py": {
-      "bytes": 27812,
-      "git_blob": "c5054789434117f061e0b33df78271983aca144c",
+      "bytes": 28422,
+      "git_blob": "e1b8f16043cb637b52718064dacfe4e8e2f9eb30",
       "mode": "100644",
-      "sha256": "cf588d352743b7f84d886d511cf62fff31cb81bf473676b8a0a467e958fc717d"
+      "sha256": "6162065d50a19f83a960362d452e4e73d6b697a74ac731d83daf0df17ede5a7e"
     },
     "scripts/signal_contract.py": {
       "bytes": 2591,
@@ -1160,10 +1160,10 @@
       "sha256": "c9c06f723ba67f1b3fb9f5f957f4f36e2fb85fe94723eb42a95a2e4bb73b5ea6"
     },
     "tests/test_research_state.py": {
-      "bytes": 22355,
-      "git_blob": "632af06c1a7c19595664e45fa6cecbcba9c38656",
+      "bytes": 30557,
+      "git_blob": "e82fe3321d73985187a4ce18c7f049d985603f21",
       "mode": "100644",
-      "sha256": "3f8f906081b91c359a75433491ea5c154d8dbaaceccd6f9f800bc715dcf4744c"
+      "sha256": "9d14dbda7b81b9e66a561f5db9a7a58be20bab1688fe4701323548f470d2c648"
     },
     "tests/test_signal_maintenance.py": {
       "bytes": 11670,
