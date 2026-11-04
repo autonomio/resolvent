@@ -5,7 +5,8 @@
       "enum": [
         "1.0",
         "1.1",
-        "1.2"
+        "1.2",
+        "1.3"
       ]
     },
     "id": {
@@ -112,6 +113,125 @@
       },
       "uniqueItems": true,
       "maxItems": 200
+    },
+    "window": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "enum": [
+            "last_completed_recent_workset",
+            "hours"
+          ]
+        },
+        "previous_workset_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^M-[0-9a-f]{32}$"
+        },
+        "from_revision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{40,64}$"
+        },
+        "from_committed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "to_committed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8760
+        },
+        "new_source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^S-[0-9a-f]{32}$"
+          },
+          "uniqueItems": true
+        },
+        "question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^Q-[0-9a-f]{32}$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "start",
+        "previous_workset_id",
+        "from_revision",
+        "from_committed_at",
+        "to_committed_at",
+        "hours",
+        "new_source_ids",
+        "question_ids"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "start": {
+                "const": "last_completed_recent_workset"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "previous_workset_id": {
+                "type": "string"
+              },
+              "from_revision": {
+                "type": "string"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "previous_workset_id": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "from_revision": {
+                "type": "null"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "from_committed_at": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "from_committed_at": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "required": [
@@ -287,7 +407,10 @@
       "then": {
         "properties": {
           "schema_version": {
-            "const": "1.2"
+            "enum": [
+              "1.2",
+              "1.3"
+            ]
           }
         },
         "required": [
@@ -309,6 +432,39 @@
             "const": "1.2"
           }
         }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "window"
+        ]
+      },
+      "then": {
+        "properties": {
+          "schema_version": {
+            "const": "1.3"
+          }
+        },
+        "not": {
+          "required": [
+            "trigger"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": "1.3"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "window"
+        ]
       }
     }
   ]

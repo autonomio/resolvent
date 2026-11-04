@@ -195,6 +195,28 @@ independent review; the pending record cannot merge. Completed records retain th
 existing immutability rule. Contribution protocol 1.2 and canonical record formats
 are unchanged.
 
+## Recent maintenance windows
+
+Maintenance profile 1.3 adds a required `window` to a recent workset: its start
+rule (`last_completed_recent_workset` or `hours`), the previous recent workset, the
+start revision and its committer time (both null at the empty model), the base
+revision's committer time, the hours used, and the sources and questions the
+window added (`new_source_ids`, `question_ids`). Its claims, sources and questions
+are those at `base_commit` absent from the start revision's tree. The window is preparation metadata taken from Git history, not
+claim valid time, evidence or an independent clock. Profile 1.3 cannot carry a
+change-signal trigger or `subject_ids` and remains 1.3 when completed. A completed
+1.3 record has reviewed every claim in its workset. Earlier profiles are unchanged.
+
+## Nightly briefs
+
+A completed recent pass has exactly one nightly brief, `nightly-briefs/YYYY-MM-DD.md`,
+named by the UTC date of its workset's `created_at`. It is a Markdown report on how
+the model moved in that window, kept beside the data roots and immutable once
+merged. Its numbers and headings are generated from the completed record, and its
+two written sections cite records by complete ID. A brief is not a claim, evidence,
+provenance or canonical record: `load_state` and compiled packages leave it out, and
+it holds nothing from outside the model.
+
 ## Recorded comparison and reassessment
 
 Admission closure 1.1 and maintenance 1.2 may contain typed `model_operations`.

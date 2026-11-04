@@ -22,7 +22,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.model import MAX_FILE_BYTES, Invalid, digest, fail, indexes, load_state, read_data, validate_state
 from scripts.temporal import merge_temporal, temporal_scope
-from scripts.model_operations import apply_operations, check_merges, model_digest
+from scripts.model_operations import apply_operations, check_merges, equivalence_groups, model_digest
 
 NAMESPACE = uuid.UUID('f546a1e4-a5b6-4a1d-9b85-d348abf54b03')
 FAMILIES = ('claims', 'evidence', 'sources', 'graph', 'questions', 'briefs')
@@ -225,21 +225,30 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
         fail(record.get('model_decisions_sha256') == digest(decisions), 'Completed maintenance decisions are immutable')
         return {}
     required = {'expected_model_sha256', 'model_operations', 'reviewed_claim_ids'}
-    fail(required <= set(decisions) <= required | {'findings', 'deferred', 'no_change_reason'},
+    fail(required <= set(decisions) <= required | {'findings', 'deferred', 'no_change_reason', 'nightly_brief'},
          'Unsupported maintenance decisions')
+    recent = 'window' in record
+    fail(recent == ('nightly_brief' in decisions), 'A recent pass writes a nightly brief; other maintenance does not')
     fail(decisions['expected_model_sha256'] == model_digest(state), 'Stale model snapshot')
     selected = set(record['claim_ids']) | set(record.get('subject_ids',[]))
     fail(isinstance(decisions['model_operations'],list), 'Model operations must be a list')
+    groups, joined = equivalence_groups(state), set()
     for op in decisions['model_operations']:
-        fail(isinstance(op,dict) and isinstance(op.get('subject_ids'),list) and all(isinstance(v,str) for v in op['subject_ids']) and
-             set(op['subject_ids']).intersection(selected), 'Operation is outside the selected maintenance workset')
+        fail(isinstance(op,dict) and isinstance(op.get('subject_ids'),list) and all(isinstance(v,str) for v in op['subject_ids']),
+             'Operation is outside the selected maintenance workset')
+        if op.get('kind') == 'comparison' and op.get('outcome') == 'equivalent' and set(op['subject_ids']) & selected:
+            # A merge may settle differing grades across every claim of the group it forms.
+            joined.update(member for subject in op['subject_ids'] for member in groups.get(subject, [subject]))
+    for op in decisions['model_operations']:
         if op.get('kind') == 'reassessment':
-            fail(set(op['subject_ids']) <= selected, 'Reassessment is outside the selected maintenance workset')
+            fail(set(op['subject_ids']) <= selected | joined, 'Reassessment is outside the selected maintenance workset')
+        else:
+            fail(set(op['subject_ids']) & selected, 'Operation is outside the selected maintenance workset')
     after = copy.deepcopy(state)
     operations, changes = apply_operations(after, decisions['model_operations'])
     changes={path:record for path,record in changes.items() if state.get(path)!=record}
     result = copy.deepcopy(record)
-    result.update(schema_version='1.2', status='completed', model_operations=operations,
+    result.update(schema_version='1.3' if 'window' in record else '1.2', status='completed', model_operations=operations,
                   model_base_sha256=decisions['expected_model_sha256'], model_decisions_sha256=digest(decisions),
                   reviewed_claim_ids=decisions['reviewed_claim_ids'], touched_files=sorted(changes),
                   findings=decisions.get('findings', list(dict.fromkeys(op['reason'] for op in operations))),
@@ -247,14 +256,30 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
     path = f'maintenance/{maintenance_id}.yaml'
     after[path] = changes[path] = result
     validate_state(after, policy_root, require_closure=True)
+    if recent:
+        from scripts.recent_additions import pass_scope
+        pass_scope(record, operations, idx.get('claims', {}), equivalence_groups(after))
     check_merges(state, after)
+    if recent:
+        # The numbers and headings are generated here; the pass supplies only its two sections.
+        from scripts.nightly_brief import SECTIONS, brief_date, brief_path, recent_pass, render, verify
+        fail(not any(recent_pass(other) and brief_date(other) == brief_date(result)
+                     for other in idx['maintenance'].values()),
+             'A recent pass for ' + brief_date(result) + ' has completed; the next window is prepared the next night')
+        texts = decisions['nightly_brief']
+        fail(isinstance(texts, dict) and set(texts) == set(SECTIONS) and all(isinstance(v, str) for v in texts.values()),
+             'A recent pass supplies nightly_brief text for what_moved and course')
+        text = render(result, {key: value.replace('\r\n', '\n').strip() for key, value in texts.items()})
+        verify(result, text, {item['id'] for item in after.values()})  # The same check the gate applies.
+        changes[brief_path(result)] = text
     return changes
 
 
-def apply_changes(root: Path, changes: dict[str, dict]) -> None:
-    """Write validated data. Roll back already written files on ordinary I/O failure."""
+def apply_changes(root: Path, changes: dict[str, dict | str]) -> None:
+    """Write validated data and nightly briefs (text). Roll back already written files on ordinary I/O failure."""
     originals: dict[Path, bytes | None] = {}
-    encoded={rel:yaml.dump(value,Dumper=RecordDumper,sort_keys=False,allow_unicode=True).encode('utf-8')
+    encoded={rel:value.encode('utf-8') if isinstance(value,str) else
+             yaml.dump(value,Dumper=RecordDumper,sort_keys=False,allow_unicode=True).encode('utf-8')
              for rel,value in changes.items()}
     fail(all(len(data)<=MAX_FILE_BYTES for data in encoded.values()), 'Planned record exceeds the 10 MiB file limit')
     try:

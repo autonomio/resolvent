@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.model import Invalid, load_state, validate_delta, validate_state
+from scripts.nightly_brief import load_briefs, validate_briefs
 
 
 def main() -> int:
@@ -20,6 +21,7 @@ def main() -> int:
     try:
         state = load_state(args.root)
         counts = validate_state(state, args.policy_root, args.require_closure)
+        validate_briefs(state, load_briefs(args.root))
         if args.base:
             validate_delta(args.root, args.base, state)
     except (Invalid, OSError, ValueError, TypeError, KeyError) as exc:
