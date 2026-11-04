@@ -7,12 +7,12 @@ import unittest
 
 from scripts.model import Invalid, validate_delta, validate_state
 from scripts.model_operations import model_digest
-from scripts.uncertainty_review import AUDIT_NOTES, HORIZON_NOTE, PRIOR_NOTES
+from scripts.uncertainty_review import AUDIT_NOTES, HORIZON_NOTE, LONG_NOTE, PRIOR_NOTES
 from scripts.world_control import canonical_id, plan_admission
 from test_model import ROOT, admitted, contribution, decisions, state_for, write_state
-from test_model_operations import QueryFixture
+from test_model_operations import QueryFixture, comparison, maintain
 
-STATEMENT = 'The synthetic fixture value is 7.'
+MAINTENANCE = 'maintenance/M-' + 'a' * 32 + '.yaml'
 
 
 def review(**changes):
@@ -24,10 +24,11 @@ def review(**changes):
     return value
 
 
-def handoff(token='5', **changes):
-    """Synthetic source material with a writer grade, an auditor review and a passed review date."""
+def handoff(token='5', grade='medium', **changes):
+    """Synthetic source material: exported grade, writer grade, auditor review and a passed review date."""
     p = contribution('source_material', token * 32)
-    p['claims'][0].update({'class': 'derived_inference', 'uncertainty': 'medium'})
+    p['claims'][0].update({'class': 'derived_inference', 'uncertainty': grade,
+                           'statement': 'The synthetic fixture has a value of seven.'})
     p['method_metadata'] = {'producer': 'synthetic-fixture', 'id_map': {'claims': {'C1': 'c1'}, 'evidence': {'E1': 'e1'}},
         'claim_metadata': {'c1': {'uncertainty': {'class': 'moderate', 'score': 2, 'rationale': 'Synthetic writer grade.'},
                                   'uncertainty_review': review(**changes),
@@ -37,37 +38,49 @@ def handoff(token='5', **changes):
     return p
 
 
-def decide(p, action='accept', **extra):
-    d = decisions(p)
-    d['uncertainty_reviews'] = {'c1': {'action': action, 'reason': 'Synthetic destination decision citing e1.', **extra}}
-    if action == 'defer':
-        d['follow_up_gaps'] = ['Reassess the deferred synthetic uncertainty recommendation for c1.']
-    return d
+def existing(grade='medium', token='4', inspected=False):
+    """A same-class claim without producer metadata, to propose as a prior or merge with."""
+    p = contribution('source_material', token * 32)
+    p['claims'][0].update({'class': 'derived_inference', 'uncertainty': grade})
+    return independent(p) if inspected else p
 
 
-def receipt(state, p):
-    return state['briefs/closed/' + p['id'].replace('RUN-', 'BC-') + '.yaml']
+def independent(p):
+    p['sources'][0].update(kind='publication', uri='https://example.invalid/' + p['id'], access='inspected')
+    p['evidence'][0].update(kind='external', independent=True)
+    return p
 
 
-def existing():
-    """An admitted same-scope claim to propose as the auditor's prior."""
-    first = contribution('source_material', '4' * 32)
-    first['claims'][0].update({'class': 'derived_inference', 'uncertainty': 'medium'})
-    return admitted(first), canonical_id(first['id'], 'claims', 'c1')
+def claim_id(p):
+    return canonical_id(p['id'], 'claims', 'c1')
 
 
-def reassess(target, p, grade='high'):
-    return {'id': 'assess1', 'kind': 'reassessment', 'subject_ids': [target], 'basis_ids': [p['id']],
-            'uncertainty': grade, 'predecessors': {target: None},
-            'reason': 'Synthetic acceptance of the audited recommendation for the same proposition.'}
+def evidence_id(p):
+    return canonical_id(p['id'], 'evidence', 'e1')
+
+
+def pending(state, p):
+    state = copy.deepcopy(state)
+    state.update(state_for(p))
+    return state
+
+
+def admit(state, p, d=None):
+    state = pending(state, p)
+    state.update(plan_admission(state, p['id'], d or decisions(p), ROOT))
+    return state
+
+
+def regrade(identity, subjects, grade, basis):
+    return {'id': identity, 'kind': 'reassessment', 'subject_ids': subjects, 'basis_ids': basis, 'uncertainty': grade,
+            'predecessors': {s: None for s in subjects}, 'reason': 'Synthetic merge outcome on the cited basis.'}
 
 
 def delta(before, after):
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
-        old, new = Path(a), Path(b)
-        write_state(old, before)
-        write_state(new, after)
-        validate_delta(new, old, after)
+        write_state(Path(a), before)
+        write_state(Path(b), after)
+        validate_delta(Path(b), Path(a), after)
 
 
 class UncertaintyReviewTests(unittest.TestCase):
@@ -76,146 +89,80 @@ class UncertaintyReviewTests(unittest.TestCase):
         self.addCleanup(fixture.temp.cleanup)
         return fixture.query
 
-    def test_every_assessed_recommendation_needs_one_explicit_decision(self):
-        p = handoff(); state = state_for(p)
-        with self.assertRaisesRegex(Invalid, 'accept, override or defer each assessed'):
-            plan_admission(state, p['id'], decisions(p), ROOT)
-        d = decide(p); d['uncertainty_reviews']['c2'] = d['uncertainty_reviews']['c1']
-        with self.assertRaisesRegex(Invalid, 'Only assessed'):
-            plan_admission(state, p['id'], d, ROOT)
-        for bad in ({'action': 'approve'}, {'reason': ' '}, {'uncertainty': 'medium'},
-                    {'action': 'override', 'uncertainty': 'high'}, {'action': 'override', 'uncertainty': 'certain'}):
-            d = decide(p); d['uncertainty_reviews']['c1'].update(bad)
-            with self.subTest(bad=bad), self.assertRaises(Invalid):
-                plan_admission(state, p['id'], d, ROOT)
-        d = decide(p, 'defer'); d['follow_up_gaps'] = []
-        with self.assertRaisesRegex(Invalid, 'recorded for maintenance'):
-            plan_admission(state, p['id'], d, ROOT)
+    def supplied(self, state, p):
+        return next(i for i in self.query(state).assessments(claim_id(p))['items'] if i['id'] == p['id'] + '#c1')
 
-    def test_decision_sets_only_the_new_claim_grade_and_keeps_provenance(self):
-        for action, extra, expected in (('accept', {}, 'high'), ('override', {'uncertainty': 'medium'}, 'medium'),
-                                        ('defer', {}, 'medium')):
-            with self.subTest(action=action):
-                p = handoff(); state = state_for(p); original = copy.deepcopy(p)
-                state.update(plan_admission(state, p['id'], decide(p, action, **extra), ROOT))
-                validate_state(state, ROOT, True)
-                delta({}, state)
-                cid = canonical_id(p['id'], 'claims', 'c1')
-                claim = state['claims/' + cid + '.yaml']
-                # A passed review date is not expiry: no decay, retirement or valid time.
-                self.assertEqual((claim['uncertainty'], claim['state'], 'valid_time' in claim), (expected, 'active', False))
-                self.assertEqual(len(claim['evidence_ids']), 1)
-                self.assertEqual(state['input-artefacts/' + p['id'] + '.json'], original)
-                closure = receipt(state, p)
-                self.assertEqual(closure['schema_version'], '1.2')
-                self.assertEqual(closure['uncertainty_reviews'], [{'candidate_id': 'c1', 'claim_id': cid,
-                    'recommended_uncertainty': 'high', 'decision': action,
-                    'uncertainty': None if action == 'defer' else expected,
-                    'reason': 'Synthetic destination decision citing e1.', 'reassessment': None, 'prior': None}])
-                self.assertEqual(plan_admission(state, p['id'], decide(p, action, **extra), ROOT), {})
+    def test_admission_uses_the_exported_grade_and_takes_no_uncertainty_decision(self):
+        p = handoff(recommended_class='low')
+        p['method_metadata']['claim_metadata']['c1']['uncertainty']['class'] = 'low'  # Writer and auditor agree.
+        original = copy.deepcopy(p)
+        d = decisions(p)
+        d['uncertainty_reviews'] = {'c1': {'action': 'accept', 'reason': 'Synthetic.'}}
+        with self.assertRaisesRegex(Invalid, 'supported model operations only'):
+            plan_admission(state_for(p), p['id'], d, ROOT)
+        state = admit({}, p)
+        validate_state(state, ROOT, True)
+        delta({}, state)
+        claim = state['claims/' + claim_id(p) + '.yaml']
+        # Agreement is not promotion, and a passed review date is not decay, retirement or valid time.
+        self.assertEqual((claim['uncertainty'], claim['state'], 'valid_time' in claim), ('medium', 'active', False))
+        self.assertEqual(state['input-artefacts/' + p['id'] + '.json'], original)
+        closure = state['briefs/closed/' + p['id'].replace('RUN-', 'BC-') + '.yaml']
+        self.assertEqual(closure['schema_version'], '1.0')
+        self.assertEqual(plan_admission(state, p['id'], decisions(p), ROOT), {})
 
-    def test_report_keeps_writer_auditor_destination_and_horizon_inspectable(self):
-        p = handoff(); state = state_for(p)
-        state.update(plan_admission(state, p['id'], decide(p), ROOT))
-        q = self.query(state); cid = canonical_id(p['id'], 'claims', 'c1')
-        self.assertEqual(q.lookup(cid)['current_assessment']['status'], 'agreed')
-        self.assertEqual(q.lookup(cid)['current_assessment']['uncertainty'], 'high')
-        item = q.assessments(cid)['items'][0]
-        self.assertEqual(item['uncertainty'], 'medium')
+    def test_report_keeps_writer_auditor_and_horizon_inspectable(self):
+        p = handoff()
+        state = admit({}, p)
+        q = self.query(state)
+        self.assertEqual(q.lookup(claim_id(p))['current_assessment']['status'], 'agreed')  # A review is not a grade.
+        history = q.assessments(claim_id(p))
+        self.assertEqual(history['current_uncertainty'], 'medium')
+        item = history['items'][0]
+        self.assertEqual((item['id'], item['uncertainty']), (p['id'] + '#c1', 'medium'))
         self.assertEqual(item['writer_uncertainty'], {'label': 'moderate', 'uncertainty': 'medium',
                                                       'rationale_preview': 'Synthetic writer grade.'})
         found = item['uncertainty_review']
-        self.assertEqual((found['status'], found['recommended_uncertainty'], found['producer_audit']), ('assessed', 'high', 'complete'))
-        self.assertEqual(found['evidence_ids'], [canonical_id(p['id'], 'evidence', 'e1')])
-        self.assertEqual(found['original_evidence_ids'], ['E1'])
-        self.assertEqual(found['decision']['action'], 'accept')
-        self.assertEqual(found['decision']['receipt'], receipt(state, p)['id'])
+        self.assertEqual({key: found[key] for key in ('status', 'recommended_uncertainty', 'producer_audit', 'audit_verdict',
+                                                      'prior', 'limitations')},
+                         {'status': 'assessed', 'recommended_uncertainty': 'high', 'producer_audit': 'complete',
+                          'audit_verdict': 'supported', 'prior': None, 'limitations': []})
+        self.assertEqual((found['evidence_ids'], found['original_evidence_ids']), ([evidence_id(p)], ['E1']))
         horizon = item['review_horizon']
-        self.assertEqual((horizon['policy'], horizon['review_after'], horizon['interpretation']), ('scheduled', '2021-01-01', HORIZON_NOTE))
-        p = handoff('6'); p['method_metadata']['claim_metadata']['c1']['freshness'] = {'policy': 'expires_automatically'}
-        state = state_for(p); state.update(plan_admission(state, p['id'], decide(p), ROOT))
-        horizon = self.query(state).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0]['review_horizon']
-        self.assertEqual(horizon['policy'], 'unknown')
-        self.assertIn('Missing or unsupported review horizon; recorded as unknown.', horizon['limitations'])
+        self.assertEqual((horizon['policy'], horizon['review_after'], horizon['interpretation'], horizon['limitations']),
+                         ('scheduled', '2021-01-01', HORIZON_NOTE, []))
+        p = handoff('6')
+        entry = p['method_metadata']['claim_metadata']['c1']
+        entry['freshness'] = {'policy': 'expires_automatically'}
+        entry['uncertainty_review']['limitations'] = [f'Synthetic producer note {n}: ' + 'x' * 400 for n in range(30)]
+        item = self.supplied(admit({}, p), p)
+        self.assertEqual(item['review_horizon']['policy'], 'unknown')
+        self.assertIn('Missing or unsupported review horizon; recorded as unknown.', item['review_horizon']['limitations'])
+        notes = item['uncertainty_review']['limitations']
+        self.assertEqual((len(notes), notes[-1], max(len(note) for note in notes)), (21, LONG_NOTE, 240))
 
-    def test_low_needs_independent_evidence_and_agreement_or_repetition_never_promotes(self):
-        p = handoff(recommended_class='low')
-        p['method_metadata']['claim_metadata']['c1']['uncertainty']['class'] = 'low'  # Writer and auditor agree.
-        with self.assertRaisesRegex(Invalid, 'low uncertainty lacks independent evidence'):
-            plan_admission(state_for(p), p['id'], decide(p), ROOT)
-        state = state_for(p)
-        state.update(plan_admission(state, p['id'], decide(p, 'override', uncertainty='medium'), ROOT))
-        repeated = handoff('6', recommended_class='low')  # Another report of the same synthetic observation.
-        state.update(state_for(repeated))
-        state.update(plan_admission(state, repeated['id'], decide(repeated, 'defer'), ROOT))
-        claims = [record for path, record in state.items() if path.startswith('claims/')]
-        self.assertEqual([(c['uncertainty'], len(c['evidence_ids'])) for c in claims], [('medium', 2)])
-        self.assertEqual(receipt(state, repeated)['claim_dispositions'][0]['disposition'], 'merged')
-
-    def test_merge_changes_an_existing_grade_only_through_linked_reassessment(self):
-        base, target = existing()
-        p = handoff(prior_claim_id=target, prior_class='moderate', prior_match_reason='Same synthetic proposition and scope.')
-        state = copy.deepcopy(base); state.update(state_for(p))
-        d = decide(p); d['claims']['c1'] = {'action': 'merge', 'target': target, 'reason': 'Synthetic same proposition.'}
-        with self.assertRaisesRegex(Invalid, 'uncertainty or temporal scope differs'):
-            plan_admission(state, p['id'], d, ROOT)
-        d['uncertainty_reviews']['c1']['reassessment'] = 'assess1'
-        d.update(expected_model_sha256=model_digest(state), model_operations=[reassess(target, p)])
-        bad = copy.deepcopy(d); bad['model_operations'][0]['basis_ids'] = [target]
-        with self.assertRaisesRegex(Invalid, 'cites the contribution'):
-            plan_admission(state, p['id'], bad, ROOT)
-        proposed = copy.deepcopy(state); proposed.update(plan_admission(state, p['id'], d, ROOT))
-        delta(base, proposed)
-        self.assertEqual(proposed['claims/' + target + '.yaml']['uncertainty'], 'high')
-        record = receipt(proposed, p)['uncertainty_reviews'][0]
-        self.assertEqual((record['claim_id'], record['reassessment']), (target, 'assess1'))
-        self.assertEqual(record['prior'], {'claim_id': target, 'status': 'comparable', 'uncertainty': 'medium'})
-        q = self.query(proposed)
-        history = q.assessments(target)
-        self.assertEqual(history['current_uncertainty'], 'high')
-        operation = [i for i in history['items'] if i['kind'] == 'reassessment'][0]
-        self.assertEqual((operation['previous_uncertainty'], operation['uncertainty']), ('medium', 'high'))
-        found = [i for i in history['items'] if i.get('uncertainty_review')][0]['uncertainty_review']
-        self.assertEqual(found['prior']['change'], 'increased')
-        self.assertEqual(found['decision']['reassessment'], receipt(proposed, p)['id'] + '#assess1')
-        self.assertEqual(q.lookup(target)['current_assessment']['status'], 'agreed')
-        # Deferring a merged review keeps the old grade explicitly and records the follow-up.
-        d = decide(p, 'defer'); d['claims']['c1'] = {'action': 'merge', 'target': target, 'reason': 'Synthetic same proposition.'}
-        deferred = copy.deepcopy(state); deferred.update(plan_admission(state, p['id'], d, ROOT))
-        self.assertEqual(deferred['claims/' + target + '.yaml']['uncertainty'], 'medium')
-        self.assertEqual(receipt(deferred, p)['uncertainty_reviews'][0]['decision'], 'defer')
-        # A prior kept as a separate claim changes only through its own recorded reassessment.
-        d = decide(p); d['connection_review']['c1']['considered_claim_ids'] = [target]
-        d.update(expected_model_sha256=model_digest(state), model_operations=[reassess(target, p)])
-        separate = copy.deepcopy(state); separate.update(plan_admission(state, p['id'], d, ROOT))
-        delta(base, separate)
-        self.assertEqual(receipt(separate, p)['claim_dispositions'][0]['disposition'], 'created')
-        self.assertEqual({separate['claims/' + c + '.yaml']['uncertainty'] for c in (target, canonical_id(p['id'], 'claims', 'c1'))}, {'high'})
-
-    def test_prior_checks_use_the_current_revision_and_never_map_candidate_ids(self):
-        base, target = existing()
+    def test_prior_checks_use_the_read_revision_and_never_map_candidate_ids(self):
+        first = existing()
+        base, target = admitted(first), claim_id(first)
         reason = 'Same synthetic proposition and scope.'
-        cases = (('c1', 'moderate', reason, 'missing'), (target, 'high', reason, 'stale'),
-                 (target, 'moderate', '', 'no_match_reason'), (target, 'moderate', reason, 'comparable'))
+        cases = (('c1', 'moderate', reason, 'missing'), (target, 'high', reason, 'stale'), (target, None, reason, 'stale'),
+                 (target, 'moderate', ' ', 'no_match_reason'), (target, 'moderate', reason, 'comparable'))
         for prior, grade, match, expected in cases:
-            with self.subTest(expected=expected):
+            with self.subTest(expected=expected, grade=grade):
                 p = handoff(prior_claim_id=prior, prior_class=grade, prior_match_reason=match)
-                state = copy.deepcopy(base); state.update(state_for(p))
-                state.update(plan_admission(state, p['id'], decide(p), ROOT))
-                check = receipt(state, p)['uncertainty_reviews'][0]['prior']
-                self.assertEqual(check['status'], expected)
-                found = self.query(state).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0]['uncertainty_review']
-                self.assertEqual(found['prior']['change'], 'increased' if expected == 'comparable' else 'not_comparable')
-                if expected != 'comparable':
-                    self.assertIn(PRIOR_NOTES[expected], found['limitations'])
-                    continue
-                forged = copy.deepcopy(state); receipt(forged, p)['uncertainty_reviews'][0]['prior']['status'] = 'stale'
-                with self.assertRaisesRegex(Invalid, 'actual destination base revision'):
-                    delta(base, forged)
-        scoped = copy.deepcopy(base); scoped['claims/' + target + '.yaml']['class'] = 'hypothesis'
+                found = self.supplied(admit(base, p), p)['uncertainty_review']
+                self.assertEqual((found['prior']['claim_id'], found['prior']['destination']['status']), (prior, expected))
+                self.assertEqual(found['prior']['uncertainty_change'], 'increased' if expected == 'comparable' else 'not_comparable')
+                self.assertEqual(PRIOR_NOTES.get(expected) in found['limitations'], expected != 'comparable')
+        scoped = copy.deepcopy(base)
+        scoped['claims/' + target + '.yaml']['class'] = 'hypothesis'
         p = handoff(prior_claim_id=target, prior_class='moderate', prior_match_reason=reason)
-        scoped.update(state_for(p)); scoped.update(plan_admission(scoped, p['id'], decide(p), ROOT))
-        self.assertEqual(receipt(scoped, p)['uncertainty_reviews'][0]['prior']['status'], 'scope_differs')
+        self.assertEqual(self.supplied(admit(scoped, p), p)['uncertainty_review']['prior']['destination']['status'], 'scope_differs')
+        # The check follows the revision being read: a later reassessment of the prior makes the same review stale.
+        state, _, _ = maintain(admit(base, p), [regrade('assess1', [target], 'high', [target])])
+        prior = self.supplied(state, p)['uncertainty_review']['prior']
+        self.assertEqual((prior['destination'], prior['uncertainty_change'], prior['producer_uncertainty_change']),
+                         ({'status': 'stale', 'uncertainty': 'high'}, 'not_comparable', 'not_comparable'))
 
     def test_unassessed_ambiguous_and_incomplete_reviews_stay_explicit_limitations(self):
         duplicate = 'Duplicate audit checks; inspect all rows in independent_audit before destination review.'
@@ -223,65 +170,130 @@ class UncertaintyReviewTests(unittest.TestCase):
                     reason='Multiple recorded audit checks share this claim ID; no single uncertainty recommendation can be assigned.')
         audit = p['method_metadata']['independent_audit']
         audit['claim_checks'].append(dict(audit['claim_checks'][0], assessment='correction_needed'))
-        state = state_for(p); state.update(plan_admission(state, p['id'], decisions(p), ROOT))
-        self.assertEqual(receipt(state, p)['schema_version'], '1.0')
+        state = admit({}, p)
         self.assertEqual(state['input-artefacts/' + p['id'] + '.json']['method_metadata']['independent_audit'], audit)
-        found = self.query(state).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0]['uncertainty_review']
-        self.assertEqual((found['status'], found['decision'], found['producer_audit']), ('not_assessed', None, 'ambiguous'))
+        found = self.supplied(state, p)['uncertainty_review']
+        self.assertEqual((found['status'], found['producer_audit'], found['audit_verdict']), ('not_assessed', 'ambiguous', 'ambiguous'))
         self.assertIn(duplicate, found['limitations'])
         self.assertIn(AUDIT_NOTES['ambiguous'], found['limitations'])
-        # A producer row marked assessed is not trusted over duplicate raw rows or unavailable evidence.
-        for changes in ({}, {'evidence_ids': ['e9']}):
-            p = handoff('6', **changes)
+        # A producer row marked assessed is not trusted over duplicate raw rows, unavailable evidence or a blank reason.
+        for token, changes, note in (('6', {}, 'Duplicate producer audit rows'), ('7', {'evidence_ids': ['e9']}, 'unavailable'),
+                                     ('8', {'reason': ' '}, 'No assessed recommendation')):
+            p = handoff(token, **changes)
             if not changes:
                 p['method_metadata']['independent_audit']['claim_checks'] *= 2
-            with self.subTest(changes=changes), self.assertRaisesRegex(Invalid, 'Only assessed'):
-                plan_admission(state_for(p), p['id'], decide(p), ROOT)
-        p = handoff('7'); p['method_metadata']['independent_audit']['audit_complete'] = False
-        state = state_for(p); state.update(plan_admission(state, p['id'], decide(p), ROOT))
-        found = self.query(state).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0]['uncertainty_review']
+            found = self.supplied(admit({}, p), p)['uncertainty_review']
+            with self.subTest(note=note):
+                self.assertEqual((found['status'], found['recommended_uncertainty'], found['evidence_ids']), ('not_assessed', None, []))
+                self.assertTrue(any(note in limitation for limitation in found['limitations']))
+        p = handoff('9', evidence_ids=[])
+        p['method_metadata']['independent_audit']['audit_complete'] = False
+        found = self.supplied(admit({}, p), p)['uncertainty_review']
         self.assertEqual((found['status'], found['producer_audit']), ('assessed', 'partial'))
+        self.assertIn('The recommendation cites no evidence.', found['limitations'])
         self.assertIn(AUDIT_NOTES['partial'], found['limitations'])
 
-    def test_legacy_inputs_and_closures_stay_readable_but_new_admissions_decide(self):
-        p = handoff(); del p['method_metadata']['claim_metadata']['c1']['uncertainty_review']
-        state = admitted(p)
-        self.assertEqual(receipt(state, p)['schema_version'], '1.0')
-        self.assertNotIn('uncertainty_review', self.query(state).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0])
-        p = handoff('8'); meta = p['method_metadata']
+    def test_legacy_malformed_and_unreviewed_inputs_read_explicitly(self):
+        p = handoff()
+        del p['method_metadata']['claim_metadata']['c1']['uncertainty_review']  # Exported before reviews existed.
+        item = self.supplied(admit({}, p), p)
+        self.assertEqual(item['uncertainty_review']['status'], 'not_assessed')
+        self.assertIn('No uncertainty review was recorded for this candidate.', item['uncertainty_review']['limitations'])
+        p = handoff('6')
+        meta = p['method_metadata']
         meta.update(id_map={'claims': {'C1': ['c1']}}, independent_audit='legacy audit text')
-        meta['claim_metadata']['c1'].update(uncertainty_review='legacy review text', freshness=None)
-        item = self.query(admitted(p)).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0]
+        meta['claim_metadata']['c1'].update(uncertainty='moderate', uncertainty_review='legacy review text', freshness=None)
+        item = self.supplied(admit({}, p), p)
         self.assertEqual((item['uncertainty_review']['status'], item['uncertainty_review']['producer_audit']), ('not_assessed', 'absent'))
-        self.assertEqual(item['review_horizon']['policy'], 'unknown')
-        p = handoff('6'); state = state_for(p)
-        state.update(plan_admission(state, p['id'], decide(p, 'defer'), ROOT))
-        legacy = receipt(state, p); del legacy['uncertainty_reviews']; legacy['schema_version'] = '1.0'
-        validate_state(state, ROOT, True)
-        found = self.query(state).assessments(canonical_id(p['id'], 'claims', 'c1'))['items'][0]['uncertainty_review']
-        self.assertIn('No destination decision was recorded for this assessed recommendation.', found['limitations'])
-        with self.assertRaisesRegex(Invalid, 'record an explicit decision'):
-            delta({}, state)
+        self.assertEqual((item['writer_uncertainty'], item['review_horizon']['policy']),
+                         ({'label': 'moderate', 'uncertainty': 'medium'}, 'unknown'))
+        p = existing(token='7')  # No per-candidate metadata: nothing is recorded or invented.
+        self.assertEqual(set(self.supplied(admit({}, p), p)), {'id', 'kind', 'uncertainty', 'disposition'})
 
-    def test_forged_decisions_and_materialized_grades_fail_validation(self):
-        p = handoff(); state = state_for(p)
-        state.update(plan_admission(state, p['id'], decide(p), ROOT))
-        cid = canonical_id(p['id'], 'claims', 'c1')
-        for field, value, message in (('claim_id', 'C-' + 'f' * 32, 'differs from its disposition'),
-                                      ('recommended_uncertainty', 'medium', 'differs from its disposition'),
-                                      ('decision', 'override', 'override adopts another grade'),
-                                      ('reassessment', 'assess1', 'linked reassessment'),
-                                      ('prior', {'claim_id': cid, 'status': 'missing', 'uncertainty': None}, 'proposed prior')):
-            forged = copy.deepcopy(state); receipt(forged, p)['uncertainty_reviews'][0][field] = value
-            with self.subTest(field=field), self.assertRaisesRegex(Invalid, message):
-                validate_state(forged, ROOT, True)
-        forged = copy.deepcopy(state); receipt(forged, p)['uncertainty_reviews'].append(receipt(forged, p)['uncertainty_reviews'][0])
-        with self.assertRaisesRegex(Invalid, 'Duplicate entries'):
-            validate_state(forged, ROOT, True)
-        forged = copy.deepcopy(state); forged['claims/' + cid + '.yaml']['uncertainty'] = 'medium'
-        validate_state(forged, ROOT, True)
-        with self.assertRaisesRegex(Invalid, 'differs from its recorded decision'):
-            delta({}, forged)
+    def test_admission_keeps_differing_reviewed_grades_separate_for_maintenance(self):
+        first = existing('high')
+        base, target = admitted(first), claim_id(first)
+        p = handoff(prior_claim_id=target, prior_class='high', prior_match_reason='Same synthetic proposition.')
+        state = pending(base, p)
+        d = decisions(p)
+        d['claims']['c1'] = {'action': 'merge', 'target': target, 'reason': 'Synthetic same proposition.'}
+        with self.assertRaisesRegex(Invalid, 'uncertainty or temporal scope differs'):
+            plan_admission(state, p['id'], d, ROOT)
+        d = decisions(p)
+        d.update(expected_model_sha256=model_digest(state), model_operations=[comparison([target, claim_id(p)])])
+        with self.assertRaisesRegex(Invalid, 'in maintenance'):
+            plan_admission(state, p['id'], d, ROOT)
+        separate = admit(base, p)
+        self.assertEqual({r['id']: r['uncertainty'] for k, r in separate.items() if k.startswith('claims/')},
+                         {target: 'high', claim_id(p): 'medium'})
+        # An equal-grade merge keeps the incoming review visible on the target.
+        same = existing('medium', '3')
+        p = handoff('6')
+        d = decisions(p)
+        d['claims']['c1'] = {'action': 'merge', 'target': claim_id(same), 'reason': 'Synthetic same proposition.'}
+        items = self.query(admit(admitted(same), p, d)).assessments(claim_id(same))['items']
+        self.assertEqual([i['id'] for i in items if 'uncertainty_review' in i], [p['id'] + '#c1'])
+
+    def test_maintenance_merge_records_old_and_incoming_grades_basis_and_outcome(self):
+        first, p = existing('high'), handoff()
+        base = admit(admitted(first), p)
+        old, new = claim_id(first), claim_id(p)
+        evidence, merge = [evidence_id(first), evidence_id(p)], comparison([old, new])
+        attempts = (([merge], 'reassesses every merged claim'),
+                    ([merge, regrade('grade1', [new], 'high', evidence + [p['id']])], 'reassesses every merged claim'),
+                    ([merge, regrade('grade1', [old, new], 'medium', evidence + [p['id']])], 'needs cited independent'),
+                    ([merge, regrade('grade1', [old, new], 'high', evidence)], 'cites each run'))
+        for operations, message in attempts:
+            with self.subTest(message=message), self.assertRaisesRegex(Invalid, message):
+                maintain(base, operations)
+        state, _, _ = maintain(base, [merge, regrade('grade1', [old, new], 'high', evidence + [p['id']])])
+        delta(base, state)
+        record = state[MAINTENANCE]['model_operations'][1]
+        self.assertEqual((record['previous_uncertainty'], record['uncertainty']), ({old: 'high', new: 'medium'}, 'high'))
+        q = self.query(state)
+        self.assertEqual(q.lookup(new)['current_assessment']['status'], 'agreed')
+        for subject, previous in ((old, 'high'), (new, 'medium')):
+            history = q.assessments(subject)
+            operation = next(i for i in history['items'] if i['kind'] == 'reassessment')
+            self.assertEqual((operation['previous_uncertainty'], operation['uncertainty']), (previous, 'high'))
+        # The review is not dropped: it stays on the incoming supplied grade, and the merge cites its run.
+        supplied = q.assessments(new)['items'][0]
+        self.assertEqual((supplied['uncertainty'], supplied['uncertainty_review']['recommended_uncertainty']), ('medium', 'high'))
+        forged = copy.deepcopy(state)
+        forged[MAINTENANCE]['model_operations'][1]['basis_ids'].remove(p['id'])
+        with self.assertRaisesRegex(Invalid, 'cites each run'):
+            delta(base, forged)
+
+    def test_merges_never_promote_confidence_from_repetition_or_model_agreement(self):
+        state = {}
+        for token in ('5', '6'):  # Repeated publication of one cohort; writer and auditor agree on low.
+            p = handoff(token, recommended_class='low')
+            p['method_metadata']['claim_metadata']['c1']['uncertainty']['class'] = 'low'
+            state = admit(state, p)
+        claims = [r for k, r in state.items() if k.startswith('claims/')]
+        self.assertEqual([(c['uncertainty'], len(c['evidence_ids'])) for c in claims], [('medium', 2)])
+        # Even independent evidence cannot take a merge past the most confident merged grade.
+        first, p = existing('medium', inspected=True), independent(handoff('7', 'high', recommended_class='low'))
+        base = admit(admitted(first), p)
+        old, new = claim_id(first), claim_id(p)
+        basis = [evidence_id(first), evidence_id(p), p['id']]
+        with self.assertRaisesRegex(Invalid, 'never ends more confident'):
+            maintain(base, [comparison([old, new]), regrade('grade1', [old, new], 'low', basis)])
+        state, _, _ = maintain(base, [comparison([old, new]), regrade('grade1', [old, new], 'medium', basis)])
+        delta(base, state)
+        self.assertEqual({state['claims/' + c + '.yaml']['uncertainty'] for c in (old, new)}, {'medium'})
+
+    def test_equal_grade_and_unreviewed_merges_keep_existing_behavior(self):
+        first, p = existing(), handoff()
+        base = admit(admitted(first), p)
+        state, _, _ = maintain(base, [comparison([claim_id(first), claim_id(p)])])
+        delta(base, state)
+        self.assertEqual(self.query(state).lookup(claim_id(p))['current_assessment']['status'], 'agreed')
+        first, second = existing('high'), existing('medium', '6')
+        base = admit(admitted(first), second)
+        state, _, _ = maintain(base, [comparison([claim_id(first), claim_id(second)])])
+        delta(base, state)
+        self.assertEqual(self.query(state).lookup(claim_id(first))['current_assessment']['status'], 'disputed')
 
 
 if __name__ == '__main__':

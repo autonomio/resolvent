@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "activity_type": "maintenance",
   "authority": "scheduled, explicitly invoked or owner-enabled change-signal repository agent; changes through PR",
   "hard_rules": [
@@ -18,7 +18,10 @@
     "research_validity_belongs_to_input_producer",
     "external_agents_own_behaviors_and_execution",
     "claim_uncertainty_changes_require_recorded_reassessment",
-    "preserve_claims_without_new_retirement_transitions"
+    "preserve_claims_without_new_retirement_transitions",
+    "merging_reviewed_claims_with_differing_grades_reassesses_every_merged_claim_citing_each_reviewing_run",
+    "merges_never_end_more_confident_than_the_most_confident_merged_grade",
+    "merges_lower_uncertainty_only_with_cited_independent_inspected_evidence"
   ],
   "procedure_steps": [
     "read_workset",

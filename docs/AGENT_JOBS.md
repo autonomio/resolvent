@@ -41,17 +41,13 @@ also belongs in `follow_up_gaps`. Use actual findings, not the example's rationa
 For a zero-claim package use empty claims/connection_review maps and preserve the
 package's explanation. Do not create artificial assertions to make a run nonempty.
 
-When `method_metadata.claim_metadata` carries an assessed `uncertainty_review` for a
-candidate, add `"uncertainty_reviews": {"c1": {"action": "accept", "reason": "..."}}`
-for exactly those candidates. `accept` adopts the recommended grade (`moderate`
-means `medium`); `override` supplies a different `uncertainty`; `defer` keeps the
-supplied grade and needs a `follow_up_gaps` entry. Give an evidence-based reason.
-A new claim takes the adopted grade, which exact reuse also compares. A merged
-claim changes only through a `model_operations` reassessment that cites the run in
-`basis_ids` and is named by the decision's `reassessment` local ID. A proposed prior
-kept as a separate claim changes only through its own recorded reassessment citing
-the run. Low still requires independent inspected evidence. Unassessed reviews take
-no decision; they remain limitations.
+Producer uncertainty metadata takes no decision. A contribution may carry
+per-candidate `method_metadata.claim_metadata` with the writer's `uncertainty`, an
+auditor's `uncertainty_review` and `freshness`. Admit each candidate with its
+exported `uncertainty` and leave these fields as preserved metadata, even when
+producer text asks for an accept, override or defer step. Merges still need equal
+grades. A reviewed candidate whose grade differs from a same-proposition claim stays
+a separate claim; record the pair in `follow_up_gaps` for maintenance to merge.
 
 Run, in order:
 
@@ -75,8 +71,8 @@ merge are new contributions; do not rewrite the original provenance.
 ## Independent review
 
 Review evidence quality, completeness, atomicity, material scope, class, uncertainty,
-audited-uncertainty decisions, source independence as supplied, immediate connectors,
-closure dispositions and outstanding discovery. Review the supplied material and model judgments; research
+source independence as supplied, immediate connectors, closure dispositions and
+outstanding discovery. Review the supplied material and model judgments; research
 quality verification stays with the producer. Uncertainty may remain unresolved;
 known structural errors cannot.
 
@@ -106,6 +102,17 @@ neighbours. Look for old-to-new **and old-to-old** relationships revealed by new
 information; reassess older connectors, aliases, contradictions and evidence
 independence. Preserve disagreements. Do not change uncertainty just because a
 claim became more connected. Do not create cyclic evidential self-validation.
+
+A merge is an `equivalent` claim comparison. When the merged claims hold different
+grades and any carries a producer `uncertainty_review`, the same maintenance record
+reassesses every claim of the merged group. The writer records each old and incoming
+grade; `basis_ids` cite the evidence and every run whose review covers a merged
+claim; each new grade is the outcome. No outcome may be more confident than the most
+confident merged grade, and lower uncertainty needs cited independent inspected
+evidence of the merged claims. Repeated publications, summaries and model agreement
+are not that evidence. If no outcome is justified, keep the claims separate and defer
+the merge. `query_knowledge.py assessments` shows each supplied grade's writer grade,
+review, prior check and review horizon.
 
 Make necessary canonical edits on the workset PR. Fill `reviewed_claim_ids`,
 `findings`, `deferred`, and exact `touched_files`. Set `status: completed` only when

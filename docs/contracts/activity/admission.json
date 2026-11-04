@@ -20,14 +20,13 @@
     "exact_claim_reuse_requires_same_class_temporal_scope_and_uncertainty",
     "non_claim_compaction_uses_recorded_equivalence_groups",
     "claim_uncertainty_changes_require_recorded_reassessment",
-    "assessed_uncertainty_recommendations_require_explicit_accept_override_or_defer",
-    "audit_recommendations_and_review_horizons_never_change_grades_automatically"
+    "exported_candidate_uncertainty_is_admitted_as_supplied_producer_uncertainty_metadata_takes_no_decision",
+    "reviewed_claims_with_differing_grades_merge_only_in_maintenance"
   ],
   "procedure_steps": [
     "validate_submission",
     "read_supplied_evidence_and_scope",
     "review_claim_classes_and_uncertainty",
-    "decide_audited_uncertainty_recommendations",
     "resolve_duplicates_and_identity",
     "record_justified_immediate_connectors",
     "record_deferred_discovery",

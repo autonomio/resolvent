@@ -579,8 +579,7 @@ python scripts/compiler.py --require-closure
 ```
 
 The writer validates before applying, captures per-record read digests and previous
-grades, and writes closure 1.1 (1.2 with uncertainty decisions) or completed
-maintenance 1.2. Retry the same receipt
+grades, and writes closure 1.1 or completed maintenance 1.2. Retry the same receipt
 and decisions for no changes; changed decisions cannot rewrite a closed receipt.
 CI checks read digests against the actual base, current predecessors, history
 branching, grouped cycles, exact canonical deltas and legacy provenance integrity.
@@ -590,31 +589,46 @@ Recent-change queries include provenance-only model operations. Existing recent,
 targeted and rotating maintenance can use these interfaces without new scheduling.
 No bulk migration, production-data rewrite or contribution protocol change is needed.
 
-### Audited uncertainty recommendations
+### Producer uncertainty metadata and reviewed merges
 
-Core 1.4.0 / compiler 1.5.0 reads a contribution's per-candidate
-`method_metadata.claim_metadata` `uncertainty`, `uncertainty_review` and `freshness`
-without any producer runtime. Every assessed recommendation needs an admission
-decision (see `docs/AGENT_JOBS.md`); the writer lists any that are missing:
+Core 1.4.0 / compiler 1.5.0 reads each candidate's preserved
+`method_metadata.claim_metadata` `uncertainty` (the writer's grade),
+`uncertainty_review` and `freshness` without any producer runtime. Admission
+decisions and closures are unchanged: each candidate keeps its exported grade.
+
+`query_knowledge.py assessments C-<id>` (`Knowledge.assessments`) adds to each
+supplied grade that carries this metadata:
+
+- `writer_uncertainty`: the original label and its ordinal grade.
+- `uncertainty_review`: `status`, `recommended_uncertainty`, canonical and original
+  evidence IDs, `producer_audit` (`complete`, `partial`, `ambiguous` or `absent`),
+  the raw row's `audit_verdict`, limitations and any `prior`. A prior shows the
+  auditor-reported grade, a `destination` check against the package revision
+  (`comparable`, `missing`, `stale`, `scope_differs` or `no_match_reason`), the
+  recomputed `uncertainty_change` and the producer's own change.
+- `review_horizon`: policy, dates, triggers, rationale and the fixed interpretation
+  that a passed date changes nothing.
+
+Free text is previewed and long lists are shortened with a note; the pinned run keeps
+the originals. Contributions without this metadata report nothing extra.
+
+A merge is a current `equivalent` claim comparison. When it joins claims whose
+grades differ and any carries an `uncertainty_review`, admission refuses it. A
+maintenance record performs it and reassesses every claim of the merged group, so
+all of them must be in the workset:
 
 ```json
-{"uncertainty_reviews": {"c1": {"action": "override", "uncertainty": "medium",
-  "reason": "e1 reports one cohort; low needs independent inspected evidence."}}}
+[{"id": "merge1", "kind": "comparison", "subject_ids": ["C-old", "C-new"], "basis_ids": ["E-old", "E-new"],
+  "outcome": "equivalent", "supersedes": null, "reason": "Same proposition, class and scope."},
+ {"id": "merge1-grade", "kind": "reassessment", "subject_ids": ["C-old", "C-new"],
+  "basis_ids": ["E-old", "E-new", "RUN-new"], "uncertainty": "high",
+  "predecessors": {"C-old": null, "C-new": null}, "reason": "Merged outcome on the cited evidence."}]
 ```
 
-When an adopted grade differs from a merge target's grade, add a reassessment to
-`model_operations` with the run ID in `basis_ids`, and name its local ID as the
-decision's `reassessment`. The writer applies adopted grades directly only to new
-claims, checks each proposed prior against the base and writes closure 1.2
-`uncertainty_reviews`: candidate and claim IDs, recommended and adopted grades,
-decision, reason, linked reassessment and prior check. The compiler checks coverage,
-mappings and links; PR delta validation rechecks priors against the actual base and
-the materialized grades. A retry of a closed run remains a no-op.
-
-`query_knowledge.py assessments C-<id>` (`Knowledge.assessments`) reports each
-supplied grade with the writer's label, the recommendation and its canonical and
-original evidence IDs, prior check and verified change, producer audit status,
-limitations, destination decision and review horizon. Free text is previewed; the
-pinned run and closure keep the originals. An explicit decision resolves its supplied
-grade in current-assessment views; an undecided legacy recommendation is reported as
-a limitation. Review horizons never change uncertainty, lifecycle or valid time.
+The writer captures `previous_uncertainty` for both claims: the old and incoming
+grades. `basis_ids` cite every run whose review covers a merged claim. No merged
+claim may end more confident than the most confident merged grade, and a merged
+claim whose uncertainty falls must cite independent inspected evidence of the merged
+claims. When one member cannot hold `low`, give it its own reassessment and outcome.
+The writer and PR delta validation apply the same rule. Equal-grade merges, and
+merges without producer reviews, keep the existing behaviour.

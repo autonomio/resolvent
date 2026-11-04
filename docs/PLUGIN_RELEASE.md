@@ -416,15 +416,16 @@ authoritative for existing clients too. Older worlds retain their own limit
 until normal core adoption. The already submitted plugin 1.4.0 ZIPs retain their
 original bytes; this change does not replace or cancel that public review.
 
-## Audited uncertainty compatibility (core 1.4.0)
+## Producer uncertainty metadata compatibility (core 1.4.0)
 
-Core 1.4.0 / compiler 1.5.0 adds closure 1.2 decisions for producer uncertainty
-recommendations and extends the repository-local assessment read. Submission
-protocol 1.2 is unchanged because recommendations travel in the existing free-form
-`method_metadata`. Fixed client protocol 1.0, the public workflow MCP, plugin 1.4.1
-distributions and live workflow 1.0.3 stay byte-for-byte unchanged. The installed
-admission procedure already prepares decisions from the selected world's live
-decision contract and runs that world's writer and compiler, which name any missing
-decision; workflow 1.0.3 already directs adopted worlds to their current contracts.
-Worlds before core 1.4.0 keep their admission rules until normal core adoption. No
-package, portal resubmission or live-workflow release is required.
+Core 1.4.0 / compiler 1.5.0 reports preserved producer uncertainty metadata in the
+repository-local assessment read and adds a maintenance rule for merging reviewed
+claims of differing grades. Admission decisions, closure formats and submission
+protocol 1.2 are unchanged: the metadata travels in the existing free-form
+`method_metadata`, and admission uses the exported grade. Fixed client protocol
+1.0, the public workflow MCP, plugin 1.4.1 distributions and live workflow 1.0.3
+stay byte-for-byte unchanged. The installed admission procedure needs no new
+decision, and it already runs the selected world's own writer and compiler, which
+explain a refused merge. Workflow 1.0.3 already directs adopted worlds to their
+current contracts. Worlds before core 1.4.0 keep their rules until normal core
+adoption. No package, portal resubmission or live-workflow release is required.

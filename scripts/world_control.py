@@ -20,8 +20,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.model import MAX_FILE_BYTES, Invalid, digest, fail, indexes, load_state, read_data, validate_state
 from scripts.temporal import merge_temporal, temporal_scope
-from scripts.model_operations import apply_operations, model_digest
-from scripts.uncertainty_review import decisions as review_decisions, prior_check, reviews, validate_admission
+from scripts.model_operations import apply_operations, check_merges, model_digest
 
 NAMESPACE = uuid.UUID('f546a1e4-a5b6-4a1d-9b85-d348abf54b03')
 FAMILIES = ('claims', 'evidence', 'sources', 'graph', 'questions', 'briefs')
@@ -58,17 +57,13 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
             fail(state[closed_path]['model_decisions_sha256'] == digest(decisions), 'Closed model decisions are immutable')
         return {}  # Idempotent retry; does not create duplicate objects.
     required = {'claims', 'connection_review', 'follow_up_gaps'}
-    fail(required <= set(decisions) <= required | {'model_operations', 'expected_model_sha256', 'uncertainty_reviews'},
-         'Decisions need claims, connection_review, follow_up_gaps and supported model operations or uncertainty decisions only')
+    fail(required <= set(decisions) <= required | {'model_operations', 'expected_model_sha256'},
+         'Decisions need claims, connection_review, follow_up_gaps and supported model operations only')
     extended = 'model_operations' in decisions
     if extended:
         fail(decisions.get('expected_model_sha256') == model_digest(state), 'Stale model snapshot')
     expected = {c['id'] for c in p['claims']}
     fail(set(decisions['claims']) == expected, 'Decisions must cover every candidate exactly once')
-    facts = reviews(p)
-    reviewed = review_decisions(facts, decisions.get('uncertainty_reviews', {}))
-    # An explicitly reviewed grade is the admitted grade; a deferral keeps the supplied grade.
-    grade = {c['id']: reviewed.get(c['id'], {}).get('uncertainty') or c['uncertainty'] for c in p['claims']}
     after = copy.deepcopy(state)
     changes: dict[str, dict] = {}
     maps = {group: {} for group in PREFIX}
@@ -97,23 +92,20 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
         if action == 'merge':
             cid = d.get('target')
             fail(cid in current_claims and current_claims[cid]['state'] == 'active', 'Merge target must be an active canonical claim')
-            # A merge never silently keeps an old grade: a differing reviewed grade needs its linked reassessment.
-            fail(c['class'] == current_claims[cid]['class'] and
-                 (grade[c['id']] == current_claims[cid]['uncertainty'] or bool(reviewed.get(c['id'], {}).get('reassessment'))) and
+            fail(c['class'] == current_claims[cid]['class'] and c['uncertainty'] == current_claims[cid]['uncertainty'] and
                  temporal_scope(c.get('valid_time')) == temporal_scope(current_claims[cid].get('valid_time')),
                  'Class, uncertainty or temporal scope differs; preserve a separate claim and compare it')
             disposition = 'merged'
         elif action == 'accept':
             match = exact.get((normalized(c['statement']), c['class']), [])
-            match = [target for target in match if current_claims[target]['uncertainty'] == grade[c['id']] and
+            match = [target for target in match if current_claims[target]['uncertainty'] == c['uncertainty'] and
                      temporal_scope(current_claims[target].get('valid_time')) == temporal_scope(c.get('valid_time'))]
             fail(len(match) <= 1, f"Ambiguous existing duplicates for {c['id']}; choose merge target explicitly")
             cid = match[0] if match else canonical_id(submission_id, 'claims', c['id'])
             disposition = 'merged' if match else 'created'
             exact.setdefault((normalized(c['statement']), c['class']), []).append(cid) if not match else None
             if cid not in current_claims:
-                current_claims[cid] = {**copy.deepcopy(c), 'id': cid, 'evidence_ids': [], 'state': 'active',
-                                       'uncertainty': grade[c['id']]}
+                current_claims[cid] = {**copy.deepcopy(c), 'id': cid, 'evidence_ids': [], 'state': 'active'}
                 if 'valid_time' in c:
                     current_claims[cid]['valid_time'] = mapped_temporal(c)
         else:
@@ -216,14 +208,9 @@ def plan_admission(state: dict[str, dict], submission_id: str, decisions: dict, 
     if extended:
         closure.update(schema_version='1.1', model_operations=operations,
                        model_base_sha256=decisions['expected_model_sha256'], model_decisions_sha256=digest(decisions))
-    if reviewed:
-        closure.update(schema_version='1.2', uncertainty_reviews=[{
-            'candidate_id': c['id'], 'claim_id': maps['claims'][c['id']],
-            'recommended_uncertainty': facts[c['id']]['recommended_uncertainty'], **reviewed[c['id']],
-            'prior': prior_check(facts[c['id']], c, idx.get('claims', {}))} for c in p['claims'] if c['id'] in reviewed])
     set_record(closed_path, closure)
     validate_state(after, policy_root)
-    validate_admission(closure, p, idx.get('claims', {}), indexes(after).get('claims', {}))
+    check_merges(state, after)
     return changes
 
 
@@ -258,6 +245,7 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
     path = f'maintenance/{maintenance_id}.yaml'
     after[path] = changes[path] = result
     validate_state(after, policy_root, require_closure=True)
+    check_merges(state, after)
     return changes
 
 
