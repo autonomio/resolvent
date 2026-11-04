@@ -457,7 +457,7 @@ when members join; use an original member ID as the stable group address.
 ### Per-question research-state export
 
 `Knowledge.research_state(reference, repository=..., reference_pointer=None)` and
-the `research-state` CLI expose portable schema 1.0 in
+the `research-state` CLI expose portable schema 1.1 in
 `docs/schemas/research-state.schema.json`. Use a closed package built from the
 selected admitted/reviewed revision. Package validation checks structure; it does
 not certify maintainer approval. The repository identity is supplied by the caller
@@ -502,6 +502,15 @@ producer declarations; source inspection, matching hashes and citation alone do
 not establish substantive review or independent evidence. References without
 review records remain unknown, not never-reviewed.
 
+An identity is a non-empty string. `review_coverage.unidentified_references` is
+always present, and empty for a clean report. It discloses each reference without
+an identity, with its recorded display fields, computed stages and row-level
+`#/references/<i>` origin. Such a row is explicit unknown coverage. It never joins
+a review by DOI or URL, its `substantively_reviewed` stage stays `unknown`, and the
+run's other records and `preserved_producer_report` status do not change. A review
+without a usable `work_id` stays in `review_coverage.other_reviews` as
+`unmatched_reference`.
+
 Only submissions explicitly bound to the selected question contribute paper-review
 history, contradictions, gaps, caveats and next questions. Parent-lineage metadata
 is retained as `lineage_only`; it never imports another question's paper reviews.
@@ -538,6 +547,12 @@ Compatibility: this adds a local core read only. The compiled package format,
 submission protocol, canonical admission and generic plugin's existing operations
 are unchanged. The public workflow MCP still receives no repository data or chat
 content. No plugin ZIP, manifest or live-workflow release is needed.
+
+Schema 1.1 requires `review_coverage.unidentified_references` and a non-empty
+`references[].id`, so 1.1 exports do not validate against the published 1.0 schema.
+Other fields keep their 1.0 meaning, except that an empty `id` or `work_id` is no
+longer an identity. The research-state read is not part of the shared skill, either
+host distribution or the plugin manifests, so no plugin change is needed.
 
 To accompany admission, add `expected_model_sha256` from the reader and a
 `model_operations` list to the existing decisions. Local operation IDs match

@@ -143,6 +143,11 @@ def research_artifact(run):
     return index, result
 
 
+def usable_id(value):
+    """The one identity rule for reference/review joins: a non-empty string, else None."""
+    return value if isinstance(value, str) and value else None
+
+
 def context_ids(knowledge, identity):
     result, offset = set(), 0
     while True:
@@ -283,7 +288,8 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
                 raise ValueError('Invalid preserved selected paper IDs')
             run_papers = []
             for i, ref in enumerate(references):
-                related = [r for r in reviews if r.get('work_id') == ref.get('id') and ref.get('id')]
+                paper_id = usable_id(ref.get('id'))
+                related = [r for r in reviews if paper_id is not None and r.get('work_id') == paper_id]
                 documented = [r for r in related if r.get('eligibility') in ('core', 'supporting')
                     and isinstance(r.get('passage_ids_read'), list) and r['passage_ids_read']
                     and all(isinstance(v, str) and v for v in r['passage_ids_read'])
@@ -292,20 +298,20 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
                     and isinstance(r.get('substantive_review_note'), str) and r['substantive_review_note'].strip()]
                 preview = ref.get('preview_marker_detected') or ref.get('full_text_status') == 'preview_suspected'
                 run_papers.append({'submission_id': rid, 'basis': anchor + '#/references/' + str(i),
-                    'paper_id': ref.get('id') if isinstance(ref.get('id'), str) else None,
+                    'paper_id': paper_id,
                     'doi': ref.get('doi') if isinstance(ref.get('doi'), str) else None,
                     'url': ref.get('url') if isinstance(ref.get('url'), str) else None,
                     'reference': ref, 'review_records': related,
-                    'review_basis': [anchor + '#/reviewed_papers/' + str(j) for j, row in enumerate(reviews) if row.get('work_id') == ref.get('id') and ref.get('id')],
+                    'review_basis': [anchor + '#/reviewed_papers/' + str(j) for j, row in enumerate(reviews) if paper_id is not None and row.get('work_id') == paper_id],
                     'stages': {'discovered': 'recorded_reference',
                         'cited': 'producer_reported' if any(r.get('incorporated_in_output') is True for r in related) else 'unknown',
                         'retrieved': 'producer_reported' if isinstance(ref.get('fresh_download_at'), str) and ref['fresh_download_at'] and not preview else 'unknown',
-                        'substantively_reviewed': 'producer_reported' if documented and ref.get('id') in selected_ids
+                        'substantively_reviewed': 'producer_reported' if documented and paper_id in selected_ids
                             and not preview else 'unknown'},
                     'limitations': ['Producer declarations; review depth and source independence are not independently established.']})
             # Orphan reviews remain visible instead of disappearing in an identity join.
-            known = {ref['id'] for ref in references if isinstance(ref.get('id'), str)}
-            orphan = [r for r in reviews if r.get('work_id') not in known]
+            known = {paper['paper_id'] for paper in run_papers} - {None}
+            orphan = [r for r in reviews if usable_id(r.get('work_id')) not in known]
             coverage.append({'submission_id': rid, 'status': 'preserved_producer_report',
                              'artifact': anchor, 'unmatched_review_records': orphan})
             papers.extend(run_papers)
@@ -331,12 +337,16 @@ def aggregate(store, record, origin):
 def continuation_view(knowledge, reference, repository, reference_pointer, source_repo,
                       selection_kind, direct_runs, grouped, history, contributing,
                       question_texts, papers, coverage, findings):
-    references, reviewed, other_reviews = {}, {}, {}
+    references, unidentified, reviewed, other_reviews = {}, {}, {}, {}
     for paper in papers:
         ref = paper['reference']
         origin = {'submission_id': paper['submission_id'], 'basis': paper['basis']}
-        if isinstance(ref.get('id'), str):
-            identity = {k: ref[k] for k in ('id', 'title', 'doi', 'url', 'year', 'source_kind', 'full_text_status', 'preview_marker_detected') if k in ref}
+        identity = {k: ref[k] for k in ('id', 'title', 'doi', 'url', 'year', 'source_kind', 'full_text_status', 'preview_marker_detected') if k in ref}
+        if paper['paper_id'] is None:
+            # Explicit unknown coverage, located only by its row. Never joined by DOI or URL.
+            identity.pop('id', None)
+            aggregate(unidentified, dict(identity, stages=paper['stages']), origin)
+        else:
             aggregate(references, dict(identity, stages=paper['stages']), origin)
         for row, basis in zip(paper['review_records'], paper['review_basis']):
             review_origin = {'submission_id': paper['submission_id'], 'basis': basis}
@@ -401,7 +411,7 @@ def continuation_view(knowledge, reference, repository, reference_pointer, sourc
                 proposals.append({'submission_id': run['id'], 'basis': path,
                     'dispositions': dispositions, 'claims': claims, 'evidence': evidence,
                     'sources': [{k: v[k] for k in ('id', 'kind', 'title', 'uri', 'locator', 'access')} for v in run['sources'] if v['id'] in sids]})
-    return copy.deepcopy({'schema_version': '1.0', 'kind': 'resolvent.research-state',
+    return copy.deepcopy({'schema_version': '1.1', 'kind': 'resolvent.research-state',
         'repository': repository, 'build': dict(knowledge.build), 'model_sha256': knowledge.model_sha256,
         'question': {'reference': reference, 'recorded_texts': question_texts},
         'selection': {'kind': selection_kind, 'reference': reference, 'reference_pointer': reference_pointer,
@@ -409,8 +419,9 @@ def continuation_view(knowledge, reference, repository, reference_pointer, sourc
         **{kind: [knowledge.records[kind][i] for i in sorted(grouped[kind])] for kind in CANONICAL_ROOTS},
         'assessments': {cid: knowledge.view(cid, 0, 100, 0)['current_assessment'] for cid in sorted(grouped['claims'])},
         'references': list(references.values()), 'reviewed_papers': list(reviewed.values()),
-        'review_coverage': {'submissions': coverage, 'other_reviews': list(other_reviews.values()),
-            'interpretation': 'reviewed_papers contains producer-reported substantive coverage only. Other reviews remain partial or uncertain; research validity and independence are not established by this export.'},
+        'review_coverage': {'submissions': coverage, 'unidentified_references': list(unidentified.values()),
+            'other_reviews': list(other_reviews.values()),
+            'interpretation': 'reviewed_papers contains producer-reported substantive coverage only. Other reviews remain partial or uncertain. unidentified_references are recorded publications without a usable ID: their coverage is unknown and they cannot join a review. Research validity and independence are not established by this export.'},
         'rejected_deferred_findings': proposals, 'provenance': {'submissions': submissions, 'receipts': receipts},
         **{kind: list(values.values()) for kind, values in sections.items()},
         'coverage': {'exhaustive': False, 'omissions': [
@@ -436,4 +447,4 @@ def research_state(knowledge, reference, *, repository, reference_pointer=None, 
     text = json.dumps(state, ensure_ascii=False, sort_keys=True, indent=2)
     return text_page(knowledge, 'research_state', text, offset=offset, max_bytes=max_bytes,
                        include_truncated=True,
-                       research_state_schema='1.0', state_sha256=sha256(text.encode()))
+                       research_state_schema='1.1', state_sha256=sha256(text.encode()))
