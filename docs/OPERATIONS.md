@@ -617,7 +617,9 @@ supplied grade that carries this metadata:
 - `writer_uncertainty`: the original label and its ordinal grade.
 - `uncertainty_review`: `status`, `recommended_uncertainty`, canonical and original
   evidence IDs, `producer_audit` (`complete`, `partial`, `ambiguous` or `absent`),
-  the raw row's `audit_verdict`, limitations and any `prior`. A prior shows the
+  the raw row's `audit_verdict`, limitations and any `prior`. `assessed` needs a
+  reason, evidence in this contribution and a complete audit without duplicate rows;
+  anything else is `not_assessed` and never compared. A prior shows the
   auditor-reported grade, a `destination` check against the package revision
   (`comparable`, `missing`, `stale`, `scope_differs` or `no_match_reason`), the
   recomputed `uncertainty_change` and the producer's own change.

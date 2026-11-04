@@ -180,22 +180,33 @@ class UncertaintyReviewTests(unittest.TestCase):
         self.assertEqual((found['status'], found['producer_audit'], found['audit_verdict']), ('not_assessed', 'ambiguous', 'ambiguous'))
         self.assertIn(duplicate, found['limitations'])
         self.assertIn(AUDIT_NOTES['ambiguous'], found['limitations'])
-        # A producer row marked assessed is not trusted over duplicate raw rows, unavailable evidence or a blank reason.
-        for token, changes, note in (('6', {}, 'Duplicate producer audit rows'), ('7', {'evidence_ids': ['e9']}, 'unavailable'),
-                                     ('8', {'reason': ' '}, 'No assessed recommendation')):
-            p = handoff(token, **changes)
-            if not changes:
-                p['method_metadata']['independent_audit']['claim_checks'] *= 2
-            found = self.supplied(admit({}, p), p)['uncertainty_review']
-            with self.subTest(note=note):
+        # A review marked assessed fails closed on duplicate rows (even ones the producer map cannot resolve), an
+        # incomplete audit, unavailable evidence or a blank reason; its otherwise comparable prior is never compared.
+        first = existing()
+        base = admitted(first)
+        prior = {'prior_claim_id': claim_id(first), 'prior_class': 'moderate', 'prior_match_reason': 'Same synthetic proposition.'}
+        cases = (('6', {}, 'duplicate', AUDIT_NOTES['ambiguous']), ('7', {}, 'unmapped duplicate', AUDIT_NOTES['ambiguous']),
+                 ('8', {}, 'incomplete', AUDIT_NOTES['partial']), ('9', {'evidence_ids': ['e9']}, 'unavailable', 'unavailable'),
+                 ('b', {'reason': ' '}, 'blank reason', 'No assessed recommendation'))
+        for token, changes, case, note in cases:
+            p = handoff(token, **prior, **changes)
+            meta = p['method_metadata']
+            if 'duplicate' in case:
+                meta['independent_audit']['claim_checks'] *= 2
+            if case == 'unmapped duplicate':
+                del meta['id_map']
+            if case == 'incomplete':
+                meta['independent_audit']['audit_complete'] = False
+            found = self.supplied(admit(base, p), p)['uncertainty_review']
+            with self.subTest(case=case):
                 self.assertEqual((found['status'], found['recommended_uncertainty'], found['evidence_ids']), ('not_assessed', None, []))
+                self.assertEqual((found['prior']['destination']['status'], found['prior']['uncertainty_change']),
+                                 ('comparable', 'not_comparable'))
                 self.assertTrue(any(note in limitation for limitation in found['limitations']))
-        p = handoff('9', evidence_ids=[])
-        p['method_metadata']['independent_audit']['audit_complete'] = False
+        p = handoff('c', evidence_ids=[])
         found = self.supplied(admit({}, p), p)['uncertainty_review']
-        self.assertEqual((found['status'], found['producer_audit']), ('assessed', 'partial'))
+        self.assertEqual((found['status'], found['producer_audit']), ('assessed', 'complete'))
         self.assertIn('The recommendation cites no evidence.', found['limitations'])
-        self.assertIn(AUDIT_NOTES['partial'], found['limitations'])
 
     def test_legacy_malformed_and_unreviewed_inputs_read_explicitly(self):
         p = handoff()

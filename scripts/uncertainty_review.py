@@ -138,7 +138,8 @@ def report(run, claims):
         raw = entry['uncertainty_review'] if isinstance(entry.get('uncertainty_review'), dict) else {}
         notes = []
         producer_notes = strings(raw.get('limitations'), notes)
-        checks = [row for name in originals.get(c['id'], []) for row in rows.get(name, [])]
+        # Rows keyed by the candidate ID itself are still found when the producer map does not resolve it.
+        checks = [row for name in originals.get(c['id']) or [c['id']] for row in rows.get(name, [])]
         recommended, basis = grade(raw.get('recommended_class')), raw.get('evidence_ids')
         if 'uncertainty_review' not in entry:
             notes.append('No uncertainty review was recorded for this candidate.')
@@ -149,8 +150,9 @@ def report(run, claims):
         elif not isinstance(basis, list) or any(not isinstance(e, str) or e not in evidence for e in basis):
             notes.append('The recommendation cites evidence unavailable in this contribution; it remains unassessed.')
             recommended = None
-        elif len(checks) > 1:
-            notes.append('Duplicate producer audit rows share this claim; the recommendation remains unassessed.')
+        elif audit != 'complete':
+            # Fail closed: duplicate rows anywhere, even unmapped ones, or an incomplete audit leave no verdict to rely on.
+            notes.append('Only a complete producer audit without duplicate rows yields an assessed recommendation.')
             recommended = None
         elif not basis:
             notes.append('The recommendation cites no evidence.')
