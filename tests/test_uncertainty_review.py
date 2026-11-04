@@ -131,15 +131,19 @@ class UncertaintyReviewTests(unittest.TestCase):
         horizon = item['review_horizon']
         self.assertEqual((horizon['policy'], horizon['review_after'], horizon['interpretation'], horizon['limitations']),
                          ('scheduled', '2021-01-01', HORIZON_NOTE, []))
-        p = handoff('6')
+        p = handoff('6', evidence_ids=[f'e{n}' for n in range(1, 27)])
+        p['evidence'] += [dict(p['evidence'][0], id=f'e{n}') for n in range(2, 27)]
+        p['claims'][0]['evidence_ids'] = [e['id'] for e in p['evidence']]
         entry = p['method_metadata']['claim_metadata']['c1']
         entry['freshness'] = {'policy': 'expires_automatically'}
         entry['uncertainty_review']['limitations'] = [f'Synthetic producer note {n}: ' + 'x' * 400 for n in range(30)]
         item = self.supplied(admit({}, p), p)
         self.assertEqual(item['review_horizon']['policy'], 'unknown')
         self.assertIn('Missing or unsupported review horizon; recorded as unknown.', item['review_horizon']['limitations'])
+        # Long producer values are bounded for paged reads; the contribution keeps them unchanged.
         notes = item['uncertainty_review']['limitations']
         self.assertEqual((len(notes), notes[-1], max(len(note) for note in notes)), (21, LONG_NOTE, 240))
+        self.assertEqual(len(item['uncertainty_review']['evidence_ids']), 20)
 
     def test_prior_checks_use_the_read_revision_and_never_map_candidate_ids(self):
         first = existing()

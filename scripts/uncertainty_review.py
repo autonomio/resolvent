@@ -163,7 +163,7 @@ def report(run, claims):
             verdict = text(checks[0], 'assessment')[:PREVIEW] or None
         found = {'status': 'assessed' if recommended else 'not_assessed', 'recommended_uncertainty': recommended,
                  'reason_preview': text(raw, 'reason')[:PREVIEW],
-                 'evidence_ids': [canonical_id(run['id'], 'evidence', e) for e in basis] if recommended else [],
+                 'evidence_ids': strings([canonical_id(run['id'], 'evidence', e) for e in basis], notes) if recommended else [],
                  'original_evidence_ids': strings(raw.get('original_evidence_ids'), notes),
                  'producer_audit': audit, 'audit_verdict': verdict, 'prior': None}
         identity = text(raw, 'prior_claim_id')
