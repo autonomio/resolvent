@@ -14,19 +14,25 @@ from scripts.model import DATA_ROOTS, Invalid, indexes, load_state
 
 
 def recent_workset(root: Path, hours: int = 24, now: datetime | None = None) -> dict | None:
-    """Exactly the claims added in the recent window; nothing added means no workset."""
-    from scripts.recent_additions import WINDOW_FIELDS, recorded_ids, window
+    """Exactly the claims added in the recent window.
+
+    Nothing added, or a recent pass already completed for the same UTC date (its nightly
+    brief holds that date), means no workset.
+    """
+    from scripts.nightly_brief import brief_date, recent_pass
+    from scripts.recent_additions import WINDOW_FIELDS, selection
     if subprocess.check_output(['git','-C',str(root),'status','--porcelain','--',*DATA_ROOTS],text=True).strip():
         raise Invalid('Commit the world data before preparing a recent workset')
     idx = indexes(load_state(root))
-    span = window(root, 'HEAD', idx.get('maintenance', {}).values(), hours=hours, at=now)
-    before = recorded_ids(root, span['from_revision'])
-    added = sorted(cid for cid in idx.get('claims', {}) if cid not in before)
-    if not added:
+    maintenance = idx.get('maintenance', {}).values()
+    span, added = selection(root, 'HEAD', maintenance, idx.get('questions', {}).values(), hours=hours, at=now)
+    added = sorted(value for value in added if value.startswith('C-'))
+    record = {'schema_version':'1.3','id':'M-'+uuid.uuid4().hex,'status':'pending','base_commit':span['to_revision'],
+              'created_at':span['at'],'claim_ids':added,'reviewed_claim_ids':[],'touched_files':[], 'findings':[],
+              'deferred':[], 'no_change_reason':None, 'window':{key: span[key] for key in WINDOW_FIELDS}}
+    if not added or any(recent_pass(other) and brief_date(other) == brief_date(record) for other in maintenance):
         return None
-    return {'schema_version':'1.3','id':'M-'+uuid.uuid4().hex,'status':'pending','base_commit':span['to_revision'],
-            'created_at':span['at'],'claim_ids':added,'reviewed_claim_ids':[],'touched_files':[], 'findings':[],
-            'deferred':[], 'no_change_reason':None, 'window':{key: span[key] for key in WINDOW_FIELDS}}
+    return record
 
 
 def workset(root: Path, limit: int = 40) -> dict | None:
@@ -67,8 +73,8 @@ def main() -> int:
     args=parser.parse_args()
     result=recent_workset(args.root,args.hours) if args.recent else workset(args.root,args.limit)
     if result is None:
-        print('No claims were added in the recent window: no maintenance PR needed.' if args.recent
-              else 'Empty world model: no maintenance PR needed.')
+        print('No recent workset: no claims were added in the window, or a recent pass for this date has completed.'
+              if args.recent else 'Empty world model: no maintenance PR needed.')
     elif args.write:
         p=args.root/'maintenance'/f"{result['id']}.yaml"
         p.parent.mkdir(exist_ok=True)

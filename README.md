@@ -103,6 +103,7 @@ stale-approval dismissal, resolved conversations and up-to-date branches. See
 | `claims/`, `evidence/`, `sources/` | Canonical assertions, evidence and source anchors. |
 | `graph/R-*.yaml` | Justified claim-to-claim connectors, stored once. |
 | `briefs/`, `questions/`, `maintenance/` | Research execution, closure, open questions and maintenance. |
+| `nightly-briefs/YYYY-MM-DD.md` | Reports on completed recent maintenance passes; not knowledge. |
 | `docs/contracts/`, `docs/schemas/`, `scripts/` | Governed processes, executable schemas and deterministic tools. |
 
 The skill routes research, conversation, interview, source material, simulation,

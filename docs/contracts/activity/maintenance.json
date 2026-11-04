@@ -32,24 +32,28 @@
   "modes": {
     "weekly": {
       "selection": "never_reviewed_claims_plus_rotating_sample_of_the_whole_model",
-      "rules": "hard_rules and procedure_steps"
+      "rules": "hard_rules and procedure_steps, including request_independent_review"
     },
     "change_signal": {
       "selection": "bounded_affected_claims_recorded_with_a_trigger",
-      "rules": "hard_rules and procedure_steps"
+      "rules": "hard_rules and procedure_steps, including request_independent_review"
     },
     "recent": {
       "enabled_by": "Actions variable RESOLVENT_MAINTENANCE_SCHEDULE=nightly, or scripts/gap_finder.py --recent",
       "record": "maintenance 1.3 with window",
       "selection": "exactly_the_claims_added_after_the_window_start_and_nothing_else",
       "window_start": "base_commit_of_the_last_completed_recent_workset_else_the_last_first_parent_revision_24_hours_before_preparation",
-      "empty_window": "no_workset_and_no_pull_request",
-      "input": "scripts/query_knowledge.py recent --at <workset created_at> --to <workset base_commit>: one complete response without paging",
+      "before_the_first_completed_recent_workset": "no_start_is_recorded_so_a_missed_or_unmerged_night_is_recovered_by_preparing_with_more_hours",
+      "empty_window": "no_workset_no_pull_request_and_no_nightly_brief",
+      "per_date": "one_completed_recent_pass_per_utc_date_of_created_at",
+      "input": "scripts/query_knowledge.py recent --at <workset created_at> --to <workset base_commit>: one complete response without paging, including shape and previous_brief",
+      "review": "none: a recent pass merges on green CI alone, and the integrity gate is its only check",
       "replaces_hard_rules": [
         "review_new_claims_and_rotating_older_claims",
         "search_outside_existing_graph_neighbours",
         "consider_old_to_old_relationships",
-        "reassess_existing_relationships"
+        "reassess_existing_relationships",
+        "record_coverage_and_deferrals"
       ],
       "hard_rules": [
         "compare_each_added_claim_with_the_rest_of_the_model",
@@ -60,7 +64,36 @@
         "existing_claims_are_comparison_targets_only",
         "no_old_to_old_review_rotating_review_or_wider_search",
         "no_research_source_fetching_or_claim_change_for_another_reason",
-        "uncertainty_changes_only_by_reassessment_when_an_equivalent_comparison_joins_different_grades"
+        "uncertainty_changes_only_by_reassessment_when_an_equivalent_comparison_joins_different_grades",
+        "review_every_added_claim_before_completion_otherwise_leave_the_workset_pending",
+        "write_the_nightly_brief_with_the_completed_record"
+      ],
+      "nightly_brief": {
+        "path": "nightly-briefs/YYYY-MM-DD.md: the UTC date of the workset's created_at, added in the pass's own pull request",
+        "kind": "report_not_knowledge: never read as a claim or evidence, not canonical, and holds nothing from outside the model",
+        "generated_by_world_control": [
+          "window_revisions_and_committer_times",
+          "claims_added",
+          "claims_merged",
+          "connections_added",
+          "grades_changed",
+          "questions_touched",
+          "new_sources"
+        ],
+        "written_by_the_pass": {
+          "what_moved": "plain language, per question: what the new claims add, confirm or contradict, what merged, and what stays unresolved (deferred or disputed); every statement cites claim IDs",
+          "course": "where the model is going, read from the window's movement, shape and previous_brief: whether this window held the previous brief's course or changed it, where attention went and what it left untouched, whether the additions converge or pull apart, whether they lean on a few sources or one kind of evidence, which grades moved, and what the merges and connections say about how the model is forming; each observation names the IDs or numbers behind it, only observes, makes no new claim about the subject and suggests no research"
+        }
+      },
+      "gate": [
+        "the_workset_is_exactly_the_window_git_history_gives_for_its_base_commit_and_created_at",
+        "every_claim_in_the_workset_is_reviewed",
+        "every_operation_has_an_added_claim_as_a_subject",
+        "a_reassessment_names_only_an_added_claim_or_its_equivalent_to_settle_an_equivalent_comparison_that_joined_different_grades",
+        "the_change_holds_only_the_record_its_nightly_brief_and_the_results_of_its_recorded_operations",
+        "a_claim_changes_only_its_grade",
+        "the_brief_numbers_and_headings_match_the_record_every_what_moved_statement_cites_a_claim_id_and_every_cited_id_exists",
+        "a_nightly_brief_outside_a_completed_recent_pass_or_a_change_to_a_merged_one_is_refused"
       ],
       "procedure_steps": [
         "read_workset",
@@ -68,9 +101,9 @@
         "read_recent_input",
         "compare_added_claims",
         "record_operations_and_findings",
+        "write_nightly_brief",
         "complete_maintenance_record",
-        "run_compiler",
-        "request_independent_review"
+        "run_compiler"
       ]
     }
   }

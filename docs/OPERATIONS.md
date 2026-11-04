@@ -321,20 +321,49 @@ still prepares a weekly workset on request.
 - `claim_ids` are exactly the claims at `HEAD` that are absent from the window
   start's tree, with no never-reviewed claims and no rotating sample.
 - The window starts at the `base_commit` of the last completed recent workset on
-  `HEAD`'s first-parent history. Without one, it starts at the last first-parent
-  revision committed at or before 24 hours (`--hours`) before preparation, or at
-  the empty model when history is younger. A late or failed night therefore loses
-  nothing, and the window never reaches back past the last completed one.
-- When nothing was added, nothing is written and the workflow opens no PR.
+  `HEAD`'s first-parent history, so it never reaches back past the last completed
+  one. Once a recent workset has completed, a late or failed night loses nothing:
+  an open workset PR holds back the next night (one open maintenance PR at a
+  time), and a workset closed unmerged is covered again by the next window.
+- Until a recent workset has completed, nothing records a start. The window then
+  starts at the last first-parent revision committed at or before 24 hours
+  (`--hours`) before preparation, or at the empty model when history is younger.
+  Complete that first workset rather than closing it. If a night before the first
+  completion is missed or closed unmerged, re-cover it with **Run workflow** and a
+  larger `hours` input (or `--hours` locally).
+- A completed recent pass reviews every claim in its workset, so a completed
+  window is covered in full. A pass that cannot finish leaves its workset pending.
+- When nothing was added, nothing is written and the workflow opens no PR. There
+  is one recent pass per UTC date: after a pass created that date has completed,
+  no further recent workset is prepared until the next date.
 - It reads committed Git objects and recorded committer times only. Uncommitted
   world data and shallow clones fail; the workflow fetches full history.
 
 The record is maintenance profile 1.3. Its `window` records the start rule, the
 previous recent workset (if any), the start revision and its committer time, the
-base revision's committer time and the hours used. Completed recent worksets count
-as reviewed coverage but do not advance the weekly rotation cursor. Agents read
-the whole input with the `recent` read below and follow the `recent` mode of the
-maintenance contract and `docs/AGENT_JOBS.md`.
+base revision's committer time, the hours used, the sources the window added and
+the questions present at its end that hold an added claim. Completed recent
+worksets count as reviewed coverage but do not advance the weekly rotation cursor.
+Agents read the whole input with the `recent` read below and follow the `recent`
+mode of the maintenance contract and `docs/AGENT_JOBS.md`.
+
+A completed recent pass adds its nightly brief, `nightly-briefs/YYYY-MM-DD.md`,
+in the same PR. `world_control.py` generates its numbers from the completed record,
+and the pass writes what moved per question and where the model is going. The
+brief is a report kept beside the data, not knowledge: `load_state`, compiled
+packages and the queries never read it as a record. The only read of a brief is
+`previous_brief` in the next `recent` response.
+
+A recent pass merges on green CI alone, with no independent review, and `World
+model integrity` is its only check. Besides the usual integrity and delta rules,
+the gate re-derives the workset's window from Git history, so the integrity job
+checks out the proposed state with full history. It refuses anything outside the
+recent rules: an operation without an added claim as a subject, a reassessment
+other than one that settles an equivalent merge of different grades, any change
+beyond the record, its brief and its recorded operations' results, or a brief that
+does not match the record. Keep the review requirement in branch protection for
+every other PR. The identity that merges recent passes needs permission to merge
+without an approval, and should merge only a PR that completes a recent workset.
 
 ## Change-signal maintenance
 
@@ -501,7 +530,8 @@ checkout, fetch or worktree read happens and nothing is written.
 
 - `window`: `start` rule, `previous_workset_id`, `from_revision` and
   `from_committed_at` (null at the empty model), `to_revision` and
-  `to_committed_at`, plus `hours`, the evaluation instant `at` and its `cutoff`.
+  `to_committed_at`, `new_source_ids` and `question_ids` (as recorded in the
+  workset), plus `hours`, the evaluation instant `at` and its `cutoff`.
   The rule is the recent workset's own, evaluated as of `to_revision`. That is the
   package revision unless `--to` names one of its ancestors. With `--at` set to a
   workset's `created_at` and `--to` to its `base_commit`, the window and added
@@ -526,23 +556,36 @@ checkout, fetch or worktree read happens and nothing is written.
   distinct statement words, then by shared-word count, then by ID. The first
   `--overlap-limit` (default 20, 0 to 1000) are kept, and `wording_overlap.omitted`
   counts the rest.
-- `decisions`: `expected_model_sha256` and `reviewed_claim_ids` for the decisions
-  file. Current comparison IDs (`supersedes`), current assessments (`predecessors`)
-  and connector digests (`previous_sha256`) are in the entries, so a pass needs no
-  other read.
+- `decisions`: `expected_model_sha256`, `reviewed_claim_ids` and an empty
+  `nightly_brief` (`what_moved`, `course`) for the decisions file. Current
+  comparison IDs (`supersedes`), current assessments (`predecessors`) and connector
+  digests (`previous_sha256`) are in the entries, so a pass needs no other read.
+- `shape`: the whole model as generated counts over active claims only:
+  `claims`, `claims_per_question` (keyed by question reference, the smallest ID of
+  a question's equivalence group), `claims_without_question`, `grade_spread`,
+  `disputed_groups` (equivalent claims whose grades differ) and
+  `source_concentration` (cited source groups, the ten supporting the most claims,
+  the claims citing any of those ten, and how many sources support each number of
+  claims).
+- `previous_brief`: the text of the nightly brief of the recent workset the window
+  starts from, read from Git at `to_revision`, or null when the window has no
+  previous recent workset. `shape` and `previous_brief` serve only the brief's last
+  section.
 
 Keyword overlap and shared metadata are comparison cues, not identity, support,
 truth or semantic similarity. Semantic matching is not performed. A claim with no
 cue is not shown to be unrelated.
 
 Compatibility: core 1.4.0 / compiler 1.5.0 adds maintenance profile 1.3, maintenance
-contract 1.3 and model-operations contract 1.2. Existing profiles and records still
-validate unchanged, and a world behaves as before until it adopts this core and sets
-the variable. The writer newly accepts only the equivalent-partner reassessment
-described below. Submission protocol 1.2, canonical record formats, compiled package
-format 1.0 and query envelope 1.1 are unchanged. The generic plugin performs
-contributions only and never prepares or runs maintenance, and no packaged file
-changes, so no plugin package or live-workflow release is needed.
+contract 1.3, model-operations contract 1.2 and nightly briefs. Existing profiles
+and records still validate unchanged, and a world behaves as before until it adopts
+this core and sets the variable. For existing worksets the writer newly accepts only
+the equivalent-partner reassessment described below; for a recent workset it
+applies the recent rules and writes the nightly brief. `compiler.py` also checks
+each brief against its pass. Submission protocol 1.2, canonical record formats,
+compiled package format 1.0 and query envelope 1.1 are unchanged. The generic plugin
+performs contributions only and never prepares or runs maintenance, and no packaged
+file changes, so no plugin package or live-workflow release is needed.
 
 ### Per-question research-state export
 
@@ -652,7 +695,9 @@ To accompany admission, add `expected_model_sha256` from the reader and a
 selected contribution or workset; reassessment targets must all be selected,
 already admitted claims. In maintenance, an `equivalent` comparison of a workset
 claim in the same decisions also selects its existing partner for reassessment,
-so a merge that joins different grades can settle them. At most 200 operations
+so a merge that joins different grades can settle them. A recent pass is narrower:
+every operation names an added claim, and a reassessment is accepted only for the
+two claims of such a merge when their grades differed. At most 200 operations
 belong in one receipt.
 
 Comparison requires two same-kind records and `outcome`, with `supersedes: null`

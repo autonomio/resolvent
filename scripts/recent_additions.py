@@ -1,6 +1,7 @@
-"""The recent-maintenance window and its complete comparison input; no judgments."""
+"""The recent-maintenance window, its complete comparison input and its gate; no judgments."""
 from __future__ import annotations
 
+from collections import Counter
 import copy
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
@@ -9,11 +10,12 @@ from pathlib import Path
 import re
 
 from scripts.build_knowledge import git
-from scripts.model import CANONICAL_ROOTS, Invalid, digest, family
+from scripts.model import CANONICAL_ROOTS, Invalid, digest, fail, family, indexes
 from scripts.temporal import point, temporal_scope
 
 RECORD_PATH = re.compile(r'(?:claims|evidence|sources|graph|questions|maintenance)/([CESRQM]-[0-9a-f]{32})\.yaml')
-WINDOW_FIELDS = ('start', 'previous_workset_id', 'from_revision', 'from_committed_at', 'to_committed_at', 'hours')
+WINDOW_FIELDS = ('start', 'previous_workset_id', 'from_revision', 'from_committed_at', 'to_committed_at', 'hours',
+                 'new_source_ids', 'question_ids')
 
 
 def utc(value: datetime) -> str:
@@ -27,10 +29,11 @@ def committed(seconds: int) -> str:
 def window(repo: Path, revision: str, maintenance, *, hours: int = 24, at=None) -> dict:
     """Start at the last completed recent workset's base, else `hours` before `at`.
 
-    Both starts are revisions on the selected revision's first-parent history; recorded
-    Git committer time is used only when no recent workset has completed. A late or
-    failed night therefore loses nothing and never reaches further back. History that
-    starts after the cutoff opens the window at the empty model.
+    Both starts are revisions on the selected revision's first-parent history. Once a
+    recent workset has completed, its base is a recorded start: a late, failed or
+    unmerged night loses nothing, and the window never reaches further back. Until then
+    nothing records a start, so the window is the `hours` before `at` by Git committer
+    time. History that starts after that cutoff opens the window at the empty model.
     """
     if type(hours) is not int or not 1 <= hours <= 8760:
         raise Invalid('Recent window hours must be between 1 and 8760')
@@ -74,6 +77,128 @@ def recorded_ids(repo: Path, revision: str | None) -> set[str]:
             if (match := RECORD_PATH.fullmatch(name.decode('utf-8', 'replace')))}
 
 
+def selection(repo: Path, revision: str, maintenance, questions, *, hours: int = 24, at=None) -> tuple[dict, set[str]]:
+    """The window as of `revision` and every record ID it added, from Git objects only.
+
+    Only maintenance and question records present at `revision` count, so a later state
+    reproduces the same selection. The window also records the sources it added and the
+    questions present at its end that hold an added claim.
+    """
+    commit = git(repo, 'rev-parse', '--verify', '--end-of-options', revision + '^{commit}').decode().strip()
+    present = recorded_ids(repo, commit)
+    span = window(repo, commit, [record for record in maintenance if record['id'] in present], hours=hours, at=at)
+    added = present - recorded_ids(repo, span['from_revision'])
+    claims = {value for value in added if value.startswith('C-')}
+    span.update(new_source_ids=sorted(value for value in added if value.startswith('S-')),
+                question_ids=sorted(question['id'] for question in questions
+                                    if question['id'] in present and claims.intersection(question['claim_ids'])))
+    return span, added
+
+
+def pass_scope(record: dict, operations: list, claims: dict) -> None:
+    """Recent-mode rules: every operation has an added claim, and grades move only to settle a merge.
+
+    A reassessment may name an added claim or the claim it was found equivalent to in the
+    same pass, and only when that equivalent pair had different grades before the pass.
+    """
+    added = set(record['claim_ids'])
+    settles = set()
+    for op in operations:
+        subjects = op['subject_ids']
+        if (op.get('kind') == 'comparison' and op.get('outcome') == 'equivalent' and added.intersection(subjects)
+                and len(subjects) == 2 and all(subject in claims for subject in subjects)
+                and claims[subjects[0]]['uncertainty'] != claims[subjects[1]]['uncertainty']):
+            settles.update(subjects)
+    for op in operations:
+        if op.get('kind') == 'reassessment':
+            fail(set(op['subject_ids']) <= settles, 'A recent pass reassesses only an added claim or its equivalent, '
+                 'to settle a merge that joined different grades')
+        else:
+            fail(bool(added.intersection(op['subject_ids'])), 'Every operation in a recent pass needs an added claim as a subject')
+
+
+def verify_pass(root: Path, old: dict, current: dict, data_changes: set[str], reports: dict) -> None:
+    """The gate for a change that completes a recent pass, which merges on green CI alone.
+
+    `reports` maps each changed nightly brief path to its (base, proposed) bytes.
+    """
+    from scripts.nightly_brief import brief_path, verify
+    for path, (before, after) in sorted(reports.items()):
+        fail(before is None and after is not None, 'Nightly briefs are immutable once merged: ' + path)
+    passes = sorted(path for path in data_changes if path in current and family(path) == 'maintenance'
+                    and current[path]['status'] == 'completed' and 'window' in current[path])
+    if not passes:
+        fail(not reports, 'A nightly brief belongs to its completed recent pass in the same change: ' +
+             ', '.join(sorted(reports)))
+        return
+    fail(len(passes) == 1, 'Complete one recent pass per change')
+    record = current[passes[0]]
+    location = brief_path(record)
+    fail(set(reports) == {location}, 'A completed recent pass adds exactly its nightly brief ' + location)
+    try:
+        shallow = git(root, 'rev-parse', '--is-shallow-repository').decode().strip()
+    except Invalid as error:
+        raise Invalid('A recent pass is verified against the Git history of its checkout: ' + str(error)) from None
+    fail(shallow == 'false', 'A recent pass is verified against complete Git history, not a shallow clone')
+    maintenance = [item for path, item in current.items() if family(path) == 'maintenance']
+    questions = [item for path, item in current.items() if family(path) == 'questions']
+    span, added = selection(root, record['base_commit'], maintenance, questions,
+                            hours=record['window']['hours'], at=record['created_at'])
+    fail(span['to_revision'] == record['base_commit'] and record['window'] == {key: span[key] for key in WINDOW_FIELDS}
+         and record['claim_ids'] == sorted(value for value in added if value.startswith('C-')),
+         'A recent workset must be exactly the window Git history gives for its base_commit and created_at')
+    try:
+        git(root, 'merge-base', '--is-ancestor', record['base_commit'], 'HEAD')
+    except Invalid:
+        raise Invalid("A recent workset's base_commit must be in the history of the proposed change") from None
+    operations = record['model_operations']
+    reassessed = {subject for op in operations if op['kind'] == 'reassessment' for subject in op['subject_ids']}
+    linked = {op['record']['id'] for op in operations if op['kind'] == 'linkage'}
+    for path in sorted(data_changes - {passes[0]}):
+        before, after = old.get(path), current.get(path)
+        if family(path) == 'claims' and before and after and after['id'] in reassessed:
+            fail({k: v for k, v in before.items() if k != 'uncertainty'} == {k: v for k, v in after.items() if k != 'uncertainty'},
+                 'A recent pass changes a claim only by reassessing its grade: ' + path)
+        else:
+            fail(family(path) == 'graph' and after is not None and after['id'] in linked,
+                 'A recent pass changes only its maintenance record, its nightly brief and the results of its '
+                 'recorded operations: ' + path)
+    pass_scope(record, operations, indexes(old).get('claims', {}))
+    try:
+        text = reports[location][1].decode('utf-8').replace('\r\n', '\n')
+    except UnicodeError:
+        raise Invalid('Nightly brief is not UTF-8: ' + location) from None
+    verify(record, text, {item['id'] for item in current.values()})
+
+
+def shape(knowledge) -> dict:
+    """The whole model as generated counts over active claims: no statement or judgment."""
+    claims, evidence, groups = knowledge.records['claims'], knowledge.records['evidence'], knowledge.groups
+    active = {cid for cid, claim in claims.items() if claim['state'] == 'active'}
+    per_question, per_source = {}, {}
+    for qid, question in knowledge.records['questions'].items():
+        per_question.setdefault(groups[qid][0], set()).update(active.intersection(question['claim_ids']))
+    for cid in active:
+        for sid in {sid for eid in claims[cid]['evidence_ids'] for sid in evidence[eid]['source_ids']}:
+            per_source.setdefault(groups[sid][0], set()).add(cid)
+    grades = Counter(claims[cid]['uncertainty'] for cid in active)
+    disputed = {groups[cid][0] for cid in active
+                if len({claims[member]['uncertainty'] for member in groups[cid] if member in active}) > 1}
+    ranked = sorted(per_source.items(), key=lambda item: (-len(item[1]), item[0]))
+    return {
+        'claims': len(active),
+        'claims_per_question': {ref: len(ids) for ref, ids in sorted(per_question.items())},
+        'claims_without_question': len(active - set().union(*per_question.values())),
+        'grade_spread': {grade: grades[grade] for grade in ('low', 'medium', 'high')},
+        'disputed_groups': len(disputed),
+        'source_concentration': {
+            'cited_sources': len(per_source),
+            'largest': [{'source_id': ref, 'claims': len(ids)} for ref, ids in ranked[:10]],
+            'claims_citing_largest': len(set().union(*(ids for _, ids in ranked[:10]))),
+            'sources_by_claim_count': [{'claims': count, 'sources': number} for count, number in
+                                       sorted(Counter(len(ids) for ids in per_source.values()).items())]}}
+
+
 def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_limit=20) -> dict:
     """Every claim added in the window and what it must be compared with, in one response.
 
@@ -81,6 +206,7 @@ def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_lim
     workset's base_commit, so a later package still returns exactly that workset.
     """
     from scripts.query_knowledge import bound, tokens
+    from scripts.nightly_brief import brief_path
     bound(overlap_limit, 0, 1000, 'overlap_limit')
     repo = Path(repo)
     records, reverse = knowledge.records, knowledge.knowledge['reverse_links']['claims']
@@ -93,11 +219,16 @@ def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_lim
             git(repo, 'merge-base', '--is-ancestor', end, revision)
         except Invalid:
             raise Invalid('The window must end at the package revision or one of its ancestors') from None
-    present = recorded_ids(repo, end)
-    span = window(repo, end, [item for path, item in provenance.items()
-                              if family(path) == 'maintenance' and item['id'] in present], hours=hours, at=at)
-    in_window = present - recorded_ids(repo, span['from_revision'])
+    maintenance = [item for path, item in provenance.items() if family(path) == 'maintenance']
+    span, in_window = selection(repo, end, maintenance, records['questions'].values(), hours=hours, at=at)
     added = sorted(cid for cid in claims if cid in in_window)
+    previous_brief = None
+    if span['previous_workset_id'] is not None:
+        prior = next(item for item in maintenance if item['id'] == span['previous_workset_id'])
+        try:
+            previous_brief = git(repo, 'show', f'{end}:{brief_path(prior)}').decode('utf-8').replace('\r\n', '\n')
+        except (Invalid, UnicodeError):
+            raise Invalid('The previous recent pass lacks a readable nightly brief') from None
     targets = [cid for cid in sorted(claims) if claims[cid]['state'] == 'active']
     replaced = {op['supersedes'] for op in knowledge.operations.values() if op['kind'] == 'comparison' and op['supersedes']}
     by_pair, by_claim = {}, {}
@@ -193,9 +324,12 @@ def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_lim
         'recent', window=span,
         interpretation=('Added claims are absent from the window start. compare_with cues are declared source '
                         'identity, question membership and statement keyword overlap; they establish no identity, '
-                        'support or truth, and no semantic matching is performed.'),
+                        'support or truth, and no semantic matching is performed. shape counts the whole model and '
+                        'previous_brief is the last nightly brief as written; both serve only the brief\'s last section.'),
         wording_overlap_limit=overlap_limit,
         wording_overlap_ranking=('claims related only by wording: Jaccard overlap of distinct statement words, '
                                  'then shared-word count, then claim ID'),
-        decisions={'expected_model_sha256': knowledge.model_sha256, 'reviewed_claim_ids': added},
+        decisions={'expected_model_sha256': knowledge.model_sha256, 'reviewed_claim_ids': added,
+                   'nightly_brief': {'what_moved': '', 'course': ''}},
+        shape=shape(knowledge), previous_brief=previous_brief,
         added_total=len(added), added=entries)

@@ -5,6 +5,11 @@ on:
     - cron: '23 6 * * 1'
     - cron: '47 4 * * *'
   workflow_dispatch:
+    inputs:
+      hours:
+        description: 'Nightly mode only, until a recent workset has completed: hours the window covers'
+        required: false
+        default: '24'
 
 permissions:
   contents: write
@@ -27,6 +32,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.RESOLVENT_AUTOMATION_TOKEN || github.token }}
       MODE: ${{ vars.RESOLVENT_MAINTENANCE_SCHEDULE == 'nightly' && 'recent' || 'weekly' }}
+      HOURS: ${{ inputs.hours || '24' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -52,10 +58,10 @@ jobs:
             exit 0
           fi
           if [ "$MODE" = recent ]; then
-            python scripts/gap_finder.py --recent --write
-            EMPTY='No claims were added in the recent window: no maintenance needed.'
+            python scripts/gap_finder.py --recent --hours "$HOURS" --write
+            EMPTY='No recent workset: no claims were added in the window, or a recent pass for this date has completed.'
             TITLE='maintain world model: recent additions review'
-            BODY='Recent mode. Existing repository agents: follow AGENTS.md and the recent mode in docs/AGENT_JOBS.md. Compare only the added claims with the rest of the model, reading the whole input with the recent call. Complete the maintenance record, run the compiler, and request independent review. This PR is not ready to merge while the workset is pending.'
+            BODY='Recent mode. Existing repository agents: follow AGENTS.md and the recent mode in docs/AGENT_JOBS.md. Compare only the added claims with the rest of the model, reading the whole input with the recent call, then complete the maintenance record with its nightly brief and run the compiler. This PR merges on green CI alone, with no independent review. It is not ready to merge while the workset is pending.'
           else
             python scripts/gap_finder.py --write
             EMPTY='Empty model: no maintenance needed.'

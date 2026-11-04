@@ -200,11 +200,23 @@ are unchanged.
 Maintenance profile 1.3 adds a required `window` to a recent workset: its start
 rule (`last_completed_recent_workset` or `hours`), the previous recent workset, the
 start revision and its committer time (both null at the empty model), the base
-revision's committer time and the hours used. Its claims are those at `base_commit`
-absent from the start revision's tree. The window is preparation metadata taken
-from Git history, not claim valid time, evidence or an independent clock. Profile
-1.3 cannot carry a change-signal trigger and remains 1.3 when completed. Earlier
-profiles are unchanged.
+revision's committer time, the hours used, the sources the window added
+(`new_source_ids`) and the questions present at its end that hold an added claim
+(`question_ids`). Its claims are those at `base_commit` absent from the start
+revision's tree. The window is preparation metadata taken from Git history, not
+claim valid time, evidence or an independent clock. Profile 1.3 cannot carry a
+change-signal trigger or `subject_ids` and remains 1.3 when completed. A completed
+1.3 record has reviewed every claim in its workset. Earlier profiles are unchanged.
+
+## Nightly briefs
+
+A completed recent pass has exactly one nightly brief, `nightly-briefs/YYYY-MM-DD.md`,
+named by the UTC date of its workset's `created_at`. It is a Markdown report on how
+the model moved in that window, kept beside the data roots and immutable once
+merged. Its numbers and headings are generated from the completed record, and its
+two written sections cite records by complete ID. A brief is not a claim, evidence,
+provenance or canonical record: `load_state` and compiled packages leave it out, and
+it holds nothing from outside the model.
 
 ## Recorded comparison and reassessment
 

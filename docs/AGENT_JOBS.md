@@ -70,7 +70,8 @@ known structural errors cannot.
 
 Submit a real GitHub review. Leave actionable comments or request changes. Never
 claim a review happened without a submitted review. The reviewer must not approve
-its own substantive edits. Governance changes require a human maintainer.
+its own substantive edits. Governance changes require a human maintainer. A
+recent-mode maintenance pass has no independent review; see Recent mode below.
 
 The deterministic gate uses base-branch rules. It verifies schemas, references,
 bidirectional evidence links, dependency/derivation cycles, research outcomes,
@@ -101,7 +102,7 @@ Make necessary canonical edits on the workset PR. Fill `reviewed_claim_ids`,
 `findings`, `deferred`, and exact `touched_files`. Set `status: completed` only when
 the recorded work is complete; explicitly defer anything not assessed. A no-change
 run needs `no_change_reason`, unless recorded model operations explain the result.
-Run the compiler and request independent review.
+Run the compiler and request independent review of a weekly or change-signal workset.
 
 `python scripts/gap_finder.py --write` prepares a workset for a manual agent run too.
 It is a candidate selector, not a relationship-inference algorithm.
@@ -111,9 +112,10 @@ It is a candidate selector, not a relationship-inference algorithm.
 With the Actions variable `RESOLVENT_MAINTENANCE_SCHEDULE=nightly`, the workflow
 prepares one recent workset a day (`python scripts/gap_finder.py --recent --write`).
 Its record carries a `window`, and its `claim_ids` are exactly the claims added
-in that window. When nothing was added, there is no workset and no PR. Build the
-package at the main revision the workset branch contains (its `base_commit`, or
-a later one if the branch was updated), then read the whole input in one response:
+in that window. When nothing was added, there is no workset, no PR and no nightly
+brief. Build the package at the main revision the workset branch contains (its
+`base_commit`, or a later one if the branch was updated), then read the whole
+input in one response:
 
 ```sh
 python scripts/build_knowledge.py --revision <main revision> --output .resolvent/knowledge
@@ -134,10 +136,81 @@ the `recent` mode of the `maintenance` contract:
 - Existing claims are comparison targets only: no old-to-old review, no rotating
   review and no wider search.
 - No research, no fetching of sources, and no change to any claim for another reason.
+  Every operation has an added claim as a subject.
 - Uncertainty changes only when a merge joins different grades, which read as
-  disputed until a `reassessment`. The writer accepts that reassessment for the
-  existing claim named in an equivalent comparison in the same delta, as well as
-  for the workset's own claims.
+  disputed until a `reassessment`. Reassess only the added claim, or the claim it
+  was found equivalent to in this pass, and only when their grades differed.
+- Review every added claim: `reviewed_claim_ids` equals `claim_ids`. A pass that
+  cannot finish leaves the workset pending instead of deferring claims: the window
+  moves on only when a pass completes, so no addition is skipped.
+
+Complete the record with `python scripts/world_control.py M-ID --decisions FILE`
+(dry run, then `--apply`). Its decisions file carries the response's `decisions`
+inputs, the operations and findings, and the pass's part of the nightly brief:
+
+```json
+{
+  "expected_model_sha256": "<decisions.expected_model_sha256>",
+  "reviewed_claim_ids": ["<every claim in the workset>"],
+  "model_operations": [],
+  "findings": ["<what the pass found>"],
+  "nightly_brief": {"what_moved": "### Q-…\n\n- C-… restates C-…: merged.", "course": "…"}
+}
+```
+
+#### Nightly brief
+
+A completed recent pass writes a nightly brief, `nightly-briefs/YYYY-MM-DD.md`
+(the UTC date of the workset's `created_at`), in its own PR. It reports how the
+model moved in that window. It is a report, not knowledge: nothing reads it as a
+claim or as evidence, it is not canonical, and it holds nothing from outside the
+model. There is one per completed recent pass and one per date.
+
+`world_control.py` writes the file. It generates the numbers from the completed
+record: the window's revisions and their times, claims added, claims merged,
+connections added, grades changed, questions touched and new sources. The pass
+writes the rest:
+
+- `what_moved`, under "What moved": per question (use `###` headings), in plain
+  language, what the new claims add, confirm or contradict, what merged, and what
+  stays unresolved (deferred or disputed). Every statement, meaning each paragraph
+  or list item, cites claim IDs.
+- `course`, under "Where the model is going", is the brief's last section. The
+  numbers and the per-question movement are the inner view; this section adds the
+  view of the model as a whole, which nothing else records. Its job is to say where
+  the model is going. Read the window's movement against the response's `shape`
+  (the whole model as generated counts: claims per question reference, grade spread
+  and source concentration) and `previous_brief` (the last brief's text, or null).
+  Ask: where is the model going, and did this window's movement hold the course in
+  the last brief or change it? Where did the attention go, and what did it leave
+  untouched? Did the additions converge or pull apart, and do they lean on a few
+  sources or one kind of evidence? Which grades moved, and what does the pattern of
+  merges and connections say about how the model is forming? Each observation names
+  the IDs or numbers behind it and stays a reading of the movement: it makes no new
+  claim about the subject. The brief only observes. It does not suggest where
+  research should go next.
+
+`shape` and `previous_brief` serve this last section alone. The pass still reads
+and changes only the window's additions. Neither text uses `#` or `##` headings,
+and citations are complete record IDs.
+
+#### Merging on the gate alone
+
+A recent pass merges on green CI alone, with no independent review. The `World
+model integrity` gate is its only check, and it refuses the PR unless:
+
+- the workset is exactly the window Git history gives for its `base_commit` and
+  `created_at`, and every claim in it was reviewed;
+- every operation has an added claim as a subject, and each reassessment names only
+  an added claim or its equivalent, to settle a merge that joined different grades;
+- the PR holds only the maintenance record, its nightly brief and the results of its
+  recorded operations, and a claim changes only its grade;
+- the brief's numbers and headings match the record, every statement under "What
+  moved" cites a claim ID, and every cited ID exists.
+
+The gate does not judge the reading. It also refuses a nightly brief outside a
+completed recent pass and any change to a merged brief. Weekly and change-signal
+worksets keep their independent review.
 
 ## Model operations available to external agents
 

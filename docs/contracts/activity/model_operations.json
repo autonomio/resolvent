@@ -13,7 +13,7 @@
     "assessments": "Immutable supplied grades and reassessments, with explicit current result",
     "changes": "Canonical changes between pinned packages plus new model operations",
     "lineage": "Existing source/evidence lineage cues as paginated cards; lineage-flag expands members",
-    "recent": "Whole recent-maintenance input in one response: window, every added claim with its support, and compare_with targets by shared source, shared question or capped keyword overlap, with existing links and decision references"
+    "recent": "Whole recent-maintenance input in one response: window with its new sources and touched questions, every added claim with its support, compare_with targets by shared source, shared question or capped keyword overlap with existing links and decision references, shape (generated whole-model counts) and previous_brief (the last nightly brief's text, or null)"
   },
   "read_bounds": {"default_items": 20, "maximum_items": 100, "maximum_bytes": 32768, "continuation": "next_offset at the same pinned build", "complete_reads": ["recent"]},
   "research_state_interface": {"schema": "docs/schemas/research-state.schema.json", "selector": "canonical Q ID, or exact preserved external reference plus submission JSON pointer", "repository": "caller-supplied selected repository identity", "pagination": "character offsets in serialized portable JSON; same build, selection and state_sha256", "complete": "explicit local full object; no pagination cap", "research_validity": "preserved producer declarations only; missing or unsupported coverage is unknown"},
@@ -38,6 +38,7 @@
     "first_reassessment_continues_actual_base_grade_subsequent_reassessment_continues_current_head",
     "one_reassessment_per_claim_per_delta_no_history_branches",
     "maintenance_reassessment_covers_workset_claims_and_existing_claims_named_in_an_equivalent_comparison_in_the_same_delta",
+    "recent_pass_operations_name_an_added_claim_and_reassess_only_an_equivalent_pair_whose_grades_differed",
     "differing_current_or_unreassessed_legacy_supplied_grades_are_disputed",
     "read_digests_rechecked_against_actual_base_on_delta_validation",
     "retry_same_receipt_and_decisions_is_no_op",

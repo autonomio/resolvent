@@ -152,6 +152,22 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 8760
+        },
+        "new_source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^S-[0-9a-f]{32}$"
+          },
+          "uniqueItems": true
+        },
+        "question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^Q-[0-9a-f]{32}$"
+          },
+          "uniqueItems": true
         }
       },
       "required": [
@@ -160,7 +176,9 @@
         "from_revision",
         "from_committed_at",
         "to_committed_at",
-        "hours"
+        "hours",
+        "new_source_ids",
+        "question_ids"
       ],
       "additionalProperties": false,
       "allOf": [
@@ -411,10 +429,7 @@
       "then": {
         "properties": {
           "schema_version": {
-            "enum": [
-              "1.2",
-              "1.3"
-            ]
+            "const": "1.2"
           }
         }
       }

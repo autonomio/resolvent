@@ -380,6 +380,9 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
         fail(set(m["reviewed_claim_ids"]) <= set(m["claim_ids"]), f"{m['id']}: reviewed claims outside workset")
         fail(all(safe_relative(p) and p in state and p.split('/')[0] in CANONICAL_ROOTS for p in m["touched_files"]), "Invalid maintenance touched file")
         if m["status"] == "completed":
+            # The next recent window starts after this one, so a completed recent pass covers all of it.
+            fail("window" not in m or set(m["reviewed_claim_ids"]) == set(m["claim_ids"]),
+                 f"{m['id']}: a completed recent pass reviews every claim in its workset; leave it pending until it does")
             fail(set(m["reviewed_claim_ids"]) == set(m["claim_ids"]) or bool(m["deferred"]), "Incomplete maintenance coverage needs explicit deferrals")
             fail(bool(m["touched_files"]) or bool(m.get('model_operations')) or bool(m["no_change_reason"]), "No-change maintenance requires an explanation")
             fail(bool(m["findings"]) or bool(m["no_change_reason"]), "Maintenance needs findings or no-change reason")
@@ -417,8 +420,10 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
     before, after = tracked_files(base), tracked_files(root)
     changed = {p for p in set(before) | set(after) if before.get(p) != after.get(p)}
     data_changes = {p for p in changed if p in current or p in old}
-    governance_changes = changed - data_changes
-    fail(not (data_changes and governance_changes), "Separate governance/code changes from model-data PRs: " + ", ".join(sorted(governance_changes)))
+    # Nightly briefs are reports kept beside the data: neither model data nor governance.
+    reports = {p for p in changed - data_changes if p.split("/")[0] == "nightly-briefs"}
+    governance_changes = changed - data_changes - reports
+    fail(not ((data_changes or reports) and governance_changes), "Separate governance/code changes from model-data PRs: " + ", ".join(sorted(governance_changes)))
     fail(not (set(old) - set(current)), "Do not delete model history")
     for path in old:
         if family(path) in ("submission", "closure", "brief", "result", "maintenance"):
@@ -471,3 +476,5 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
                  'Claims remain permanent; do not create claim-retirement transitions')
             if previous and previous['uncertainty'] != record['uncertainty']:
                 fail(record['id'] in new_assessments, 'Uncertainty changes require an explicit reassessment')
+    from scripts.recent_additions import verify_pass
+    verify_pass(root, old, current, data_changes, {p: (before.get(p), after.get(p)) for p in reports})

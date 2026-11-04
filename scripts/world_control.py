@@ -222,8 +222,10 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
         fail(record.get('model_decisions_sha256') == digest(decisions), 'Completed maintenance decisions are immutable')
         return {}
     required = {'expected_model_sha256', 'model_operations', 'reviewed_claim_ids'}
-    fail(required <= set(decisions) <= required | {'findings', 'deferred', 'no_change_reason'},
+    fail(required <= set(decisions) <= required | {'findings', 'deferred', 'no_change_reason', 'nightly_brief'},
          'Unsupported maintenance decisions')
+    recent = 'window' in record
+    fail(recent == ('nightly_brief' in decisions), 'A recent pass writes a nightly brief; other maintenance does not')
     fail(decisions['expected_model_sha256'] == model_digest(state), 'Stale model snapshot')
     selected = set(record['claim_ids']) | set(record.get('subject_ids',[]))
     fail(isinstance(decisions['model_operations'],list), 'Model operations must be a list')
@@ -238,6 +240,9 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
             fail(set(op['subject_ids']) <= selected | joined, 'Reassessment is outside the selected maintenance workset')
         else:
             fail(set(op['subject_ids']) & selected, 'Operation is outside the selected maintenance workset')
+    if recent:
+        from scripts.recent_additions import pass_scope
+        pass_scope(record, decisions['model_operations'], idx.get('claims', {}))
     after = copy.deepcopy(state)
     operations, changes = apply_operations(after, decisions['model_operations'])
     changes={path:record for path,record in changes.items() if state.get(path)!=record}
@@ -250,13 +255,26 @@ def plan_maintenance(state, maintenance_id, decisions, policy_root):
     path = f'maintenance/{maintenance_id}.yaml'
     after[path] = changes[path] = result
     validate_state(after, policy_root, require_closure=True)
+    if recent:
+        # The numbers and headings are generated here; the pass supplies only its two sections.
+        from scripts.nightly_brief import SECTIONS, brief_date, brief_path, recent_pass, render, verify
+        fail(not any(recent_pass(other) and brief_date(other) == brief_date(result)
+                     for other in idx['maintenance'].values()),
+             'A recent pass for ' + brief_date(result) + ' has completed; the next window is prepared the next night')
+        texts = decisions['nightly_brief']
+        fail(isinstance(texts, dict) and set(texts) == set(SECTIONS) and all(isinstance(v, str) for v in texts.values()),
+             'A recent pass supplies nightly_brief text for what_moved and course')
+        text = render(result, {key: value.replace('\r\n', '\n').strip() for key, value in texts.items()})
+        verify(result, text, {item['id'] for item in after.values()})  # The same check the gate applies.
+        changes[brief_path(result)] = text
     return changes
 
 
-def apply_changes(root: Path, changes: dict[str, dict]) -> None:
-    """Write validated data. Roll back already written files on ordinary I/O failure."""
+def apply_changes(root: Path, changes: dict[str, dict | str]) -> None:
+    """Write validated data and nightly briefs (text). Roll back already written files on ordinary I/O failure."""
     originals: dict[Path, bytes | None] = {}
-    encoded={rel:yaml.dump(value,Dumper=RecordDumper,sort_keys=False,allow_unicode=True).encode('utf-8')
+    encoded={rel:value.encode('utf-8') if isinstance(value,str) else
+             yaml.dump(value,Dumper=RecordDumper,sort_keys=False,allow_unicode=True).encode('utf-8')
              for rel,value in changes.items()}
     fail(all(len(data)<=MAX_FILE_BYTES for data in encoded.values()), 'Planned record exceeds the 10 MiB file limit')
     try:
