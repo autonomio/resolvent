@@ -1172,10 +1172,10 @@
       "sha256": "bd56bda925c69e97ec87623dc5ab84ec6c097c97a445569c29c4ce2c7972e7f1"
     },
     "tests/test_recent_maintenance.py": {
-      "bytes": 34547,
-      "git_blob": "f48ac03fb920a11fe68cb1f9565f340b135be8a9",
+      "bytes": 36369,
+      "git_blob": "303be827eb2fe357862ba5cd24fae50208a0a907",
       "mode": "100644",
-      "sha256": "b7593fbc395a5bb601e23d97221c3a9ca3d5c2ce427e0cd90c32387ab1373481"
+      "sha256": "1a9a1444cdd81d227189781e8518e13aee55bbb6b9dd376d22781735d9f91e43"
     },
     "tests/test_release_asset_recovery.py": {
       "bytes": 2007,
