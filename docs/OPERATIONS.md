@@ -454,6 +454,91 @@ member IDs and legacy states, and expose differing assessments as disputed.
 Every original record remains directly addressable. The representative can change
 when members join; use an original member ID as the stable group address.
 
+### Per-question research-state export
+
+`Knowledge.research_state(reference, repository=..., reference_pointer=None)` and
+the `research-state` CLI expose portable schema 1.0 in
+`docs/schemas/research-state.schema.json`. Use a closed package built from the
+selected admitted/reviewed revision. Package validation checks structure; it does
+not certify maintainer approval. The repository identity is supplied by the caller
+from its selected destination, not guessed from the package or an external page.
+
+```sh
+python scripts/query_knowledge.py --package .resolvent/knowledge research-state Q-<id> --repository owner/world
+python scripts/query_knowledge.py --package .resolvent/knowledge research-state external-question-9 --repository owner/world --reference-pointer /method_metadata/external/question --source-repo . --complete > .resolvent/research-state.json
+```
+
+For an external question without a Q record, supply the JSON pointer to its
+existing reference in preserved RUN submissions. Matching is exact and includes
+all matching submissions at the pinned revision. The pointer is a local field
+address, never a URL to fetch. For example, a producer that already stored a
+reference under `method_metadata.portal_context.question_ref` can select
+`/method_metadata/portal_context/question_ref`; no Portal service is needed or
+consulted. An absent reference fails instead of inventing a question binding.
+Each preserved brief's question text remains separately attributed.
+
+`--source-repo` (Python `source_repo=Path(...)`) optionally reads the original RUN
+JSON from the package's exact Git commit using the existing local object reader.
+It disables replacement objects and lazy fetching, verifies each original blob
+against the package's input-file hash and requires equal compiled JSON values.
+This preserves the original object-field order for producer checksums that cover
+embedded JSON strings. Compiled values alone normalize field order and can make
+those checksums unverifiable; without original objects that coverage stays unknown.
+No selected-revision code is executed and no source, URI or missing object is fetched.
+
+The continuation view exposes native `claims`, `evidence`, `sources`, `graph`
+and `questions` arrays, with original IDs, source passages and current assessment
+views. Selection retains only the question's admitted claims and their complete
+evidence/premise/source support chains. Context supplies relationships within
+those claims. Other graph neighbours and unused producer sources are omitted
+explicitly. No relevance or new contradiction is inferred.
+
+`references` contains publication identities and recorded discovery, citation,
+retrieval and review stages. `reviewed_papers` contains only documented,
+producer-selected core/supporting reviews with read-passage IDs, investigated
+sections, a substantive note and no recorded preview warning. Other review records,
+access limitations and unknown coverage stay under `review_coverage`. These are
+producer declarations; source inspection, matching hashes and citation alone do
+not establish substantive review or independent evidence. References without
+review records remain unknown, not never-reviewed.
+
+Only submissions explicitly bound to the selected question contribute paper-review
+history, contradictions, gaps, caveats and next questions. Parent-lineage metadata
+is retained as `lineage_only`; it never imports another question's paper reviews.
+`rejected_deferred_findings` preserves proposal statements, dispositions, evidence
+and source-access records separately from admitted claims. Source excerpts for
+those unadmitted proposals remain at their pinned origins rather than being copied
+into continuation context. Canonical supporting passages remain included.
+
+The existing `canary-research.json` and `canary.references` version 1 extension are
+read locally with a checked reconstruction checksum and a conservative 32 MiB
+decoding budget. No Canary installation, provider, credentials or filesystem/URL
+reference resolution is required. Missing, malformed or unsupported reports yield
+unknown coverage with pinned provenance. In producer `basis` strings, a pointer
+after a second `#` addresses the decoded embedded JSON document.
+
+Exact repeats of the selected reference, review and gap display fields share one
+display entry with every occurrence's provenance. Differing coverage and review
+notes remain separate. This compacts repeated data; it neither equates canonical
+records nor establishes independent observations. `provenance` retains submission
+and receipt IDs, paths, original input-file hashes and selected record IDs. Full
+RUN/receipt bodies, producer UI/encoding payloads, file inventories and download
+metadata are omitted. The same pinned repository objects retain those originals.
+
+Default responses use the existing passage transport: at most 32 KiB of encoded
+JSON, `text`, `total_chars`, `offset`, `next_offset`, `truncated` and a digest of
+the complete serialized view. Keep repository, selector and package fixed;
+concatenate page text by character offset, verify `state_sha256`, then parse JSON.
+`--max-bytes` can lower the transport cap to 1 KiB. `--complete` (Python
+`complete=True`) explicitly returns this complete continuation view for a local
+file or consumer. It does not include omitted archive data or remove selection
+omissions, and consumers still enforce their own input limits.
+
+Compatibility: this adds a local core read only. The compiled package format,
+submission protocol, canonical admission and generic plugin's existing operations
+are unchanged. The public workflow MCP still receives no repository data or chat
+content. No plugin ZIP, manifest or live-workflow release is needed.
+
 To accompany admission, add `expected_model_sha256` from the reader and a
 `model_operations` list to the existing decisions. Local operation IDs match
 `[a-z][a-z0-9_-]{0,63}` and are unique within the receipt. Each decision supplies

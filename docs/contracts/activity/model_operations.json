@@ -1,19 +1,21 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "kind": "model_tooling",
   "authority": "Externally supplied model judgments through existing independently reviewed PRs",
   "input_protocol": "1.2 unchanged",
-  "formats": {"query": "1.1", "admission_closure": "1.1", "maintenance": "1.2"},
+  "formats": {"query": "1.1", "research_state": "1.0", "admission_closure": "1.1", "maintenance": "1.2"},
   "read_interface": "scripts/query_knowledge.py: Knowledge and local CLI",
   "reads": {
     "candidates": "Keyword-overlap candidates or paginated enumeration by canonical kind; selection reasons, never semantic identity",
     "context": "Record/group neighbourhood cards for comparison, linkage or reassessment; no behavior execution",
+    "research_state": "Portable question neighbourhood, support chains and preserved producer review history; default byte-bounded JSON text pages, explicit complete export",
     "passage": "Native text field or complete record/operation JSON in byte-bounded character ranges",
     "assessments": "Immutable supplied grades and reassessments, with explicit current result",
     "changes": "Canonical changes between pinned packages plus new model operations",
     "lineage": "Existing source/evidence lineage cues as paginated cards; lineage-flag expands members"
   },
   "read_bounds": {"default_items": 20, "maximum_items": 100, "maximum_bytes": 32768, "continuation": "next_offset at the same pinned build"},
+  "research_state_interface": {"schema": "docs/schemas/research-state.schema.json", "selector": "canonical Q ID, or exact preserved external reference plus submission JSON pointer", "repository": "caller-supplied selected repository identity", "pagination": "character offsets in serialized portable JSON; same build, selection and state_sha256", "complete": "explicit local full object; no pagination cap", "research_validity": "preserved producer declarations only; missing or unsupported coverage is unknown"},
   "write_interface": "scripts/world_control.py RUN-ID-or-M-ID --decisions FILE [--apply]; default dry run",
   "common_supplied_fields": ["id", "kind", "subject_ids", "basis_ids", "reason"],
   "operation_fields": {

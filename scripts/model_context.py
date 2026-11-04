@@ -123,11 +123,22 @@ def passage(knowledge, record_id, *, field=None, offset=0, max_bytes=MAX_BYTES):
         text = record.get(field)
         if not isinstance(text,str):
             raise Invalid('Passage field must be a native text field')
+    return text_page(knowledge, 'passage', text, offset=offset, max_bytes=max_bytes,
+                     record_id=record_id, field=field)
+
+
+def text_page(knowledge, operation, text, *, offset=0, max_bytes=MAX_BYTES, include_truncated=False, **metadata):
+    """The shared character-range transport for native records and portable exports."""
+    from scripts.query_knowledge import bound
+    bound(offset,0,2**63-1,'offset');bound(max_bytes,1024,MAX_BYTES,'max_bytes')
     end = min(len(text),offset+max_bytes)
     def response(end):
-        return knowledge.envelope('passage',record_id=record_id,field=field,offset=offset,
+        result = knowledge.envelope(operation,**metadata,offset=offset,
                                   total_chars=len(text),next_offset=end if end<len(text) else None,
                                   text=text[offset:end])
+        if include_truncated:
+            result['truncated'] = end < len(text)
+        return result
     low, high = offset, max(offset,end)
     while low<high:
         middle=(low+high+1)//2
