@@ -144,13 +144,39 @@ class ResearchStateTests(unittest.TestCase):
         self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'unknown')
 
     def test_unknown_artifact_reports_unknown_coverage_and_identifies_the_original(self):
-        for content in ('not JSON', '{"references":{},"reviewed_papers":[]}'):
+        for content in ('not JSON', '{}', '{"references":[]}', '{"reviewed_papers":[]}', '{"references":{},"reviewed_papers":[]}'):
             p = proposal(); p['result']['artifacts'][0]['content'] = content
             q = self.query(admitted(p)); result = self.export(q)
             self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'unknown')
             path = f"input-artefacts/{p['id']}.json"
             self.assertEqual(result['provenance']['submissions'][0]['path'], path)
             self.assertEqual(result['provenance']['submissions'][0]['sha256'], q.input_hashes[path])
+
+    def test_invalid_plain_numbers_and_unicode_fall_back_without_breaking_the_export(self):
+        for content in ('{"references":[],"reviewed_papers":[],"gaps":[1e999]}',
+                        '{"references":[],"reviewed_papers":[],"gaps":["\\ud800"]}'):
+            p = proposal(); p['result']['artifacts'][0]['content'] = content
+            result = self.export(self.query(admitted(p)))
+            self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'unknown')
+            json_bytes(result)  # Still finite, valid UTF-8 JSON.
+        p = proposal(); p['result']['artifacts'][0]['content'] = '{"references":[],"reviewed_papers":[]}'
+        self.assertEqual(self.export(self.query(admitted(p)))['review_coverage']['submissions'][0]['status'], 'preserved_producer_report')
+
+    def test_external_question_closes_existing_claim_links_like_the_q_selector(self):
+        parent = proposal(); parent['method_metadata']['external']['question'] = 'older-question'
+        state = admitted(parent)
+        cid = canonical_id(parent['id'], 'claims', 'c1')
+        child = proposal('2'); child['claims'] = []
+        child['handoff']['no_claims_reason'] = 'Question-only follow-up.'
+        child['questions'] = [{'id': 'q1', 'question': 'Which prior finding applies?', 'claim_ids': [cid]}]
+        state.update(state_for(child)); state.update(plan_admission(state, child['id'], decisions(child), ROOT))
+        q = self.query(state); external = self.export(q)
+        qid = canonical_id(child['id'], 'questions', 'q1')
+        canonical = q.research_state(qid, repository='example/world', complete=True)
+        for kind in ('claims', 'evidence', 'sources'):
+            self.assertEqual(records(external, kind), records(canonical, kind))
+        self.assertIn(cid, records(external, 'claims'))
+        self.assertIn(cid, external['assessments'])
 
     def test_unlinked_world_data_is_omitted_with_an_explicit_scope(self):
         state = admitted(proposal()); p = contribution(token='3'*32)
@@ -247,8 +273,15 @@ class ResearchStateTests(unittest.TestCase):
             p['method_metadata']['canary_encoding'] = {'format':'canary.references','version':1,'values':[token],
                 'artifacts':[{'index':0,'name':'canary-research.json','style':'default'}], 'view':False,'sha256':'0'*64}
             with self.assertRaises(ValueError): research_artifact(p)
+        p = proposal(); original = p['result']['artifacts'][0]['content']
+        checksum = hashlib.sha256(json.dumps({'artifacts': [original]}, ensure_ascii=False,
+            sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        p['method_metadata']['canary_encoding'] = {'format': 'canary.references', 'version': 1,
+            'values': [], 'artifacts': [{'index': 0, 'name': 'canary-research.json', 'style': 'default'}],
+            'view': False, 'sha256': checksum}
+        self.assertEqual(research_artifact(p)[1], research())
         with patch('scripts.research_state.MAX_EXPANDED_BYTES', 10):
-            with self.assertRaises(ValueError): research_artifact(p)
+            with self.assertRaisesRegex(ValueError, 'expansion exceeds'): research_artifact(p)
 
     def test_encoded_values_literals_numbers_ordered_objects_and_native_arrays(self):
         p = proposal()

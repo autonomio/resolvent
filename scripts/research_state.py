@@ -139,6 +139,7 @@ def research_artifact(run):
             result = parse(artifact['content'])  # The selected artifact was not reference encoded.
     if not isinstance(result, dict):
         raise ValueError('Preserved research artifact must be an object')
+    json_bytes(result)  # Reject non-finite numbers and invalid UTF-8 before the per-run fallback ends.
     return index, result
 
 
@@ -190,6 +191,8 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
         if not direct_runs:
             raise Invalid('No preserved submission matches this exact external question reference')
         selection_kind = 'persisted_external_reference'
+    for qid in sorted(selected.intersection(knowledge.records['questions'])):
+        selected.update(context_ids(knowledge, qid))
     # Retain relationships within the question's claims, rather than importing
     # other questions through graph neighbours. Premise support still closes below.
     seed_claims = selected.intersection(knowledge.records['claims'])
@@ -207,7 +210,9 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
         identity = pending.pop()
         kind, record = knowledge.by_id[identity]
         linked = set(knowledge.groups[identity])
-        if kind == 'claims':
+        if kind == 'questions':
+            linked.update(record['claim_ids'])
+        elif kind == 'claims':
             linked.update(record['evidence_ids'])
         elif kind == 'evidence':
             linked.update(record['premise_claim_ids'])
@@ -264,8 +269,8 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
             anchor = runs[rid][0] + '#/result/artifacts/' + str(index) + '/content'
             if rid in direct_runs and isinstance(artifact.get('question'), str) and artifact['question']:
                 question_texts.append({'id': rid, 'text': artifact['question'], 'basis': anchor + '#/question'})
-            references = artifact.get('references', [])
-            reviews = artifact.get('reviewed_papers', [])
+            references = artifact['references']
+            reviews = artifact['reviewed_papers']
             if (not isinstance(references, list) or not all(isinstance(r, dict) for r in references)
                     or not isinstance(reviews, list) or not all(isinstance(r, dict) for r in reviews)):
                 raise ValueError('Invalid publication coverage arrays')
