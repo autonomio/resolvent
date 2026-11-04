@@ -16,6 +16,15 @@ and branch deletion. Restrict new governance changes to human maintainer review.
 Owner-enrolled exact upstream core copies use the upstream approval and automated
 destination verification described in `docs/CORE_UPDATES.md`; they do not add a
 per-fork human review requirement or bypass repository protections.
+A world that opts in with `verified_contributions: true` in `resolvent.yaml`, through
+a governance PR, admits verified contributions mechanically, and they merge without
+review (see `docs/AGENT_JOBS.md`). To allow that, let the identity that merges them do
+so without an approving review, for example with a pull-request-only ruleset bypass.
+Keep the required checks and an up-to-date branch for every PR, and keep review
+required for everyone else. CI checks a receipt against the statements it covers; it
+does not authenticate the producer. Opt in only for a producer the world trusts, and
+let the bypass identity merge only that producer's verified contribution PRs.
+Without the opt-in, nothing changes.
 
 The bootstrap owner may initialize an empty repository with the template files.
 Subsequent research and maintenance changes use PRs. No sample research is merged.
@@ -649,3 +658,22 @@ claim whose uncertainty falls must cite independent inspected evidence of the me
 claims. When one member cannot hold `low`, give it its own reassessment and outcome.
 The writer and PR delta validation apply the same rule. Equal-grade merges, and
 merges without producer reviews, keep the existing behaviour.
+
+### Verified contributions
+
+Core 1.5.0 / compiler 1.6.0 adds an opt-in mechanical admission for
+`source_material` contributions with a version 1 `method_metadata.verification`
+receipt, such as a connector v4 bundle. A world turns it on with
+`verified_contributions: true` in `resolvent.yaml`; it is off by default. With it
+off, the writer refuses `--verified` and CI adds no check.
+
+`world_control.py RUN-ID --verified [--apply]` takes no decisions file. The writer
+checks that each candidate has a supported final verdict, for the producer claim
+mapped to it, bound to its exact statement's SHA-256, and that withheld claims stay
+out. It accepts every candidate with the recorded verdict as its reason, keeps each
+exported grade, defers relationships to existing claims to maintenance, and writes
+an ordinary closure 1.0. With the opt-in on in the base branch's `resolvent.yaml`,
+PR delta validation recomputes the admission on the actual base and fails unless
+the delta is exactly that result, so an agent closure, an edited record or a stale
+base cannot pass as mechanical. Contributions without a receipt, and closures
+already merged, are unaffected.
