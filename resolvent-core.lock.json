@@ -1,5 +1,5 @@
 {
-  "core_version": "1.6.0",
+  "core_version": "1.6.1",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -728,10 +728,10 @@
       "sha256": "868c9725e21daf544b289a60aed94b3a5065a13093db830c7cc4913f20688f1b"
     },
     "scripts/model.py": {
-      "bytes": 27231,
-      "git_blob": "53aef4dfe0b509ff19d529c21249197e775c5cde",
+      "bytes": 28845,
+      "git_blob": "0fe2a81ec50734aaac36ff3720ce2c7a13a3c651",
       "mode": "100644",
-      "sha256": "29f2023583b07e675cee35c217eadcb85ccb039d2dfd003210e93c3f2b7dc58d"
+      "sha256": "301e837b89982794729f9f0f8f111f12da08bd0e6f23aa0c5f25af22022ee45e"
     },
     "scripts/model_context.py": {
       "bytes": 9723,
@@ -1142,10 +1142,10 @@
       "sha256": "636cd35d1e92708456c4f1c1357a88ae377d8bcd15d657239c18c9774408d8ca"
     },
     "tests/test_model.py": {
-      "bytes": 14139,
-      "git_blob": "17fbdae0525baeecff14728b727cf8ca99f68e97",
+      "bytes": 16705,
+      "git_blob": "c5d4c719b49b84fb77e30d4019385d69071c04b4",
       "mode": "100644",
-      "sha256": "948e6a0ca3d5fa2fd5e6c44326f897cfc3b61d7438391ef51613290f0968c21f"
+      "sha256": "a7b38bee0327b6a45fa79469ba3749049e7bf6f28856a81cd7ce52244abd1fbc"
     },
     "tests/test_model_operations.py": {
       "bytes": 27025,

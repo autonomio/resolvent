@@ -1,11 +1,15 @@
 """Synthetic software fixtures only; never seed claims for a real world model."""
 from __future__ import annotations
-import copy,json,sys,tempfile,unittest
+import copy,json,subprocess,sys,tempfile,unittest
 from pathlib import Path
+from unittest import mock
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT))
+from scripts import model
 from scripts.model import Invalid,load_state,read_data,validate_delta,validate_state
 from scripts.world_control import apply_changes,canonical_id,plan_admission
+# libyaml is None only where PyYAML was built without it.
+PARSERS={'libyaml':model.LibyamlLoader,'pure Python':model.PythonLoader}
 
 def contribution(method='research',token='1'*32):
  p={'schema_version':'1.0','id':'RUN-'+token,'input_method':method,'created_at':'2026-01-01T12:00:00Z',
@@ -147,14 +151,46 @@ class ModelTests(unittest.TestCase):
      'reviewed_claim_ids':[],'touched_files':[],'findings':[],'deferred':[],'no_change_reason':None};s[f'maintenance/{mid}.yaml']=m
   with self.assertRaisesRegex(Invalid,'Awaiting maintenance'):validate_state(s,ROOT,True)
   m.update(status='completed',reviewed_claim_ids=[cid],no_change_reason='No justified change in test.');validate_state(s,ROOT,True)
- def test_duplicate_keys(self):
+ def test_strict_yaml_rules_on_both_parsers(self):
+  cases={'id: first\nid: second\n':'Duplicate mapping key','1: one\n':'keys must be strings',
+         'a: &ref [1]\nb: *ref\n':'anchors and aliases','a: &unused 1\n':'anchors and aliases','b: *undefined\n':'anchors and aliases'}
   with tempfile.TemporaryDirectory() as d:
-   p=Path(d)/'bad.yaml';p.write_text('id: first\nid: second\n')
-   with self.assertRaisesRegex(Invalid,'Duplicate mapping key'):read_data(p)
- def test_yaml_aliases(self):
+   p=Path(d)/'record.yaml'
+   for parser,loader in PARSERS.items():
+    with self.subTest(parser=parser),mock.patch.object(model,'StrictLoader',loader):
+     if loader is None:self.skipTest('PyYAML was built without libyaml')
+     for text,error in cases.items():
+      with self.subTest(text=text):
+       p.write_text(text)
+       with self.assertRaisesRegex(Invalid,error):read_data(p)
+     # Timestamps stay text; the schemas validate explicit date/time strings.
+     p.write_text('created_at: 2026-01-01T12:00:00Z\ndate: 2026-01-01\n')
+     self.assertEqual(read_data(p),{'created_at':'2026-01-01T12:00:00Z','date':'2026-01-01'})
+ def test_both_parsers_read_written_records_identically(self):
+  record={'id':'C-'+'1'*32,'statement':'Line one\nline two: still text # not a comment','dates':['2026-01-01','2026-01-01T12:00:00Z'],
+          'words':['yes','No','on','null','~','','0x1F','1e3','.inf','007',' padded ','tab\there','é 中文 \U0001f600','x '*60],
+          'number':7,'ratio':0.25,'flag':True,'missing':None,'nested':{'list':[{'empty':[]},{}]}}
   with tempfile.TemporaryDirectory() as d:
-   p=Path(d)/'bad.yaml';p.write_text('a: &ref [1]\nb: *ref\n')
-   with self.assertRaisesRegex(Invalid,'anchors and aliases'):read_data(p)
+   apply_changes(Path(d),{'claims/record.yaml':record})
+   for parser,loader in PARSERS.items():
+    with self.subTest(parser=parser),mock.patch.object(model,'StrictLoader',loader):
+     if loader is None:self.skipTest('PyYAML was built without libyaml')
+     self.assertEqual(read_data(Path(d)/'claims/record.yaml'),record)
+ def test_each_yaml_file_is_parsed_once(self):
+  self.assertIs(model.StrictLoader,model.LibyamlLoader or model.PythonLoader)
+  parses=[]
+  class Counted(model.StrictLoader):
+   def __init__(self,stream):parses.append(stream);super().__init__(stream)
+  with tempfile.TemporaryDirectory() as d:
+   p=Path(d)/'claims/record.yaml';p.parent.mkdir();p.write_text('id: x\n')
+   with mock.patch.object(model,'StrictLoader',Counted),mock.patch('yaml.scan',side_effect=AssertionError('second parse')):
+    self.assertEqual(load_state(Path(d)),{'claims/record.yaml':{'id':'x'}})
+  self.assertEqual(parses,['id: x\n'])
+ def test_pure_python_parser_without_libyaml(self):
+  code=("import sys;sys.modules['yaml._yaml']=None;sys.path.insert(0,sys.argv[1]);import yaml;from scripts import model;"
+        "print(yaml.__with_libyaml__,model.LibyamlLoader,model.StrictLoader is model.PythonLoader)")
+  run=subprocess.run([sys.executable,'-c',code,str(ROOT)],capture_output=True,text=True,check=True)
+  self.assertEqual(run.stdout.split(),['False','None','True'])
  def test_nonfinite_json(self):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d)/'bad.json';p.write_text('{"x":NaN}')
