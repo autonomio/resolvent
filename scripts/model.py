@@ -27,8 +27,24 @@ class Invalid(ValueError):
     """A contribution or world model violates an executable rule."""
 
 
-class StrictLoader(yaml.SafeLoader):
-    pass
+class StrictRules(yaml.composer.Composer, yaml.constructor.SafeConstructor, yaml.resolver.Resolver):
+    """The YAML rules, applied in Python to the events of either parser below.
+
+    Nodes are composed here rather than in libyaml, so the rules see every anchor and alias on both parsers.
+    """
+
+    def __init__(self) -> None:
+        yaml.composer.Composer.__init__(self)
+        yaml.constructor.SafeConstructor.__init__(self)
+        yaml.resolver.Resolver.__init__(self)
+
+    def compose_node(self, parent: yaml.Node | None, index: Any) -> yaml.Node:
+        # Reject YAML anchors and aliases to keep data finite and reviewable.
+        event = self.peek_event()
+        if isinstance(event, yaml.AliasEvent) or event.anchor is not None:
+            raise yaml.composer.ComposerError(None, None, "YAML anchors and aliases are not supported",
+                                              event.start_mark)
+        return super().compose_node(parent, index)
 
 
 def unique_pairs(pairs: list[tuple[str, Any]]) -> dict:
@@ -42,16 +58,41 @@ def unique_pairs(pairs: list[tuple[str, Any]]) -> dict:
     return result
 
 
-def construct_mapping(loader: StrictLoader, node: yaml.MappingNode) -> dict:
+def construct_mapping(loader: StrictRules, node: yaml.MappingNode) -> dict:
     return unique_pairs([(loader.construct_object(k), loader.construct_object(v)) for k, v in node.value])
 
 
-StrictLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping)
+StrictRules.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping)
 # Preserve dates as text; the schemas validate explicit date/time strings.
-StrictLoader.yaml_implicit_resolvers = {
+StrictRules.yaml_implicit_resolvers = {
     k: [(tag, rx) for tag, rx in values if tag != "tag:yaml.org,2002:timestamp"]
-    for k, values in StrictLoader.yaml_implicit_resolvers.items()
+    for k, values in StrictRules.yaml_implicit_resolvers.items()
 }
+
+
+class PythonLoader(yaml.reader.Reader, yaml.scanner.Scanner, yaml.parser.Parser, StrictRules):
+    """The strict rules on PyYAML's pure-Python parser."""
+
+    def __init__(self, stream: str) -> None:
+        yaml.reader.Reader.__init__(self, stream)
+        yaml.scanner.Scanner.__init__(self)
+        yaml.parser.Parser.__init__(self)
+        StrictRules.__init__(self)
+
+
+if yaml.__with_libyaml__:
+    class LibyamlLoader(StrictRules, yaml.cyaml.CParser):
+        """The same rules on libyaml, which scans and parses in C."""
+
+        def __init__(self, stream: str) -> None:
+            yaml.cyaml.CParser.__init__(self, stream)
+            StrictRules.__init__(self)
+else:
+    LibyamlLoader = None
+
+# libyaml where PyYAML was built with it, otherwise the pure-Python parser. Their known differences are in
+# syntax the writer never emits: libyaml accepts a tab inside a plain scalar and rejects an escaped surrogate pair.
+StrictLoader = LibyamlLoader or PythonLoader
 
 
 def read_data(path: Path) -> dict:
@@ -65,9 +106,6 @@ def read_data(path: Path) -> dict:
             value = json.loads(raw, object_pairs_hook=unique_pairs,
                                parse_constant=lambda x: (_ for _ in ()).throw(Invalid(f"Non-finite number: {x}")))
         else:
-            # Reject YAML aliases/anchors to keep data finite and reviewable.
-            if any(isinstance(t, (yaml.tokens.AnchorToken, yaml.tokens.AliasToken)) for t in yaml.scan(raw)):
-                raise Invalid(f"YAML anchors and aliases are not supported: {path}")
             value = yaml.load(raw, Loader=StrictLoader)
     except (json.JSONDecodeError, yaml.YAMLError, UnicodeError) as exc:
         raise Invalid(f"Cannot parse {path}: {exc}") from exc
