@@ -1,6 +1,6 @@
 """Synthetic software fixtures only; never seed claims for a real world model."""
 from __future__ import annotations
-import copy,json,subprocess,sys,tempfile,unittest
+import copy,hashlib,json,subprocess,sys,tempfile,tracemalloc,unittest
 from pathlib import Path
 from unittest import mock
 ROOT=Path(__file__).resolve().parent.parent
@@ -208,6 +208,53 @@ class ModelTests(unittest.TestCase):
    base,root=Path(a),Path(b);s=admitted();write_state(base,s);write_state(root,s);path=next(k for k in s if k.startswith('claims/'))
    s[path]['uncertainty']='medium';write_state(root,{path:s[path]})
    with self.assertRaisesRegex(Invalid,'Unrecorded'):validate_delta(root,base,s)
+ def test_a_delta_holds_digests_and_parses_only_the_base_files_it_changes(self):
+  # 24 admitted runs with 128 KiB excerpts. The delta admits a run restating the first claim, so it adds files
+  # and updates that one base claim.
+  base={}
+  for i in range(24):
+   p=contribution(token=f'{i:032x}');p['claims'][0]['statement']=f'The synthetic fixture value {i} is 7.'
+   p['sources'][0]['excerpt']='Synthetic excerpt text.'+' Synthetic excerpt text.'*5500;base.update(admitted(p))
+  p=contribution(token='f'*32);p['claims'][0]['statement']='The synthetic fixture value 0 is 7.'
+  head=copy.deepcopy(base);head.update(state_for(p));head.update(plan_admission(head,p['id'],decisions(p),ROOT))
+  claim='claims/'+canonical_id('RUN-'+'0'*32,'claims','c1')+'.yaml'
+  self.assertNotEqual(base[claim],head[claim])
+  with tempfile.TemporaryDirectory() as a,tempfile.TemporaryDirectory() as b:
+   old,root=Path(a),Path(b);write_state(old,base);write_state(root,head);current=load_state(root)
+   size=sum(f.stat().st_size for f in old.rglob('*') if f.is_file())
+   validate_delta(root,old,current)  # The deferred imports happen outside the measurement.
+   with mock.patch.object(model,'read_data',wraps=model.read_data) as read:
+    tracemalloc.start()
+    try:validate_delta(root,old,current);peak=tracemalloc.get_traced_memory()[1]
+    finally:tracemalloc.stop()
+   # Of the base, only the claim the delta changed is parsed again.
+   self.assertEqual([Path(c.args[0]).relative_to(old).as_posix() for c in read.call_args_list],[claim])
+   self.assertEqual(model.tracked_files(old)[claim],hashlib.sha256((old/claim).read_bytes()).digest())
+   # Holding either tree's bytes, or the base parsed, would take more than the tree itself.
+   self.assertLess(peak,size/4)
+ def test_delta_refusals_hold_without_the_trees_in_memory(self):
+  s=admitted();run,closure,claim=[next(k for k in s if k.startswith(r)) for r in ('input-artefacts/','briefs/closed/','claims/')]
+  brief='nightly-briefs/2026-01-01.md'  # Only validate_delta runs here; validate_briefs ties each brief to its pass.
+  def check(edit,merged=s):
+   with tempfile.TemporaryDirectory() as a,tempfile.TemporaryDirectory() as b:
+    base,root=Path(a),Path(b)
+    for tree,state in ((base,merged),(root,s)):write_state(tree,state);(tree/'nightly-briefs').mkdir();(tree/brief).write_text('Merged brief.\n')
+    edit(root);validate_delta(root,base,load_state(root))
+  def unchanged(root):pass
+  def reencode(root):(root/run).write_text(json.dumps(s[run],indent=4)+'\n')
+  def amend(root):write_state(root,{closure:dict(s[closure],completed_at='2026-01-02T00:00:00Z')})
+  def delete(root):(root/closure).unlink()
+  def omit(root):(root/claim).unlink()
+  def rewrite(root):(root/brief).write_text('Rewritten brief.\n')
+  def remove(root):(root/brief).unlink()
+  def add(root):(root/'nightly-briefs/2026-01-02.md').write_text('Unrequested brief.\n')
+  check(unchanged);check(unchanged,{})  # No change, and the admission as its own delta.
+  check(reencode)  # Other bytes, the same record: provenance compares records, as before.
+  for edit,merged,error in ((amend,s,'Merged provenance is immutable'),(delete,s,'Do not delete model history'),
+                            (omit,{},'not changed'),(rewrite,s,'Nightly briefs are immutable once merged'),
+                            (remove,s,'Nightly briefs are immutable once merged'),
+                            (add,s,'A nightly brief belongs to its completed recent pass')):
+   with self.subTest(edit=edit.__name__),self.assertRaisesRegex(Invalid,error):check(edit,merged)
  def test_registry(self):
   registry=read_data(ROOT/'docs/contracts/governance/contract_registry.json')
   self.assertEqual(set(registry['routes']),{'research','conversation','interview','source_material','simulation','intra_model','liminal_research'})
