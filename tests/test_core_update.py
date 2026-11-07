@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import shutil
 import tempfile
@@ -11,7 +12,7 @@ from unittest.mock import patch
 
 import yaml
 
-from scripts import core_release, core_update, signal_maintenance
+from scripts import core_merge, core_release, core_update, signal_maintenance
 from scripts.build_knowledge import json_bytes
 from scripts.model import DATA_ROOTS, Invalid, validate_state, load_state
 from test_model import ROOT, write_state
@@ -76,6 +77,41 @@ class AdapterTests(unittest.TestCase):
                         adapter('workflow','run','validate.yml')
                     self.assertIs(raised.exception,error)
                     run.assert_called_once()
+
+
+def expressions(value):
+    """Every string in a parsed workflow value that holds a GitHub expression."""
+    if isinstance(value,dict):
+        return [text for child in value.values() for text in expressions(child)]
+    if isinstance(value,list):
+        return [text for child in value for text in expressions(child)]
+    return [value] if isinstance(value,str) and '${{' in value else []
+
+
+class RunnerTests(unittest.TestCase):
+    def test_only_jobs_without_secrets_or_write_tokens_follow_resolvent_runner(self):
+        moved={}
+        for path in sorted(p for p in (ROOT/'.github/workflows').iterdir() if p.suffix in ('.yml','.yaml')):
+            workflow=yaml.load(path.read_text(),Loader=yaml.BaseLoader)
+            for key,job in workflow['jobs'].items():
+                # The core updater's rule for candidate workflows: read-only permissions and no secrets.
+                permissions=job.get('permissions',workflow.get('permissions'))
+                credentials=(not isinstance(permissions,dict) or 'secrets' in job or
+                             any(value not in ('read','none') for value in permissions.values()) or
+                             any(re.search(r'\bsecrets\b',text,re.I) for text in expressions([workflow.get('env'),job])))
+                with self.subTest(workflow=path.name,job=key):
+                    if credentials:
+                        self.assertEqual(job['runs-on'],'ubuntu-latest')  # A fresh GitHub-hosted VM per job.
+                    else:
+                        self.assertEqual(job['runs-on'],"${{ vars.RESOLVENT_RUNNER || 'ubuntu-latest' }}")
+                        moved[job['name']]=job['steps']
+        self.assertEqual(set(moved),core_merge.CHECKS)  # Required check names are unchanged.
+        for name,tools in (('World model integrity',('git',)),('Tests and skill package',('git','rsync'))):
+            with self.subTest(job=name):
+                install=moved[name][0]  # Before any checkout, and skipped while the variable is unset.
+                self.assertEqual(install.get('if'),"vars.RESOLVENT_RUNNER != ''")
+                for tool in tools:
+                    self.assertRegex(install.get('run',''),r'\b'+tool+r'\b')
 
 
 class CoreTests(unittest.TestCase):
@@ -299,7 +335,8 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(set(workflow['on']),{'schedule','workflow_dispatch','workflow_run'})
         validate=load('.github/workflows/validate.yml')['jobs']['tests']
         self.assertEqual(validate['permissions'],{'contents':'read'})
-        self.assertEqual(validate['steps'][0]['with']['persist-credentials'],'false')
+        checkouts=[step for step in validate['steps'] if step.get('uses','').startswith('actions/checkout@')]
+        self.assertEqual([step['with']['persist-credentials'] for step in checkouts],['false'])
         self.assertIn('python scripts/compiler.py --require-closure',[step.get('run') for step in validate['steps']])
         inventory=next(step for step in validate['steps'] if step.get('name')=='Verify committed core inventory')
         version=next(step for step in validate['steps'] if step.get('name')=='Require a version bump for core changes')
