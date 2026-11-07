@@ -1,5 +1,5 @@
 {
-  "core_version": "1.6.1",
+  "core_version": "1.7.0",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -86,10 +86,10 @@
       "sha256": "5555637f1b4fb7113a5f0591709540131cf50d3f1279b3e09592833f38ca2815"
     },
     ".github/workflows/validate.yml": {
-      "bytes": 4708,
-      "git_blob": "bde1fac6b0e743c0ee7d29425521c9ee4a8d1571",
+      "bytes": 5692,
+      "git_blob": "987a85f50aa6db95c84d5a1c50a3df12f11d4e50",
       "mode": "100644",
-      "sha256": "5a54c79ddb5bd0e91d8465e659ac363da9fa606db602314b5654e2dbb7fa5d40"
+      "sha256": "82a6063b443660515483bebc3d034669b59a1e091b731ac7236834eb1edb067f"
     },
     ".gitignore": {
       "bytes": 188,
@@ -452,10 +452,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 52397,
-      "git_blob": "bd179a104b740f40426932e48bda90192f993ea1",
+      "bytes": 54990,
+      "git_blob": "88118c3564719c849f763080ca0f4eb19da7c30c",
       "mode": "100644",
-      "sha256": "56bc8b8878637bc59ee200ee44f6d6aea504728f677e1afcb1385cc833752154"
+      "sha256": "a79657bc913ae8a441128dfef9635026693143c8420acc06ee7fb4f05a5e68fe"
     },
     "docs/Ontology.md": {
       "bytes": 18103,
@@ -1124,10 +1124,10 @@
       "sha256": "8f791718c2e0bd75eec557605fd3d7ac83f3f3a505bacec1c736a07e21a08414"
     },
     "tests/test_core_update.py": {
-      "bytes": 25114,
-      "git_blob": "04008d43024c7798954810b550e83277424384b3",
+      "bytes": 27776,
+      "git_blob": "aeb264214ced0dd88d0d9886f995b7301a48cf84",
       "mode": "100644",
-      "sha256": "16dd7f6295b59ab9eb0957934e6998b6f9739d2294c4cef26a76091e60eae7a0"
+      "sha256": "c7cf779c66224db6e7882e78f461e205b82294ed28e851f1e58f18eb41799731"
     },
     "tests/test_file_limits.py": {
       "bytes": 3187,

@@ -31,7 +31,8 @@ Subsequent research and maintenance changes use PRs. No sample research is merge
 
 ## CI
 
-The workflow installs pinned validation dependencies on GitHub-hosted runners.
+The workflow installs pinned validation dependencies on GitHub-hosted runners, or on
+the runner that `RESOLVENT_RUNNER` names (below).
 `World model integrity` runs trusted base-branch code against the proposed model;
 it checks exact delta coverage and fails while admission or maintenance is pending.
 `Tests and skill package` runs candidate tests without secrets or write privileges.
@@ -40,6 +41,43 @@ A separate policy job never executes contributor code with a write token.
 A workflow/code/schema change goes in its own governance PR. After approval, the
 new policy applies to future contributions. Structural green status is not semantic
 approval. External review agents need their own proper review identity/permissions.
+
+### Validation runners
+
+Set the Actions repository variable `RESOLVENT_RUNNER` to a runner label, such as
+`self-hosted`, to run both validation jobs on that runner. Each declares
+`runs-on: ${{ vars.RESOLVENT_RUNNER || 'ubuntu-latest' }}`, so unset or empty keeps
+`ubuntu-latest` and today's runs. The check names do not change, so required checks
+and core-update merges are unaffected. They are the only jobs in the workflows a world
+receives that hold no secret and no write token.
+
+Every other job holds a secret or a write token, so it stays on GitHub-hosted
+`ubuntu-latest`. Core update holds `RESOLVENT_AUTOMATION_TOKEN` and a pull-request
+write token for its copy approval. Weekly/nightly and change-signal maintenance hold
+contents, pull-request and Actions write, or `RESOLVENT_AUTOMATION_TOKEN`, to push a
+branch, open a PR and dispatch validation. The core, plugin and workflow-service
+publishers run only in `autonomio/resolvent`, with contents write, the Resend key or
+the Cloudflare deploy token. A GitHub-hosted runner is a new VM for each job. A
+self-hosted machine can outlive a job and serve other jobs, so code that a PR ran
+there, or a credential left there, could reach the next job.
+
+A named runner may be a fresh Linux VM without GitHub's preinstalled tools. Before
+its checkouts, each job installs what it uses and the runner lacks, with apt-get
+(through sudo unless the runner runs as root): Git for both jobs, which the checkouts,
+compiler, release checks and tests use, and rsync for the release-copy test.
+actions/setup-python and actions/setup-node then install Python 3.12 and Node 24, and
+pip and npm install the pinned dependencies. setup-python downloads Python only for
+the Ubuntu releases GitHub builds it for; on another Linux, put Python 3.12 in the
+runner's tool cache first. `Tests and skill package` runs the proposed head's code on
+that machine, with no secret and no write token. GitHub passes no variables to a run
+that a fork's pull request triggers, so that run stays on `ubuntu-latest`, but a
+fork's PR can edit the workflow to name any runner. GitHub therefore recommends
+self-hosted runners only for private repositories; use an ephemeral, isolated one.
+
+Compatibility: core 1.7.0 changes only this workflow, this section and a test. Existing
+worlds receive it through their normal core update and run as before until they set
+the variable. The compiler, submission protocol 1.2, plugin 1.4.1 and live workflow
+1.0.3 are unchanged, so no plugin package or live-workflow release is needed.
 
 ## Data-file size
 

@@ -17,9 +17,17 @@ concurrency:
 jobs:
   integrity:
     name: World model integrity
-    runs-on: ubuntu-latest
+    # This job holds no secret or write token, so RESOLVENT_RUNNER may name a self-hosted runner.
+    runs-on: ${{ vars.RESOLVENT_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
+      - name: Install Git on a named runner that lacks it
+        if: vars.RESOLVENT_RUNNER != ''
+        run: |
+          if ! command -v git >/dev/null; then
+            if [ "$(id -u)" = 0 ]; then sudo=; else sudo=sudo; fi
+            $sudo apt-get update && $sudo apt-get install -y git
+          fi
       - name: Check out trusted policy
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -66,11 +74,21 @@ jobs:
 
   tests:
     name: Tests and skill package
-    runs-on: ubuntu-latest
+    # This job holds no secret or write token, so RESOLVENT_RUNNER may name a self-hosted runner.
+    runs-on: ${{ vars.RESOLVENT_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
+      - name: Install Git and rsync on a named runner that lacks them
+        if: vars.RESOLVENT_RUNNER != ''
+        run: |
+          set --
+          for tool in git rsync; do command -v "$tool" >/dev/null || set -- "$@" "$tool"; done
+          if [ "$#" -gt 0 ]; then
+            if [ "$(id -u)" = 0 ]; then sudo=; else sudo=sudo; fi
+            $sudo apt-get update && $sudo apt-get install -y "$@"
+          fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
