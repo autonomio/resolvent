@@ -1,5 +1,5 @@
 {
-  "core_version": "1.7.0",
+  "core_version": "1.7.1",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -428,10 +428,10 @@
       "sha256": "9fc116d5528601c60ad9eac32e2d4b709059240408f3d3e5c8ad655880862aff"
     },
     "docs/AGENT_JOBS.md": {
-      "bytes": 18342,
-      "git_blob": "cebf61b74d6b2fed93cae14eeaf9482269dfb7eb",
+      "bytes": 18642,
+      "git_blob": "503b4d8643f0c0ba05b0af517ea9489e9dcdbbfd",
       "mode": "100644",
-      "sha256": "80d9b09437f9affcff0ab744175a35560257b3a20a1c649bebea778795856224"
+      "sha256": "111a731edefdc00d1181546507de2c4e05446c688450058d38674779e71c4025"
     },
     "docs/CLAUDE_SETUP.md": {
       "bytes": 4828,
@@ -452,10 +452,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/OPERATIONS.md": {
-      "bytes": 54990,
-      "git_blob": "88118c3564719c849f763080ca0f4eb19da7c30c",
+      "bytes": 55578,
+      "git_blob": "1ce9a40c82d8127da343725e9935183105ce3127",
       "mode": "100644",
-      "sha256": "a79657bc913ae8a441128dfef9635026693143c8420acc06ee7fb4f05a5e68fe"
+      "sha256": "1fa60e5776b97ebd081c09bd0e46ca0d474a97a6ea0b111b72362f3e7d162f54"
     },
     "docs/Ontology.md": {
       "bytes": 18103,
@@ -782,10 +782,10 @@
       "sha256": "7b867a66f0dfaa7e3208088a9573a7a5cff14ff58cf9d2e931832839b45b45f8"
     },
     "scripts/recent_additions.py": {
-      "bytes": 20743,
-      "git_blob": "3ba655cec00f0379ef9833845204628d0efa5541",
+      "bytes": 21022,
+      "git_blob": "711ab15c491d8e62192197019e820f51c3aaa5e4",
       "mode": "100644",
-      "sha256": "77cf6a723f14e178d4022ead5b50c7f7950ea5ab57144f1799d4bea44713e606"
+      "sha256": "b0189637441fbcc61a00da79172b6ee1a4d6cd81688b8de4a9158d2a69cfd4ec"
     },
     "scripts/reconcile_plugin_assets.py": {
       "bytes": 2445,
@@ -1172,10 +1172,10 @@
       "sha256": "bd56bda925c69e97ec87623dc5ab84ec6c097c97a445569c29c4ce2c7972e7f1"
     },
     "tests/test_recent_maintenance.py": {
-      "bytes": 39526,
-      "git_blob": "846775b4c672700419fd8fbf12dff9265c304e46",
+      "bytes": 43138,
+      "git_blob": "57c3f18103630ea11e8ea2dc0274e17f89369e35",
       "mode": "100644",
-      "sha256": "8660eaa9236ff18e473ab9882214f9b77955628a0cc48aa1048923defe1bd965"
+      "sha256": "ada7bb1e1a562a1d8b871b438378c852ae18db39e94649ab099a219d69a948fd"
     },
     "tests/test_release_asset_recovery.py": {
       "bytes": 2007,

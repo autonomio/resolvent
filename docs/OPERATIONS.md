@@ -607,8 +607,13 @@ checkout, fetch or worktree read happens and nothing is written.
   counts the rest.
 - `decisions`: `expected_model_sha256`, `reviewed_claim_ids` and an empty
   `nightly_brief` (`what_moved`, `course`) for the decisions file. Current
-  comparison IDs (`supersedes`), current assessments (`predecessors`) and connector
-  digests (`previous_sha256`) are in the entries, so a pass needs no other read.
+  comparison IDs (`supersedes`), current assessments (`predecessors`), connector
+  digests (`previous_sha256`) and the reviewing runs a merge cites (`basis_ids`)
+  are in the entries, so a pass needs no other read. Each added and `compare_with`
+  entry has `reviewing_run_ids`: each member of its `equivalence_group` with the IDs
+  of the runs whose `uncertainty_review` covers that member, or an empty list. A
+  merge that joins different grades cites them for every claim of the group it
+  forms, as described under reviewed merges below.
 - `shape`: the whole model as generated counts over active claims only:
   `claims`, `claims_per_question` (keyed by question reference, the smallest ID of
   a question's equivalence group), `claims_without_question`, `grade_spread`,
@@ -635,6 +640,10 @@ each brief against its pass. Submission protocol 1.2, canonical record formats,
 compiled package format 1.0 and query envelope 1.1 are unchanged. The generic plugin
 performs contributions only and never prepares or runs maintenance, and no packaged
 file changes, so no plugin package or live-workflow release is needed.
+
+Core 1.7.1 adds `reviewing_run_ids` to the added and `compare_with` entries. No other
+field changes and query envelope 1.1 is unchanged, so a reader that ignores the new
+field reads the same response as before.
 
 ### Per-question research-state export
 
