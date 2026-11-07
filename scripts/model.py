@@ -124,7 +124,13 @@ def safe_relative(path: str) -> bool:
     return not p.is_absolute() and ".." not in p.parts and "\\" not in path and bool(p.parts)
 
 
-def load_state(root: Path) -> dict[str, dict]:
+def load_state(root: Path, unchanged: dict[str, dict] | None = None) -> dict[str, dict]:
+    """Every data record under `root`, by path.
+
+    A record in `unchanged` stands for its path's file, which is then not parsed again. Pass only records parsed
+    from files with the same bytes. Every path is still walked and checked.
+    """
+    unchanged = unchanged or {}
     state: dict[str, dict] = {}
     for name in DATA_ROOTS:
         folder = root / name
@@ -139,7 +145,8 @@ def load_state(root: Path) -> dict[str, dict]:
                 continue
             if path.suffix not in (".yaml", ".json"):
                 raise Invalid(f"Unsupported data file: {path.relative_to(root)}")
-            state[path.relative_to(root).as_posix()] = read_data(path)
+            relative = path.relative_to(root).as_posix()
+            state[relative] = unchanged[relative] if relative in unchanged else read_data(path)
     return state
 
 
@@ -440,6 +447,7 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
 
 
 def tracked_files(root: Path) -> dict[str, bytes]:
+    """The SHA-256 digest of each file's bytes, by path: a digest, not the contents, so a tree costs little."""
     excluded = {".git", ".venv", "__pycache__", ".resolvent", ".pytest_cache"}
     files: dict[str, bytes] = {}
     for path in root.rglob("*"):
@@ -449,14 +457,20 @@ def tracked_files(root: Path) -> dict[str, bytes]:
         if path.is_symlink():
             raise Invalid(f"Repository symlinks are not supported: {rel}")
         if path.is_file():
-            files[rel.as_posix()] = path.read_bytes()
+            with path.open("rb") as handle:
+                files[rel.as_posix()] = hashlib.file_digest(handle, "sha256").digest()
     return files
 
 
 def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
-    old = load_state(base)
+    """Check the change from the trusted `base` checkout to `root`, whose records `current` holds.
+
+    `current` is `load_state(root)`. A base file with the same bytes as the proposed one parses to the record
+    `current` already holds, so the base state shares that record and parses only the files the change touched.
+    """
     before, after = tracked_files(base), tracked_files(root)
     changed = {p for p in set(before) | set(after) if before.get(p) != after.get(p)}
+    old = load_state(base, {p: r for p, r in current.items() if p in before and p not in changed})
     data_changes = {p for p in changed if p in current or p in old}
     # Nightly briefs are reports kept beside the data: neither model data nor governance.
     reports = {p for p in changed - data_changes if p.split("/")[0] == "nightly-briefs"}
@@ -519,4 +533,7 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
     from scripts.verified_admission import validate_verified_delta
     validate_verified_delta(base, old, current, data_changes)
     from scripts.recent_additions import verify_pass
-    verify_pass(root, old, current, data_changes, {p: (before.get(p), after.get(p)) for p in reports})
+    # The trees hold digests, so the changed nightly briefs are read here.
+    briefs = {p: ((base / p).read_bytes() if p in before else None, (root / p).read_bytes() if p in after else None)
+              for p in reports}
+    verify_pass(root, old, current, data_changes, briefs)
