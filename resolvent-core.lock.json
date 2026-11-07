@@ -1124,10 +1124,10 @@
       "sha256": "8f791718c2e0bd75eec557605fd3d7ac83f3f3a505bacec1c736a07e21a08414"
     },
     "tests/test_core_update.py": {
-      "bytes": 27457,
-      "git_blob": "cf1e7348e17b5c5ccf39a011fe7715aee59b17a3",
+      "bytes": 27776,
+      "git_blob": "aeb264214ced0dd88d0d9886f995b7301a48cf84",
       "mode": "100644",
-      "sha256": "c7348f1f2843cd4575bd2f814afa187ea2d6ddb1d321a222617ec451f3c82e9d"
+      "sha256": "c7cf779c66224db6e7882e78f461e205b82294ed28e851f1e58f18eb41799731"
     },
     "tests/test_file_limits.py": {
       "bytes": 3187,

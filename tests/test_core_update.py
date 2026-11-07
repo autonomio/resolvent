@@ -90,16 +90,21 @@ def expressions(value):
 
 class RunnerTests(unittest.TestCase):
     def test_only_jobs_without_secrets_or_write_tokens_follow_resolvent_runner(self):
+        # Only the workflows a world receives through core updates. Its own and integration workflows are not held.
+        lock=json.loads((ROOT/core_release.LOCK).read_text())
+        managed=sorted(path for path in lock['files']
+                       if path.startswith('.github/workflows/') and path.endswith(('.yml','.yaml')))
+        self.assertIn('.github/workflows/validate.yml',managed)
         moved={}
-        for path in sorted(p for p in (ROOT/'.github/workflows').iterdir() if p.suffix in ('.yml','.yaml')):
-            workflow=yaml.load(path.read_text(),Loader=yaml.BaseLoader)
+        for path in managed:
+            workflow=yaml.load((ROOT/path).read_text(),Loader=yaml.BaseLoader)
             for key,job in workflow['jobs'].items():
                 # The core updater's rule for candidate workflows: read-only permissions and no secrets.
                 permissions=job.get('permissions',workflow.get('permissions'))
                 credentials=(not isinstance(permissions,dict) or 'secrets' in job or
                              any(value not in ('read','none') for value in permissions.values()) or
                              any(re.search(r'\bsecrets\b',text,re.I) for text in expressions([workflow.get('env'),job])))
-                with self.subTest(workflow=path.name,job=key):
+                with self.subTest(workflow=path,job=key):
                     if credentials:
                         self.assertEqual(job['runs-on'],'ubuntu-latest')  # A fresh GitHub-hosted VM per job.
                     else:
