@@ -26,6 +26,7 @@ from scripts.signal_contract import signal_id
 from scripts.world_control import apply_changes, canonical_id, plan_admission, plan_maintenance
 from test_change_signals import signal
 from test_model import ROOT, contribution, decisions, state_for, write_state
+from test_uncertainty_review import existing, handoff
 
 T0, T1 = '2026-01-01T00:00:00Z', '2026-01-02T12:00:00Z'
 NIGHT1, COMPLETED = '2026-01-03T06:00:00Z', '2026-01-03T07:00:00Z'
@@ -368,6 +369,50 @@ class RecentTests(unittest.TestCase):
         with self.assertRaisesRegex(Invalid, 'reassesses only'):
             plan_maintenance(pending, record['id'], dict(decision, model_operations=[merge, dict(
                 settle, subject_ids=[X, Y, B], predecessors={X: None, Y: None, B: None})]), ROOT)
+
+    def test_each_card_gives_the_runs_a_mixed_grade_merge_cites(self):
+        # Before the window: R's run carried a producer uncertainty_review, and R shares a group with P.
+        plain, reviewed, restated = existing('medium', '3'), handoff('4'), handoff('5', 'high')
+        P, R, N = (ident(p, 'claims', 'c1') for p in (plain, reviewed, restated))
+        self.admit(plain, '2026-01-03T00:00:00Z')
+        self.admit(reviewed, '2026-01-03T01:00:00Z')
+        weekly = weekly_workset(self.repo)
+        state = self.pending(weekly)
+        grouped = {'id': 'pr', 'kind': 'comparison', 'subject_ids': [P, R], 'basis_ids': [P, R], 'outcome': 'equivalent',
+                   'supersedes': None, 'reason': 'Synthetic: the same proposition at the same grade.'}
+        changes = plan_maintenance(state, weekly['id'], dict(expected_model_sha256=model_digest(state),
+                                   model_operations=[grouped], reviewed_claim_ids=weekly['claim_ids']), ROOT)
+        write_state(self.repo, changes)
+        self.state.update(changes)
+        self.commit('2026-01-03T02:00:00Z')
+        # In the window: N, from another reviewed run, restates R at a different grade.
+        self.admit(restated, '2026-01-03T12:00:00Z')
+        record = recent_workset(self.repo, now=instant('2026-01-04T06:00:00Z'))
+        self.assertEqual(record['claim_ids'], [N])
+        query, _ = self.knowledge(record['base_commit'])
+        response = query.recent(self.repo, at=record['created_at'])
+        entry = response['added'][0]
+        cards = {card['id']: card for card in [entry] + entry['compare_with']}
+        self.assertEqual(entry['reviewing_run_ids'], {N: [restated['id']]})
+        for cid in (P, R):  # A card covers every member of its group, not only its own claim.
+            self.assertEqual(cards[cid]['reviewing_run_ids'], {P: [], R: [reviewed['id']]})
+        # From the response alone: merge N with R and settle every grade of the group the merge forms.
+        members = sorted(set(entry['equivalence_group'] + cards[R]['equivalence_group']))
+        runs = sorted({run for cid in (N, R) for ids in cards[cid]['reviewing_run_ids'].values() for run in ids})
+        evidence = entry['evidence_ids'] + cards[R]['evidence_ids']
+        merge = {'id': 'merge1', 'kind': 'comparison', 'subject_ids': [N, R], 'basis_ids': evidence, 'outcome': 'equivalent',
+                 'supersedes': None, 'reason': 'Synthetic: the same proposition, class and temporal scope.'}
+        grade = {'id': 'grade1', 'kind': 'reassessment', 'subject_ids': members, 'basis_ids': evidence + runs,
+                 'uncertainty': 'high', 'predecessors': {cid: cards[cid]['current_assessment'] for cid in members},
+                 'reason': 'Synthetic: settle the grades the merge joined, citing each reviewing run.'}
+        pending, base = self.pending(record), self.snapshot()
+        decision = dict(response['decisions'], model_operations=[merge, grade], nightly_brief=texts(record))
+        self.propose(plan_maintenance(pending, record['id'], decision, ROOT))
+        gate(self.repo, base)  # check_merges accepts it, in the writer and in the gate.
+        for run_id in runs:  # The same merge without a run the read gave is still refused.
+            uncited = dict(grade, basis_ids=[value for value in grade['basis_ids'] if value != run_id])
+            with self.subTest(uncited=run_id), self.assertRaisesRegex(Invalid, 'cites each run'):
+                plan_maintenance(pending, record['id'], dict(decision, model_operations=[merge, uncited]), ROOT)
 
     def test_a_recent_pass_reviews_every_addition_and_only_it_writes_a_brief(self):
         record, query, response = self.prepared()

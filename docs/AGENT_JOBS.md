@@ -211,7 +211,11 @@ Follow the `recent` mode of the `maintenance` contract:
   disputed until a `reassessment`. Reassess only claims of the group that a merge
   of an added claim forms in this pass, and only when that group's grades differed.
   When a merged claim carries a producer `uncertainty_review`, reassess every claim
-  of the group, as the merge rule above says.
+  of the group, as the merge rule above says. The response gives the runs that
+  reassessment's `basis_ids` cite: each added entry and each `compare_with` entry
+  has `reviewing_run_ids`, the IDs of the runs whose `uncertainty_review` covers
+  each member of its `equivalence_group`. Cite the runs of every member of the
+  group the merge forms.
 - Review every added claim: `reviewed_claim_ids` equals `claim_ids`. A pass that
   cannot finish leaves the workset pending instead of deferring claims: the window
   moves on only when a pass completes, so no addition is skipped.

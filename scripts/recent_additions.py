@@ -13,6 +13,7 @@ from scripts.build_knowledge import git
 from scripts.model import CANONICAL_ROOTS, Invalid, digest, fail, family, indexes
 from scripts.model_operations import equivalence_groups
 from scripts.temporal import point, temporal_scope
+from scripts.uncertainty_review import reviewed_claims
 
 RECORD_PATH = re.compile(r'(?:claims|evidence|sources|graph|questions|maintenance)/([CESRQM]-[0-9a-f]{32})\.yaml')
 WINDOW_FIELDS = ('start', 'previous_workset_id', 'from_revision', 'from_committed_at', 'to_committed_at', 'hours',
@@ -241,6 +242,7 @@ def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_lim
             by_pair.setdefault(frozenset(op['subject_ids']), []).append(item)
             for subject in op['subject_ids']:
                 by_claim.setdefault(subject, []).append(item)
+    reviewed = reviewed_claims(indexes(knowledge.state))  # Each claim's reviewing runs, as check_merges reads them.
     admissions = {}
     for path, item in sorted(provenance.items()):
         if family(path) == 'closure':
@@ -280,6 +282,7 @@ def recent(knowledge, repo=Path('.'), *, hours=24, at=None, to=None, overlap_lim
                 'uncertainty': claim['uncertainty'], 'state': claim['state'],
                 'evidence_ids': list(claim['evidence_ids']), 'source_ids': direct_sources(cid),
                 'question_ids': list(reverse[cid]['question_ids']), 'equivalence_group': list(groups[cid]),
+                'reviewing_run_ids': {member: sorted(reviewed.get(member, ())) for member in groups[cid]},
                 'current_assessment': knowledge.current_assessments.get(cid), 'added_in_window': cid in in_window}
 
     def between(a, b):
