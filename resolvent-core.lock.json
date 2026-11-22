@@ -1,5 +1,5 @@
 {
-  "core_version": "1.7.2",
+  "core_version": "1.7.3",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -98,10 +98,10 @@
       "sha256": "f8c88eb72a3d3f8542c59e732f45fa295504d8053116864f48a0690fa6c93600"
     },
     "AGENTS.md": {
-      "bytes": 4922,
-      "git_blob": "54ce074159a3603aba99b164549f6bec56b65a36",
+      "bytes": 5115,
+      "git_blob": "a977973aa3b753a95604b9f1e4c824810956f83f",
       "mode": "100644",
-      "sha256": "d03c17b86d1fc9d655b35659618d6ac822f0c837f41ba215d77b945e272bf160"
+      "sha256": "962cd7485bc7cebc5976a6d54a52624850013172f4f8642a20b91a16595da4f3"
     },
     "CLAUDE.md": {
       "bytes": 885,
