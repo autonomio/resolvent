@@ -150,6 +150,49 @@ proposed ontology change instead. The types can expand through governance review
 `graph/R-*.yaml` is the single canonical edge representation. No manually maintained
 TTL copy or mandatory graph database is needed. Reverse traversal is derived.
 
+## Questions and answers (schema 1.3)
+
+A question may declare an optional `space`: the finite set of answers it
+distinguishes. A `categorical` space lists at least two values. A `numeric` space
+has `low`, `high` and `step`, and may name a `unit`; `step` is the precision that
+matters for the question, and the range must span a whole number of steps. Numbers
+are plain decimal text, never binary floats. Absence of a space means the question
+is not measurable, never that every answer is admitted.
+
+Optional `focus: true` marks a question the repository is currently trying to
+resolve. It is a reviewed declaration of attention, not a statement about any claim.
+
+A claim may declare optional `answers`. Each names a `question_id`, the part of that
+question's space the claim's statement admits (`values` for a categorical space,
+`ranges` of `{low, high}` for a numeric one) and nonempty `evidence_ids` drawn from
+the same claim's evidence: the evidence that bounds the answer. A claim gives at
+most one answer per question. A range admits every cell it touches, so precision
+finer than the step adds nothing. Absence means the claim answers nothing declared.
+
+An answer restates, in the question's terms, what the existing statement already
+says. It must not be narrower than the statement and its evidence support. It does
+not establish truth or change class, uncertainty, valid time, evidence access or
+lifecycle. No field records whether one claim supports or opposes another:
+repetition, narrowing and disagreement are derived from the admitted sets
+(`docs/INFORMATION.md`). Claims that cannot all hold leave the question unresolved.
+Nothing is voted on; only a reviewed change settles it. Claims judged equivalent
+should give the same answers; the ledger reports any that do not.
+
+The compiler checks structure and references: the question exists and declares a
+space, the answer fits that space, and its evidence is the claim's own. It cannot
+check that the declaration is right.
+
+Adding or correcting an answer, adding a space to a question that had none, and
+setting `focus` are metadata-only and keep the record's ID through reviewed
+maintenance. Changing a declared space changes what every answer to it means, so it
+needs a new question ID and reviewed retirement of the old question. Retired
+questions keep their answers inspectable and are not measured.
+
+Schema 1.3 changes canonical claim and question records only. Contribution protocol
+1.2, the installed plugin and the compiled wrapper format are unchanged, so a
+contribution cannot carry these fields yet: they enter through reviewed maintenance.
+Letting contributions carry them is a separate protocol change and plugin release.
+
 ## Identity and history
 
 UUID-based global IDs avoid collisions between concurrent researchers. Each

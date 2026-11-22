@@ -23,6 +23,12 @@
         "resolved",
         "retired"
       ]
+    },
+    "space": {
+      "$ref": "#/$defs/answer_space"
+    },
+    "focus": {
+      "type": "boolean"
     }
   },
   "required": [
@@ -32,5 +38,82 @@
     "state"
   ],
   "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "decimal": {
+      "type": "string",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "answer_space": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "categorical"
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 2,
+              "uniqueItems": true
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "values"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "numeric"
+            },
+            "low": {
+              "$ref": "#/$defs/decimal"
+            },
+            "high": {
+              "$ref": "#/$defs/decimal"
+            },
+            "step": {
+              "$ref": "#/$defs/decimal"
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "low",
+            "high",
+            "step"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$comment": "Schema 1.3: optional declared answer space and focus. Legacy records remain valid."
 }

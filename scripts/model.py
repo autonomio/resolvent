@@ -14,6 +14,7 @@ from typing import Any
 
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
+from scripts.answers import validate_answers, validate_space
 from scripts.temporal import validate_temporal
 
 DATA_ROOTS = ("claims", "evidence", "sources", "graph", "questions", "input-artefacts", "briefs", "maintenance")
@@ -190,6 +191,21 @@ def check_temporal(claim: dict) -> None:
             raise Invalid(f"{claim['id']}: {exc}") from exc
 
 
+def check_answers(claim: dict, questions: dict[str, dict]) -> None:
+    try:
+        validate_answers(claim, questions)
+    except ValueError as exc:
+        raise Invalid(f"{claim['id']}: {exc}") from exc
+
+
+def check_space(question: dict) -> None:
+    if 'space' in question:
+        try:
+            validate_space(question['space'])
+        except ValueError as exc:
+            raise Invalid(f"{question['id']}: {exc}") from exc
+
+
 def check_ancestry(source: dict, known_source_ids: set[str]) -> None:
     if 'ancestry' not in source:
         return
@@ -343,6 +359,7 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
              for parent in source.get('ancestry', {}).get('parent_source_ids', [])], 'source ancestry')
     for c in claims.values():
         check_temporal(c)
+        check_answers(c, idx.get("questions", {}))
         fail(set(c["evidence_ids"]) <= set(evidence), f"{c['id']}: unresolved canonical evidence")
         no_duplicates(c["evidence_ids"], c["id"] + ".evidence_ids")
         for eid in c["evidence_ids"]:
@@ -366,6 +383,7 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
         fail(set(r["evidence_ids"]) <= set(evidence), f"{r['id']}: unresolved evidence")
     acyclic([(r["from"], r["to"]) for r in graph.values() if r["type"] == "dependency" and r["state"] == "active"], "dependency")
     for q in idx.get("questions", {}).values():
+        check_space(q)
         fail(set(q["claim_ids"]) <= set(claims), f"{q['id']}: unresolved question claim")
     submissions = idx.get("submission", {})
     closed = set()
