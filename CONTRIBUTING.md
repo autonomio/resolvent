@@ -32,8 +32,22 @@ python scripts/build_knowledge.py --revision HEAD --output .resolvent/onboarding
 python scripts/query_knowledge.py --package .resolvent/onboarding search "" --limit 5
 ```
 
-See a populated input example in the test fixtures.
-[Synthetic submission](tests/fixtures/connector-v4-verified.json)
+## Try verified admission
+
+Run this from the repository root with the Python environment from First checkout
+active. The smoke test exercises the local writer with a synthetic submission.
+
+```sh
+python -m unittest discover -s tests -p test_verified_admission.py \
+  -k test_writer_command_admits_only_where_the_world_opts_in -v
+```
+
+The test creates a disposable world, confirms the opt-in gate, then sets
+`verified_contributions: true` in that world's `resolvent.yaml`. It dry-runs and
+applies admission, validates closure, and confirms the run is already processed
+on retry. Expect one passing test with two supported claims admitted.
+[Synthetic submission](tests/fixtures/connector-v4-verified.json) ·
+[Mechanical admission](docs/AGENT_JOBS.md#mechanical-admission-of-verified-contributions)
 
 ## Find your starting point
 
