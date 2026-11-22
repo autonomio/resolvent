@@ -1,5 +1,5 @@
 {
-  "core_version": "1.7.3",
+  "core_version": "1.8.0",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -86,10 +86,10 @@
       "sha256": "5555637f1b4fb7113a5f0591709540131cf50d3f1279b3e09592833f38ca2815"
     },
     ".github/workflows/validate.yml": {
-      "bytes": 5692,
-      "git_blob": "987a85f50aa6db95c84d5a1c50a3df12f11d4e50",
+      "bytes": 6702,
+      "git_blob": "e3c3b78f87e7e3cbf8e084e6be28c38b5e549608",
       "mode": "100644",
-      "sha256": "82a6063b443660515483bebc3d034669b59a1e091b731ac7236834eb1edb067f"
+      "sha256": "99e04c716b9ca5fa1cb5afaa34e3b0df7aeea761ea9f429e7caa187661570ff5"
     },
     ".gitignore": {
       "bytes": 188,
@@ -451,6 +451,12 @@
       "mode": "100644",
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
+    "docs/INFORMATION.md": {
+      "bytes": 20275,
+      "git_blob": "78627639a94f001c858e3b4dc54cee67a7cb45e2",
+      "mode": "100644",
+      "sha256": "b0b4427f7c9d97db994852426b81d789fddd6a17a9ccd32958f379bcf758d35f"
+    },
     "docs/OPERATIONS.md": {
       "bytes": 55578,
       "git_blob": "1ce9a40c82d8127da343725e9935183105ce3127",
@@ -458,10 +464,10 @@
       "sha256": "1fa60e5776b97ebd081c09bd0e46ca0d474a97a6ea0b111b72362f3e7d162f54"
     },
     "docs/Ontology.md": {
-      "bytes": 18103,
-      "git_blob": "6b8335836bba4de9f2392639f032ef6559f4cf43",
+      "bytes": 20802,
+      "git_blob": "dca9daca837a753c1a48e47b7c9f07937c49c206",
       "mode": "100644",
-      "sha256": "678d74af8281deeeb7bc1b3a2f60ed1b0cb0aa537e0b976ac2f5a2b3b29110ab"
+      "sha256": "042d1330bf35d8de448a05b42d0210faddd9f2e7cc8df320e848a054ecf9376e"
     },
     "docs/PLUGIN_DESIGN.md": {
       "bytes": 13922,
@@ -476,10 +482,10 @@
       "sha256": "1451b0a9bfbe43e0df97a0cb58789466d101cb48e12d28e97d791591d2ff09cf"
     },
     "docs/PLUGIN_RELEASE.md": {
-      "bytes": 28415,
-      "git_blob": "78d781d3c440e2e6d760dfe42c5b5913c1e194f0",
+      "bytes": 29308,
+      "git_blob": "ab1ab4ee81513b336e232696e3d794351d81690a",
       "mode": "100644",
-      "sha256": "1c5beb0e7c0fe63772ae3421b7d1b67785e0d64af16e291cfaa000cd97633f9b"
+      "sha256": "3f936bf2628120c6218723067dc861c18a302fd7293da50b087a1788f6f788e9"
     },
     "docs/SMOKE_TEST.md": {
       "bytes": 1343,
@@ -596,10 +602,10 @@
       "sha256": "bb0436cfd1f21ed688df0ee80037241efa69133c9091909b44db99d01ff0b445"
     },
     "docs/schemas/claims.schema.json": {
-      "bytes": 3201,
-      "git_blob": "15c2067e84f58972a07fb7debdfdbeca7de8f80c",
+      "bytes": 4875,
+      "git_blob": "943448002eea782a55b430c5439730ed3dd56e54",
       "mode": "100644",
-      "sha256": "e2cda764a825c540148a12025f817265d8155caeb26249a776848513f54f042c"
+      "sha256": "0876f190d05391a2634e4493c1b7d943736ede4b3c0880d00559418b5cfbd93c"
     },
     "docs/schemas/closure.schema.json": {
       "bytes": 7478,
@@ -626,10 +632,10 @@
       "sha256": "5f34317a443dd5e94f27edfa8b3fe71f4246601dd1dbb628f9eaa6de5e942eea"
     },
     "docs/schemas/questions.schema.json": {
-      "bytes": 614,
-      "git_blob": "d5c5c05076149d4074ff44f8eedbcc9802d7d912",
+      "bytes": 2567,
+      "git_blob": "b536d61f07a5a303c2a53150e35fb09d2ec6afa8",
       "mode": "100644",
-      "sha256": "6b0bb0df9be90923bc275ec41b8302cccf043b6e2f98bee046671fce95e9fa0a"
+      "sha256": "f46b407b68df4cb69f66045ac7f5883e2e7dec7195458cc2d31e25daeed43a4c"
     },
     "docs/schemas/research-state.schema.json": {
       "bytes": 10587,
@@ -673,11 +679,17 @@
       "mode": "100644",
       "sha256": "7c07d01749c988f7072c8671af536c43d899951bd25a7217b3b9b1a783637786"
     },
-    "scripts/build_knowledge.py": {
-      "bytes": 10500,
-      "git_blob": "9a70d9de0836b6b201c627675eefb491777334f9",
+    "scripts/answers.py": {
+      "bytes": 4231,
+      "git_blob": "25ceb29cbd963e1cbdb324e55a96d10d49274999",
       "mode": "100644",
-      "sha256": "5a2ddf588eb09bb4518208c8ea7d5683cacbe94a14cdd3a0f32545613fcc6044"
+      "sha256": "0a83a7ae451e5f50fb8de27339047806ea3d963acec0acc5a46c26a671c740c2"
+    },
+    "scripts/build_knowledge.py": {
+      "bytes": 10522,
+      "git_blob": "a095088c33a81f05ab1c351e811242341ebc98ee",
+      "mode": "100644",
+      "sha256": "10aa6cddc3e585c0cff59bdc6f3a4e812fcbe7be71b58641178d107ef2518ebb"
     },
     "scripts/change_impact.py": {
       "bytes": 9351,
@@ -727,11 +739,17 @@
       "mode": "100644",
       "sha256": "868c9725e21daf544b289a60aed94b3a5065a13093db830c7cc4913f20688f1b"
     },
-    "scripts/model.py": {
-      "bytes": 30017,
-      "git_blob": "67ba0fcdd3e18acd614f03e7f83cdc620fe81181",
+    "scripts/information.py": {
+      "bytes": 54768,
+      "git_blob": "b9cb4dcc38239c0f4735d8fc765cf5274b6701ae",
       "mode": "100644",
-      "sha256": "6b9d2e1ddcfdf36082cd44ce286ff2fd033c0e56197476d9a735ee9d9a279017"
+      "sha256": "4c34b064eb7c358a932fab5ff6f25643060c887004c17477300ac1d0fce4b693"
+    },
+    "scripts/model.py": {
+      "bytes": 30587,
+      "git_blob": "90a8c785dfeb1523e1c72cb75415ef4338b20ac0",
+      "mode": "100644",
+      "sha256": "0c8f5168232cfe74cf26fc9a3be10e3647d8d206a3c77bbdc8a435ed409a3fb0"
     },
     "scripts/model_context.py": {
       "bytes": 9723,
@@ -1099,6 +1117,12 @@
       "mode": "100644",
       "sha256": "a72f90b7cb783001b1eca617894a35bd72517ef6e88ae748bac35d124da3f4ba"
     },
+    "tests/test_answers.py": {
+      "bytes": 5779,
+      "git_blob": "a58a5ddbeda262720d5d2ef4c70b9ba1b2ed078a",
+      "mode": "100644",
+      "sha256": "a6726e6caac02975a214296a366eb9568cc43c84195f3b50e08191f8c83423e6"
+    },
     "tests/test_change_impact.py": {
       "bytes": 16976,
       "git_blob": "2724e15f9185883f738ef8a7c2225f73d9424c84",
@@ -1134,6 +1158,12 @@
       "git_blob": "be955d4b09821ce648206181daf66dfdb31f748b",
       "mode": "100644",
       "sha256": "f443ccdec158e812b1c50a610d0a62614ed66deeb3cf6f7ca7f593c9848ddb80"
+    },
+    "tests/test_information.py": {
+      "bytes": 27429,
+      "git_blob": "c1d7749d92c9a090b2e3032c9db18c156bf6b605",
+      "mode": "100644",
+      "sha256": "2db783f58f676840d8f696d9cca7b15781e77929d32f56595d4e65f97f6ecfb7"
     },
     "tests/test_knowledge.py": {
       "bytes": 16111,

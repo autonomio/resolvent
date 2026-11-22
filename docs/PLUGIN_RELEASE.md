@@ -233,6 +233,18 @@ that compiled format. It changes no submission schema, admission behavior,
 installed skill, host manifest or distribution bytes. The existing plugin remains
 compatible, so this repository-only query API requires no plugin release.
 
+The information ledger (`scripts/information.py`) is a read-only report over
+canonical records, recorded model operations and completed maintenance reviews. The
+validation workflow runs it as an advisory step that cannot fail the job, holds no
+secret or write token and changes no record. Canonical schema 1.3 adds optional
+`answers` to claims and optional `space` and `focus` to questions, validated by the
+compiler through `scripts/answers.py`. Records without them remain valid.
+Contribution protocol 1.2, the bundled submission schema, admission behavior, live
+workflow references, the public workflow service, host manifests and distribution
+bytes are unchanged, so the installed plugin needs no release. A contribution cannot
+carry the new fields until a later protocol change, which needs a coordinated plugin
+release and an update to the workflow service's supported world protocols.
+
 Valid-time support changes the installed contribution protocol and shared workflow.
 Release 1.1.0 therefore synchronizes the optional 1.1 submission schema, skill,
 host manifests and both distributions. The schema evaluator remains fail-closed;
