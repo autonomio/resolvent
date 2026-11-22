@@ -1,6 +1,6 @@
 # Information ledger
 
-Status: ledger version 1.0. Advisory and read-only, implemented in
+Status: ledger version 1.2. Advisory and read-only, implemented in
 `scripts/information.py`. It runs in the validation workflow on every change and
 never blocks it.
 
@@ -90,6 +90,7 @@ Each is a test in `tests/test_information.py` and was checked on real records.
 | `gains_origin` | Existing claim gains an origin | Links, and the origin if new to the model |
 | `repeat_citation` | Existing claim gains passages, no origin | Citations only |
 | `support_withdrawn`, `support_changed` | Existing claim loses origins | Negative |
+| `origin_reidentified` | Same source records resolve to another origin | Origins and links move; no loss of standing. A step with nothing else reads `origin_identity_changed` |
 | `retired` | Claim leaves the active set | Minus its links and exclusive origins |
 | `reassessed` | Class, uncertainty or valid time changed | None |
 | `unmeasured_edit` | Statement changed | None, flagged as unmeasurable |
@@ -102,9 +103,9 @@ The step also gets one outcome label for sorting; the numbers carry the detail.
 `known_origin_share` is the fraction of the origins a step draws on that the model
 already held.
 
-A **review cue** flags a new claim sharing at least half its word set with an earlier
-claim on a shared origin, when review has not compared the pair. It is a heuristic
-pointer and never enters a total.
+A **review cue** flags a new claim whose word set overlaps an earlier claim's by at
+least half (shared words over all words in either) on a shared origin, when review
+has not compared the pair. It is a heuristic pointer and never enters a total.
 
 ## Commitment
 
@@ -129,14 +130,23 @@ Claims that cannot all hold leave what each consistent group allows.
 committed state consistent with the claims from the declared space.
 
 **Surprise** of an incoming answer is `log2(admitted before / admitted before ∩
-incoming)`. No label records agreement or disagreement; it is derived:
+incoming)`, measured against the earlier state alone. The **gain** is the difference
+between the two states for the whole step. No label records agreement or
+disagreement; the verdict is derived, in this order:
 
-| Surprise | Verdict | Effect on bits held |
+| Test | Verdict | Effect on bits held |
 |---|---|---|
-| Zero | `repeats` | None |
-| Finite | `narrows` | Gain equal to the surprise |
-| Infinite | `conflicts` | Loss; the question is flagged |
+| Shares nothing with what was admitted before (infinite surprise) | `conflicts` | Loss; the question is flagged |
 | No earlier answer | `first_answer` | Gain against the declared space |
+| Admits everything admitted before, or equals an existing answer | `repeats` | None |
+| After the step it cannot hold together with every other answer | `conflicts` | The question is flagged |
+| Otherwise | `narrows` | Gain |
+
+When the earlier state is consistent and one answer arrives, the gain equals the
+surprise. Otherwise only the state difference is exact. An answer whose question's
+space changed reads `space_changed`: cells of two spaces are never compared, and the
+gain is taken from the two states. Each answer row says whether the claim's own
+record changed or only its question did.
 
 A question may be marked `focus`; gains are reported in total, on focus and off.
 Read with the observation base, the two axes separate what a count cannot:
@@ -153,12 +163,15 @@ Read with the observation base, the two axes separate what a count cannot:
 Commitment laws, each tested:
 
 1. A repeated or weaker answer gains exactly zero, however it is worded.
-2. A consistent new answer gains exactly its surprise.
+2. One answer added to a consistent state, and consistent with it, gains exactly its
+   surprise.
 3. A contradiction has infinite surprise and lowers bits held. Two equally precise,
    disjoint answers cost exactly one bit.
 4. Nothing is voted on. Two claims against one leave the question unresolved until a
    reviewed change settles it.
-5. Bits held never exceed capacity. Digits finer than the step earn nothing.
+5. Bits held never exceed capacity. Digits finer than the step earn nothing. A
+   declaration is bounded: 40 characters per number, 64 ranges per answer, 1,024
+   values per space or answer.
 6. The state depends on which answers are active, not on their order.
 7. Step gains multiply, as exact ratios, to the final state.
 8. A model that declares no questions measures zero and stays valid.
@@ -178,11 +191,15 @@ history shows, and applies it to groups of claims, never to one.
 - since a completed maintenance record last reviewed it, or never;
 - since its newest evidence was reported, as a lower bound from source dates.
 
-**Attrition.** A *loss of standing* is a reviewed change that weakens an admitted
-claim: its uncertainty is raised, an origin is withdrawn, an answer is widened or
-withdrawn, or it leaves the active set. The ledger counts losses against two
-exposures: claim reviews and claim-days. Each rate carries a 95% interval computed
-from the two counts alone. A loss that coincides with the claim being folded into an
+**Attrition.** A *loss of standing* is a reviewed change to the claim itself that
+weakens it: its uncertainty is raised, a cited source is withdrawn along with its
+origin, its own answer is widened or removed, or it leaves the active set. A change
+to how a source is identified, or to a question, is not a loss. The ledger counts
+losses against two exposures: claim-days, and claim reviews for the losses found in
+the step that reviewed the claim. Each rate carries a 95% interval computed from the
+two counts alone. Bits lost are counted the same way: a drop on a question whose
+space changed, or that was retired, is not a loss. A committer time earlier than its
+parent's is read as its parent's, so no span is negative. A loss that coincides with the claim being folded into an
 equivalence group is counted apart, because there the repository reconciled grades
 between duplicates and nothing was observed to change.
 
@@ -199,12 +216,19 @@ instrument re-tests itself as history grows.
 
 ## Automation
 
-The validation workflow runs `information.py ci` after integrity checks, using the
-trusted base-branch code on the proposed state. It appends a short reading to the
-job summary and uploads the full reports as a seven-day artifact. The step holds no
-secret or write token, changes no record, and cannot fail the job: it continues on
-error, is time-limited, and the command itself always exits zero. A repository gets
-it with the core update and needs to change nothing.
+The validation workflow runs `information.py ci` as the last step of the integrity
+job, using the trusted base-branch code on the proposed state. It appends a short
+reading to the job summary and uploads the full reports as a seven-day artifact. The
+step holds no secret or write token, changes no record, and cannot fail the job: it
+continues on error, is time-limited, and the command itself always exits zero. The
+reading is written part by part, so a history too long to replay within the time
+allowed still leaves the ledger and the change on the page. A repository gets it
+with the core update and needs to change nothing.
+
+The ledger reads what the compiler reads: regular record files at their fixed
+paths, parsed by the compiler's own strict loader, with each ID matching its file
+name. A revision name is resolved to a commit ID before any other Git command sees
+it.
 
 ```
 python scripts/information.py --repo <world> ledger [--revision <rev>]
@@ -313,12 +337,14 @@ Every reading matched.
 - **Clocks.** Median 7.6 days since admission and 7.2 days since last review; 40
   claims never reviewed. Newest evidence reported at least 325 days earlier at the
   median, and up to 28 years; 69 claims have no dated evidence.
-- **Attrition.** 10 losses of standing in 1,483 claim reviews: 0.67% per review
-  (95% interval 0.37% to 1.24%), or 0.0018 per claim-day (0.0009 to 0.0033).
+- **Attrition.** 10 losses of standing in 5,618 claim-days: 0.0018 per claim-day
+  (95% interval 0.0009 to 0.0033). Five were found in the step that reviewed the
+  claim, among 1,483 claim reviews: 0.34% per review (0.14% to 0.79%). The other five
+  fell on claims that step did not list as reviewed.
 - **Cause that structure can see.** All 10 were uncertainty raised when the claim
-  was folded into an equivalence group. Apart from folding, no loss was observed in
-  5,618 claim-days, which bounds that rate below 0.00065 per claim-day and shows no
-  decay yet. Eleven days cannot show more.
+  was folded into an equivalence group. Apart from folding, no loss was observed,
+  which bounds that rate below 0.00065 per claim-day and shows no decay yet. Eleven
+  days cannot show more.
 - **Projection.** Over the next 7 days, 10.1 expected losses among 810 claims
   (4.8 to 18.6).
 - **Walk-forward test.** 10 of 10 daily windows fell inside the predicted range. The
@@ -342,8 +368,9 @@ Every reading matched.
 - **Currency sees only reviewed change.** It cannot tell a claim that held from one
   nobody re-examined, nor why a claim was weakened beyond what structure shows. With
   short history its intervals are wide, and no figure applies to a single claim.
-- **Replay cost** grows with history length times model size. The automation step is
-  time-limited for that reason.
+- **Replay cost** grows with history length times model size. The automation step
+  gives replay a time budget and reports the ledger and the change without it when
+  the budget runs out. A long-lived repository will need incremental replay.
 
 ## Fields, and what is deferred
 
@@ -366,7 +393,7 @@ probability is attached.
 Everything here is additive. `scripts/information.py` reads records and writes
 reports. Schema 1.3 adds optional fields to the canonical claim and question schemas
 and a compiler check (`scripts/answers.py`, fingerprinted with the other policy
-files; compiler version 1.8.0). Existing records, old revisions and compiled packages
+files; compiler version 1.8.1, which bounds the size of a declaration). Existing records, old revisions and compiled packages
 stay valid, and the compiled wrapper format stays 1.0 with native fields preserved.
 
 The submission protocol, bundled submission schema, admission behavior, live

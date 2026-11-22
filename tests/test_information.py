@@ -12,7 +12,8 @@ import unittest
 import yaml
 
 from scripts.answers import admitted_set
-from scripts.information import GROUPS, Commitment, History, Invalid, Measure, delta, ledger, origin_key
+from scripts.information import (GROUPS, Commitment, History, Invalid, Measure, bits, commitment_delta, delta, ledger,
+                                 origin_key, period_end, poisson_quantile, wilson)
 
 
 def source(sid: str, uri: str | None, *, kind='publication', title='T', **extra) -> dict:
@@ -383,6 +384,194 @@ class Currency(unittest.TestCase):
         self.assertEqual(found['attrition']['loss_per_review'], {'estimate': None, 'interval95': None})
 
 
+def repo_git(root: Path, *args: str, **env: str) -> str:
+    return subprocess.run(['git', '-C', str(root), *args], check=True, capture_output=True, text=True,
+                          env={'PATH': __import__('os').environ['PATH'], **env}).stdout.strip()
+
+
+class Hardening(unittest.TestCase):
+    """One test per defect an independent review reproduced."""
+
+    def commit(self, root: Path, message: str = 'more') -> None:
+        repo_git(root, 'add', '-A')
+        repo_git(root, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q', '--allow-empty', '-m', message)
+
+    def repo(self, temporary: str) -> Path:
+        root = Path(temporary)
+        Currency().history(root, [(0, world(), [])])
+        return root
+
+    def test_only_regular_record_files_at_their_fixed_path_are_read(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            head = repo_git(root, 'rev-parse', 'HEAD')
+            blob = repo_git(root, 'rev-parse', 'HEAD:claims/C-a.yaml')
+            # a submodule entry named like a record, and a record-like file outside its fixed path
+            repo_git(root, 'update-index', '--add', '--cacheinfo', f'160000,{head},claims/C-zz.yaml')
+            (root / 'claims' / 'nested').mkdir()
+            (root / 'claims' / 'nested' / 'C-n.yaml').write_text(yaml.safe_dump(claim('C-n', ['E-a'])), encoding='utf-8')
+            repo_git(root, 'add', 'claims/nested')
+            repo_git(root, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q', '-m', 'odd entries')
+            self.assertEqual(sorted(History(root).records('HEAD')['claims']), ['C-a', 'C-b', 'C-c'])
+            repo_git(root, 'update-index', '--add', '--cacheinfo', f'120000,{blob},claims/C-link.yaml')
+            repo_git(root, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q', '-m', 'symlink')
+            with self.assertRaisesRegex(Invalid, 'regular files'):
+                History(root).records('HEAD')
+
+    def test_record_id_must_match_its_file_name_and_revisions_cannot_be_options(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            (root / 'claims' / 'C-wrong.yaml').write_text(yaml.safe_dump(claim('C-a', ['E-a'])), encoding='utf-8')
+            self.commit(root)
+            with self.assertRaisesRegex(Invalid, 'does not match its file name'):
+                History(root).records('HEAD')
+            for revision in ('--output=/tmp/x', '-n1', ''):
+                with self.assertRaises(Invalid):
+                    History(root).records(revision)
+
+    def test_commit_subjects_with_line_separators_do_not_break_history(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            self.commit(root, 'Merge pull request #7 from fork/fix\u2028x\x0cy\x85z')
+            self.assertEqual(len(History(root).revisions('HEAD')), 2)
+            self.assertTrue(History(root).replay('HEAD')['currency']['measured'])
+
+    def test_records_parse_as_the_compiler_parses_them(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            (root / 'questions' / 'Q-d.yaml').write_text(
+                'id: Q-d\nquestion: When?\nclaim_ids: []\nstate: open\n'
+                'space:\n  kind: categorical\n  values: [2024-01-01, 2024-02-01, unknown]\n', encoding='utf-8')
+            record = yaml.safe_load((root / 'claims' / 'C-a.yaml').read_text())
+            record['answers'] = [{'question_id': 'Q-d', 'values': ['2024-01-01'], 'evidence_ids': ['E-a']}]
+            (root / 'claims' / 'C-a.yaml').write_text(yaml.safe_dump(record), encoding='utf-8')
+            self.commit(root)
+            report = ledger(History(root).records('HEAD'))['commitment']
+            self.assertEqual(report['by_question']['Q-d']['held']['ratio'], '3/1')  # dates stay text, as in the compiler
+
+    def test_a_loss_outside_any_review_is_not_a_share_of_reviews(self):
+        self.assertIsNone(wilson(11, 10))
+        self.assertIsNone(wilson(1, 0))
+        weakened = world()
+        weakened['claims']['C-a']['uncertainty'] = 'high'
+        with tempfile.TemporaryDirectory() as temporary:
+            Currency().history(Path(temporary), [(0, world(), []), (1, weakened, []), (2, weakened, [])])
+            found = History(Path(temporary)).replay('HEAD')['currency']['attrition']
+        self.assertEqual((found['losses'], found['losses_found_at_review'], found['losses_outside_review']), (1, 0, 1))
+        self.assertEqual(found['loss_per_review'], {'estimate': None, 'interval95': None})
+
+    def test_identity_and_question_changes_are_not_losses_of_standing(self):
+        digest = world()
+        digest['sources']['S-b']['ancestry'] = {'status': 'unknown', 'parent_source_ids': [], 'notes': ['n'],
+                                               'content_sha256': 'b' * 64}
+        report = delta(world(), digest)
+        self.assertEqual({row['verdict'] for row in report['claims'].values()}, {'origin_reidentified'})
+        self.assertEqual(([row['loss'] for row in report['claims'].values()], report['outcome']),
+                         ([[], []], 'origin_identity_changed'))
+        split = world()  # two passages of one document; a digest on one of them splits the origin
+        split['sources']['S-a1']['ancestry'] = {'status': 'unknown', 'parent_source_ids': [], 'notes': ['n'],
+                                                'content_sha256': 'a' * 64}
+        report = delta(world(), split)
+        self.assertEqual((report['gain']['origins'], report['outcome'], report['claims']['C-a']['loss']),
+                         (1, 'origin_identity_changed', []))
+        retired, regridded = asked(), asked()
+        retired['questions']['Q-f']['state'] = 'retired'
+        regridded['questions']['Q-n']['space'] = {**RATE, 'step': '0.5'}
+        for after in (retired, regridded):
+            report = delta(asked(), after)
+            self.assertEqual([row['loss'] for row in report['claims'].values() if row['loss']], [])
+            self.assertEqual(report['commitment']['loss']['ratio'], '1/1')  # the question changed, not the claims
+        self.assertLess(delta(asked(), retired)['commitment']['gain']['bits'], 0)  # fewer bits held, yet no loss booked
+        dropped = asked()  # the claim's own answer removed is a loss
+        del dropped['claims']['C-b']['answers']
+        self.assertEqual(delta(asked(), dropped)['claims']['C-b']['loss'], ['answer_withdrawn'])
+
+    def test_a_changed_space_is_measured_by_state_and_never_mixes_cells(self):
+        wider = asked()
+        wider['questions']['Q-f']['space'] = {'kind': 'categorical', 'values': ['yes', 'no', 'maybe', 'unknown']}
+        row = commitment_delta(asked(), wider)['questions']['Q-f']
+        self.assertEqual((row['gain']['ratio'], row['space_changed'], row['answers']['C-a']['verdict']), ('2/1', True, 'space_changed'))
+        numeric = asked()  # categorical becomes numeric and the answer is rewritten: no crash, no cell comparison
+        numeric['questions']['Q-f']['space'] = RATE
+        numeric['claims']['C-a']['answers'] = [ranges('Q-f', ('10', '20'))]
+        row = commitment_delta(asked(), numeric)['questions']['Q-f']
+        self.assertEqual((row['answers']['C-a']['verdict'], row['held_after']['ratio']), ('space_changed', '101/11'))
+
+    def test_exact_ratios_are_printed_only_while_short(self):
+        self.assertEqual(bits(Fraction(10 ** 400, 1))['ratio'], None)
+        self.assertAlmostEqual(bits(Fraction(10 ** 400, 1))['bits'], 1328.771238, places=5)
+        many = asked()
+        for number in range(2000):
+            many['questions'][f'Q-{number}'] = {'id': f'Q-{number}', 'question': '?', 'claim_ids': [], 'state': 'open', 'space': RATE}
+            many['claims']['C-a']['answers'].append(ranges(f'Q-{number}', ('40', '40.2')))
+        report = ledger(many)['commitment']
+        self.assertEqual((report['held']['ratio'], report['questions']), (None, 2002))
+        with self.assertRaises(ValueError):
+            admitted_set(RATE, ranges('Q-n', ('1' * 41, '2' * 41)))
+
+    def test_contested_answers_are_conflicts_and_a_restated_side_is_a_repeat(self):
+        four = {'kind': 'categorical', 'values': ['a', 'b', 'c', 'd']}
+        base = asked()
+        base['questions']['Q-4'] = {'id': 'Q-4', 'question': '?', 'claim_ids': [], 'state': 'open', 'space': four}
+        base['claims']['C-a']['answers'].append(values('Q-4', 'a', 'b', 'c', 'd'))
+        split = answering(answering(base, 'C-x', values('Q-4', 'a', 'b')), 'C-y', values('Q-4', 'c', 'd'))
+        row = commitment_delta(base, split)['questions']['Q-4']
+        self.assertEqual(({answer['verdict'] for answer in row['answers'].values()}, row['conflict_after']), ({'conflicts'}, True))
+        restated = answering(split, 'C-z', values('Q-4', 'a', 'b'))
+        row = commitment_delta(split, restated)['questions']['Q-4']
+        self.assertEqual((row['answers']['C-z']['verdict'], row['gain']['ratio']), ('repeats', '1/1'))
+
+    def test_statistics_hold_at_their_edges(self):
+        self.assertTrue(800 < poisson_quantile(800, 0.975) < 900)
+        self.assertTrue(700 < poisson_quantile(800, 0.025) < 800)
+        self.assertEqual(poisson_quantile(0.0, 0.975), 0)
+        self.assertEqual([period_end(text) for text in ('2024-13', '2024-00', '2024-05-00', '2024-02-30', 'soon')], [None] * 5)
+        self.assertEqual(period_end('2024-02') - period_end('2024-01'), 29)
+
+    def test_commit_times_that_run_backwards_never_give_a_negative_span(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            Currency().history(Path(temporary), [(10, world(), []), (0, world(), []), (1, world(), [])])
+            found = History(Path(temporary)).replay('HEAD')['currency']
+        self.assertEqual((found['history_days'], found['clocks_days']['since_admitted']['min']), (0.0, 0.0))
+        self.assertIsNone(found['projection']['expected_losses']['interval95'])  # no exposure, so no rate is stated
+
+    def test_declaring_answers_is_not_read_as_no_change(self):
+        before = asked()
+        del before['claims']['C-b']['answers']
+        self.assertEqual(delta(before, asked())['outcome'], 'changes_commitment')
+
+    def test_ci_reports_the_ledger_even_when_history_cannot_be_replayed_in_time(self):
+        script = Path(__file__).resolve().parents[1] / 'scripts/information.py'
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            result = subprocess.run([sys.executable, str(script), '--repo', str(root), 'ci', '--budget', '-1'],
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('| Now | 3 | 3 | 3 | 4 |', result.stdout)
+        self.assertIn('Currency: not reported for this change (history is longer than the time allowed for replay).', result.stdout)
+
+    def test_ci_still_reports_when_its_report_files_cannot_be_written(self):
+        script = Path(__file__).resolve().parents[1] / 'scripts/information.py'
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            blocked = Path(temporary) / 'claims' / 'C-a.yaml' / 'out'  # a path under a file can never be a directory
+            result = subprocess.run([sys.executable, str(script), '--repo', str(root), 'ci', '--out', str(blocked)],
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('| Now | 3 | 3 | 3 | 4 |', result.stdout)
+        self.assertIn('does not measure truth', result.stdout)
+
+    def test_ci_exits_zero_when_its_reader_goes_away(self):
+        script = Path(__file__).resolve().parents[1] / 'scripts/information.py'
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            process = subprocess.Popen([sys.executable, str(script), '--repo', str(root), 'ci'],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process.stdout.close()  # nobody reads the summary
+            self.assertEqual(process.wait(), 0)
+            process.stderr.close()
+
+
 class Replay(unittest.TestCase):
     def test_step_gains_sum_to_the_final_state_and_bytes_are_reproducible(self):
         states = [world()]
@@ -435,7 +624,9 @@ class Replay(unittest.TestCase):
 
     def test_validation_workflow_runs_the_ledger_from_trusted_code_without_blocking(self):
         workflow = (Path(__file__).resolve().parents[1] / '.github/workflows/validate.yml').read_text()
-        step = workflow.split('Report the information ledger (advisory, never blocks)')[1].split('- name: Record the exact main push range')[0]
+        step = workflow.split('Report the information ledger (advisory, never blocks)')[1].split('\n  tests:')[0]
+        # after the push-range steps, so it can never delay or pre-empt that artifact
+        self.assertLess(workflow.index('name: resolvent-push-range'), workflow.index('Report the information ledger'))
         self.assertIn('continue-on-error: true', step)
         self.assertIn('python policy/scripts/information.py --repo candidate ci', step)  # base-branch code, proposed data
         self.assertNotIn('candidate/scripts', step)

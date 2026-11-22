@@ -50,24 +50,6 @@ jobs:
         run: |
           python policy/scripts/compiler.py \
             --root candidate --policy-root policy --base policy --require-closure
-      - name: Report the information ledger (advisory, never blocks)
-        # Trusted base-branch code reads the proposed state as data. It holds no secret or write
-        # token, changes no record, and writes only this job's summary and a short-lived artifact.
-        continue-on-error: true
-        env:
-          LEDGER_BEFORE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
-        run: |
-          if [ -f policy/scripts/information.py ]; then
-            timeout 240 python policy/scripts/information.py --repo candidate ci \
-              --before "$LEDGER_BEFORE" --out "$RUNNER_TEMP/resolvent-information" >> "$GITHUB_STEP_SUMMARY" || true
-          fi
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        continue-on-error: true
-        with:
-          name: resolvent-information
-          path: ${{ runner.temp }}/resolvent-information
-          retention-days: 7
-          if-no-files-found: ignore
       - name: Record the exact main push range
         if: github.event_name == 'push'
         env:
@@ -89,6 +71,24 @@ jobs:
           path: ${{ runner.temp }}/resolvent-push-range/push-range.json
           retention-days: 7
           if-no-files-found: error
+      - name: Report the information ledger (advisory, never blocks)
+        # Trusted base-branch code reads the proposed state as data. It holds no secret or write
+        # token, changes no record, and writes only this job's summary and a short-lived artifact.
+        continue-on-error: true
+        env:
+          LEDGER_BEFORE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+        run: |
+          if [ -f policy/scripts/information.py ]; then
+            timeout 240 python policy/scripts/information.py --repo candidate ci \
+              --before "$LEDGER_BEFORE" --budget 150 --out "$RUNNER_TEMP/resolvent-information" >> "$GITHUB_STEP_SUMMARY" || true
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        continue-on-error: true
+        with:
+          name: resolvent-information
+          path: ${{ runner.temp }}/resolvent-information
+          retention-days: 7
+          if-no-files-found: ignore
 
   tests:
     name: Tests and skill package

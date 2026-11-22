@@ -168,6 +168,8 @@ question's space the claim's statement admits (`values` for a categorical space,
 the same claim's evidence: the evidence that bounds the answer. A claim gives at
 most one answer per question. A range admits every cell it touches, so precision
 finer than the step adds nothing. Absence means the claim answers nothing declared.
+A declaration stays small: at most 40 characters per number, 64 ranges per answer
+and 1,024 values per space or answer.
 
 An answer restates, in the question's terms, what the existing statement already
 says. It must not be narrower than the statement and its evidence support. It does

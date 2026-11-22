@@ -13,10 +13,13 @@ from datetime import date, datetime, timezone
 from fractions import Fraction
 import json
 import math
+import os
 from pathlib import Path
 import re
+import statistics
 import subprocess
 import sys
+import time
 from urllib.parse import urlsplit, urlunsplit
 
 import yaml
@@ -24,11 +27,14 @@ import yaml
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.answers import admitted_set, capacity, grid
+from scripts.model import MAX_FILE_BYTES, Invalid, StrictLoader, read_data
 
-LEDGER_VERSION = '1.0'
+LEDGER_VERSION = '1.2'
 GROUPS = ('claims', 'evidence', 'sources', 'graph', 'questions')
 # Closures and completed maintenance carry the repository's recorded model judgments.
 JUDGMENT_ROOTS = ('briefs/closed', 'maintenance')
+# A record's fixed location: one YAML file directly inside its folder.
+RECORD_PATH = re.compile(rb'(?:claims|evidence|sources|graph|questions|maintenance|briefs/closed)/[^/]+\.yaml')
 # A source kind fixes what sort of thing stands at the origin. It is never a quality rating.
 STRATA = {'publication': 'observational', 'web': 'observational',
           'conversation': 'testimonial', 'interview': 'testimonial',
@@ -36,12 +42,7 @@ STRATA = {'publication': 'observational', 'web': 'observational',
 STRATUM_ORDER = ('observational', 'testimonial', 'generated', 'unclassified')
 IDENTITY_BASES = ('sha256', 'uri', 'title', 'source')
 CUE_THRESHOLD = Fraction(1, 2)
-LOADER = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
 EMPTY = frozenset()
-
-
-class Invalid(ValueError):
-    pass
 
 
 def json_bytes(value: object) -> bytes:
@@ -379,9 +380,10 @@ INFINITE = 'infinite'
 
 
 def bits(ratio) -> dict:
-    """log2 of an exact ratio; the ratio is the measurement, the decimal a reading aid."""
+    """log2 of an exact ratio. The ratio is printed while it stays short; a long one is given in bits alone."""
     ratio = Fraction(ratio)
-    return {'ratio': f'{ratio.numerator}/{ratio.denominator}',
+    short = max(ratio.numerator.bit_length(), ratio.denominator.bit_length()) <= 256
+    return {'ratio': f'{ratio.numerator}/{ratio.denominator}' if short else None,
             'bits': round(math.log2(ratio.numerator) - math.log2(ratio.denominator), 6)}
 
 
@@ -432,9 +434,11 @@ class Commitment:
         self.questions = {qid: q for qid, q in records.get('questions', {}).items()
                           if q.get('space') and q.get('state', 'open') != 'retired'}
         self.answers = {qid: {} for qid in self.questions}
+        self.written = defaultdict(dict)
         self.claims = active(records.get('claims', {}))
         for claim_id, record in self.claims.items():
             for answer in record.get('answers', []):
+                self.written[answer['question_id']][claim_id] = answer
                 if answer['question_id'] in self.questions:
                     space = self.questions[answer['question_id']]['space']
                     self.answers[answer['question_id']][claim_id] = admitted_set(space, answer)
@@ -472,32 +476,53 @@ class Commitment:
 
 
 def commitment_delta(before: dict, after: dict) -> dict:
-    """Per question: bits held before and after, and how each incoming answer met the earlier state."""
+    """Per question: bits held before and after, and how each incoming answer met the earlier state.
+
+    Surprise is measured against the earlier state alone. The gain is the difference between
+    the two states for the whole step. They coincide when the earlier state is consistent and
+    one answer arrives. Cells of two different spaces are never compared with each other.
+    """
     old, new = Commitment(before), Commitment(after)
-    rows, total, focus = {}, Fraction(1), Fraction(1)
+    rows, total, focus, lost = {}, Fraction(1), Fraction(1), Fraction(1)
     verdicts = Counter()
     for qid in sorted(old.questions.keys() | new.questions.keys()):
+        asked_before, asked_after = qid in old.questions, qid in new.questions
         prior, current = old.answers.get(qid, {}), new.answers.get(qid, {})
-        if prior == current and (qid in old.questions) == (qid in new.questions):
+        same_space = asked_before and asked_after and old.questions[qid]['space'] == new.questions[qid]['space']
+        if same_space and prior == current:
             continue
         question = new.questions.get(qid) or old.questions[qid]
-        space = question['space']
-        held_before = old.held(qid) if qid in old.questions else Fraction(1)
-        held_after = new.held(qid) if qid in new.questions else Fraction(1)
+        held_before = old.held(qid) if asked_before else Fraction(1)
+        held_after = new.held(qid) if asked_after else Fraction(1)
+        families = new.states[qid]['maximal'] if asked_after else set()
+        comparable = same_space or not asked_before  # a new question has no earlier cells to mix with
         answers = {}
         for claim_id in sorted(prior.keys() | current.keys()):
             was, now = prior.get(claim_id), current.get(claim_id)
-            if was == now:
+            if comparable and was == now:
                 continue
-            row = {}
+            # 'claim' when the claim's own answer record changed; 'question' when only its question did.
+            row = {'by': 'claim' if old.written.get(qid, {}).get(claim_id) != new.written.get(qid, {}).get(claim_id)
+                   else 'question'}
             if now is None:
                 verdict = 'withdrawn'
+            elif not comparable:
+                verdict = 'space_changed'
             elif was is None:
+                space = question['space']
                 cut = surprise(space, prior, now)
                 row['surprise'] = INFINITE if cut is None else bits(cut)
-                verdict = ('first_answer' if not prior else 'conflicts' if cut is None else
-                           'repeats' if cut == 1 else 'narrows')
+                contested = len(families) > 1 and any(claim_id not in family for family in families)
+                if cut is None:
+                    verdict = 'conflicts'
+                elif not prior:
+                    verdict = 'conflicts' if contested else 'first_answer'
+                elif cut == 1 or now in prior.values():
+                    verdict = 'repeats'
+                else:
+                    verdict = 'conflicts' if contested else 'narrows'
             else:
+                space = question['space']
                 alone_before = question_state(space, {claim_id: was})['admitted']
                 alone_after = question_state(space, {claim_id: now})['admitted']
                 both = question_state(space, {0: was, 1: now})
@@ -512,14 +537,13 @@ def commitment_delta(before: dict, after: dict) -> dict:
         total *= gain
         if question.get('focus'):
             focus *= gain
+        if gain < 1 and same_space:
+            lost *= gain
         rows[qid] = {'held_before': bits(held_before), 'held_after': bits(held_after), 'gain': bits(gain),
-                     'conflict_after': qid in new.states and len(new.states[qid]['maximal']) > 1,
+                     'conflict_before': asked_before and len(old.states[qid]['maximal']) > 1,
+                     'conflict_after': asked_after and len(new.states[qid]['maximal']) > 1,
+                     'space_changed': asked_before and asked_after and not same_space,
                      'focus': bool(question.get('focus')), 'answers': answers}
-    lost = Fraction(1)
-    for row in rows.values():
-        ratio = Fraction(row['gain']['ratio'])
-        if ratio < 1:
-            lost *= ratio
     return {'gain': bits(total), 'gain_on_focus': bits(focus), 'gain_off_focus': bits(total / focus), 'loss': bits(lost),
             'verdicts': dict(sorted(verdicts.items())), 'questions': rows}
 
@@ -552,7 +576,9 @@ def delta(before: dict, after: dict) -> dict:
         elif was and not now:
             verdict = 'retired' if claim_id in after.get('claims', {}) else 'removed'
         else:
-            verdict = ('support_changed' if gained and lost else 'gains_origin' if gained else
+            # The same source records resolving to another origin is an identity change, not a change of support.
+            verdict = ('origin_reidentified' if (gained or lost) and p_old == p_new else
+                       'support_changed' if gained and lost else 'gains_origin' if gained else
                        'support_withdrawn' if lost else 'repeat_citation' if p_new - p_old else
                        'citations_withdrawn' if p_old - p_new else None)
             changed = [field for field in MEASURED_FIELDS if r_old.get(field) != r_new.get(field)]
@@ -567,7 +593,7 @@ def delta(before: dict, after: dict) -> dict:
         loss = []
         if was and not now:
             loss.append('retired')
-        if was and now and lost:
+        if was and now and lost and p_old - p_new:
             loss.append('support_withdrawn')
         if was and now and GRADE.get(r_new.get('uncertainty'), 0) > GRADE.get(r_old.get('uncertainty'), 0):
             loss.append('uncertainty_raised')
@@ -622,7 +648,7 @@ def delta(before: dict, after: dict) -> dict:
     commitment = commitment_delta(before, after)
     for question in commitment['questions'].values():
         for claim_id, answer in question['answers'].items():
-            if answer['verdict'] in ('widened', 'withdrawn') and claim_id in new.claims:
+            if answer['verdict'] in ('widened', 'withdrawn') and answer['by'] == 'claim' and claim_id in new.claims:
                 row = rows.setdefault(claim_id, {'verdict': 'answer_changed', 'effects': [], 'loss': [], 'claims': 0,
                                                  'links': 0, 'citations': 0, 'origins_new_to_claim': 0,
                                                  'origins_new_to_model': 0, 'origins_lost_by_claim': 0,
@@ -631,7 +657,11 @@ def delta(before: dict, after: dict) -> dict:
     folded_now = {claim_id for group in equivalences for claim_id in group['claims']}
     for claim_id, row in rows.items():
         row['at_equivalence'] = claim_id in folded_now
-    if numbers['origins'] > 0:
+    identity_only = (bool(rows) and all(row['verdict'] == 'origin_reidentified' for row in rows.values())
+                     and not connector_rows and not commitment['questions'] and not equivalences)
+    if identity_only:
+        outcome = 'origin_identity_changed'
+    elif numbers['origins'] > 0:
         outcome = 'adds_origins'
     elif numbers['claims'] > 0:
         outcome = 'adds_claims_on_known_origins'
@@ -641,10 +671,14 @@ def delta(before: dict, after: dict) -> dict:
         outcome = 'loss'
     elif extra['connectors'] > 0:
         outcome = 'adds_connectors'
+    elif commitment['questions']:
+        outcome = 'changes_commitment'
     elif numbers['citations'] > 0:
         outcome = 'repeat_citations_only'
     elif equivalences:
         outcome = 'records_equivalence'
+    elif verdicts.get('origin_reidentified'):
+        outcome = 'origin_identity_changed'
     elif verdicts.get('reassessed'):
         outcome = 'reassessment_only'
     elif rows or connector_rows:
@@ -680,8 +714,8 @@ Z95 = 1.959964
 
 
 def wilson(events: int, trials: int) -> list | None:
-    """95% score interval for a proportion, from the two counts alone."""
-    if not trials:
+    """95% score interval for a proportion, from the two counts alone; None when they are not a proportion."""
+    if not trials or not 0 <= events <= trials:
         return None
     share, z2 = events / trials, Z95 * Z95
     centre, spread = share + z2 / (2 * trials), Z95 * math.sqrt(share * (1 - share) / trials + z2 / (4 * trials * trials))
@@ -697,6 +731,9 @@ def byar(events: int) -> tuple[float, float]:
 
 def poisson_quantile(mean: float, level: float) -> int:
     """Smallest count whose cumulative probability reaches the level."""
+    if mean > 500:
+        # exp(-mean) underflows long before this matters; the normal form is accurate here.
+        return max(0, math.floor(mean + statistics.NormalDist().inv_cdf(level) * math.sqrt(mean) + 0.5))
     term = total = math.exp(-mean)
     count = 0
     while total < level and count < 100000:
@@ -712,6 +749,8 @@ def period_end(text) -> int | None:
     if not match:
         return None
     year, month, day = (int(part) if part else None for part in match.groups())
+    if year < 1 or (month is not None and not 1 <= month <= 12) or (day is not None and day < 1):
+        return None
     try:
         if day:
             return date(year, month, day).toordinal()
@@ -766,6 +805,7 @@ def currency(timeline: list[dict], final: Measure, admitted: dict, reviewed: dic
     by_kind = Counter(kind for event in losses for kind in event['kinds'])
     per_day = rate_report(len(losses), exposure)
     folded = sum(1 for event in losses if event['at_equivalence'])
+    at_review = sum(1 for event in losses if event['at_review'])
     horizon = min(7.0, span)
     low, high = byar(len(losses))
     expected = lambda rate: round(rate * len(final.claims) * horizon, 4)
@@ -804,8 +844,10 @@ def currency(timeline: list[dict], final: Measure, admitted: dict, reviewed: dic
         'attrition': {
             'reviews': reviews, 'losses': len(losses), 'losses_by_kind': dict(sorted(by_kind.items())),
             'losses_when_folded_as_equivalent': folded, 'losses_otherwise': len(losses) - folded,
-            'loss_per_review': {'estimate': round(len(losses) / reviews, 6) if reviews else None,
-                                'interval95': wilson(len(losses), reviews)},
+            # Only a loss found in the step that reviewed the claim is a share of reviews.
+            'losses_found_at_review': at_review, 'losses_outside_review': len(losses) - at_review,
+            'loss_per_review': {'estimate': round(at_review / reviews, 6) if reviews else None,
+                                'interval95': wilson(at_review, reviews)},
             'loss_per_claim_day': per_day,
             'loss_per_claim_day_otherwise': rate_report(len(losses) - folded, exposure),
             'commitment_bits_lost': round(sum(row['bits_lost'] for row in timeline), 6),
@@ -838,35 +880,74 @@ class History:
             raise Invalid('Git operation failed: ' + args[0])
         return done.stdout
 
+    def commit(self, revision: str) -> str:
+        """Resolve a revision to a commit ID; the name itself never reaches another Git command."""
+        if not isinstance(revision, str) or not revision or revision.startswith('-'):
+            raise Invalid('Not a revision')
+        found = self.git('rev-parse', '--verify', '--quiet', '--end-of-options', revision + '^{commit}').decode().strip()
+        if not re.fullmatch(r'[0-9a-f]{40,64}', found):
+            raise Invalid('Not a revision')
+        return found
+
     def revisions(self, revision: str) -> list[tuple[str, int, str]]:
         """First-parent history, oldest first: the same line knowledge time selects on."""
-        lines = self.git('log', '--first-parent', '--reverse', '--format=%H%x00%ct%x00%s',
-                         revision).decode('utf-8', 'replace').splitlines()
-        return [(commit, int(recorded), subject) for commit, recorded, subject in
-                (line.split('\0', 2) for line in lines)]
+        fields = self.git('log', '--first-parent', '--reverse', '-z', '--format=%H%x00%ct%x00%s',
+                          self.commit(revision)).decode('utf-8', 'replace').split('\0')
+        if fields and fields[-1] == '':
+            fields.pop()
+        # NUL-separated: a subject may hold any other character, including line separators.
+        if len(fields) % 3:
+            raise Invalid('Unexpected history listing')
+        return [(fields[i], int(fields[i + 1]), fields[i + 2]) for i in range(0, len(fields), 3)]
 
     def records(self, revision: str) -> dict:
+        """Records at a revision, read as the compiler reads them.
+
+        Only regular files at a record's fixed path count, parsed by the compiler's own
+        strict loader, with the ID matching the file name. A submodule entry has no file in
+        a checkout, so the compiler never sees it and neither does this.
+        """
         entries = []
-        for entry in self.git('ls-tree', '-r', '-z', '--full-tree', revision, '--', *GROUPS, *JUDGMENT_ROOTS).split(b'\0'):
+        listing = self.git('ls-tree', '-r', '-z', '--full-tree', self.commit(revision), '--', *GROUPS, *JUDGMENT_ROOTS)
+        for entry in listing.split(b'\0'):
             if not entry:
                 continue
             meta, raw = entry.split(b'\t', 1)
-            path, oid = raw.decode(), meta.decode().split()[2]
-            if path.endswith('.yaml'):
-                entries.append((path, oid))
+            if not RECORD_PATH.fullmatch(raw):
+                continue
+            mode, kind, oid = meta.decode('ascii').split()
+            if kind == 'commit':
+                continue
+            if kind != 'blob' or mode not in ('100644', '100755'):
+                raise Invalid('Data records must be regular files')
+            try:
+                entries.append((raw.decode('utf-8'), oid))
+            except UnicodeDecodeError as exc:
+                raise Invalid('Record paths must be UTF-8') from exc
         missing = sorted({oid for _, oid in entries if oid not in self.cache})
         if missing:
             out = self.git('cat-file', '--batch', input=('\n'.join(missing) + '\n').encode())
             offset = 0
             for oid in missing:
-                end = out.index(b'\n', offset)
-                size = int(out[offset:end].split()[2])
-                self.cache[oid] = yaml.load(out[end + 1:end + 1 + size], Loader=LOADER)
+                end = out.find(b'\n', offset)
+                header = out[offset:end].split() if end >= 0 else []
+                if len(header) != 3 or header[1] != b'blob' or int(header[2]) > MAX_FILE_BYTES:
+                    raise Invalid('Missing, oversized or unexpected record object')
+                size = int(header[2])
+                try:
+                    record = yaml.load(out[end + 1:end + 1 + size].decode('utf-8'), Loader=StrictLoader)
+                except (yaml.YAMLError, UnicodeError) as exc:
+                    raise Invalid('Cannot parse a record') from exc
+                if not isinstance(record, dict) or not isinstance(record.get('id'), str):
+                    raise Invalid('A record must be an object with an ID')
+                self.cache[oid] = record
                 offset = end + 1 + size + 1
         records = {group: {} for group in GROUPS}
         judgments = []
         for path, oid in entries:
             record = self.cache[oid]
+            if record['id'] != path.rsplit('/', 1)[1][:-len('.yaml')]:
+                raise Invalid('Record ID does not match its file name')
             if path.startswith(JUDGMENT_ROOTS):
                 judgments.append(record)
             else:
@@ -875,12 +956,16 @@ class History:
         records['reviews'] = collect_reviews(judgments)
         return records
 
-    def replay(self, revision: str) -> dict:
+    def replay(self, revision: str, deadline: float | None = None) -> dict:
         steps, previous = [], {group: {} for group in GROUPS}
         running = Counter()
         timeline, admitted, reviewed, counted = [], {}, {}, set()
         seconds, reviews, last, active_before = 0, 0, None, 0
-        for commit, recorded, subject in self.revisions(revision):
+        for commit, committed, subject in self.revisions(revision):
+            if deadline is not None and time.monotonic() > deadline:
+                raise Invalid('history is longer than the time allowed for replay')
+            # A committer time earlier than its parent's is read as its parent's, so no span is negative.
+            recorded = committed if last is None else max(last, committed)
             current = self.records(commit)
             step = delta(previous, current)
             state = ledger(current)
@@ -888,13 +973,16 @@ class History:
                 seconds += active_before * max(0, recorded - last)
             for claim_id in current['claims']:
                 admitted.setdefault(claim_id, recorded)
+            fresh = set()
             for review_id, claim_ids in sorted(current.get('reviews', {}).items()):
                 if review_id not in counted:
                     counted.add(review_id)
                     reviews += len(claim_ids)
+                    fresh.update(claim_ids)
                     for claim_id in claim_ids:
                         reviewed[claim_id] = recorded
-            losses = [{'claim_id': claim_id, 'kinds': row['loss'], 'at_equivalence': row['at_equivalence']}
+            losses = [{'claim_id': claim_id, 'kinds': row['loss'], 'at_equivalence': row['at_equivalence'],
+                       'at_review': claim_id in fresh}
                       for claim_id, row in step['claims'].items() if row['loss']]
             last, active_before = recorded, len(active(current['claims']))
             timeline.append({'time': recorded, 'active': active_before, 'claim_seconds': seconds, 'reviews': reviews,
@@ -905,7 +993,7 @@ class History:
             step['commitment'] = {key: step['commitment'][key] for key in ('gain', 'gain_on_focus', 'loss', 'verdicts')}
             step['losses'] = len(losses)
             running.update(step['gain'])
-            steps.append({'revision': commit, 'committer_time': recorded, 'subject': subject,
+            steps.append({'revision': commit, 'committer_time': committed, 'subject': subject,
                           'step': {**step, 'review_cues': cues}, 'totals': state['totals'],
                           'connectors': state['connectors'], 'concentration': state['concentration']})
             previous = current
@@ -923,7 +1011,7 @@ def percent(value) -> str:
     return 'n/a' if value is None else f'{100 * value:.2f}%'
 
 
-def summary(now: dict, change: dict | None, replayed: dict | None) -> str:
+def summary_head(now: dict, change: dict | None) -> str:
     """A short advisory reading for a job summary. Structure only; it never states that anything is true."""
     totals, lines = now['totals'], ['### Information ledger (advisory)', '']
     lines += ['| | Claims | Propositions | Origins | Links |', '|---|---|---|---|---|',
@@ -948,47 +1036,73 @@ def summary(now: dict, change: dict | None, replayed: dict | None) -> str:
                       f"{held['questions']} declared question(s), {held['questions_in_conflict']} in conflict{moved}."]
     else:
         lines += ['', 'Commitment: no question declares an answer space, so nothing is measured.']
+    return '\n'.join(lines) + '\n'
+
+
+def summary_history(replayed: dict | None, reason: str | None) -> str:
     found = (replayed or {}).get('currency') or {}
+    lines = ['']
     if found.get('measured'):
         seen, test = found['attrition'], found['walk_forward']
         interval = seen['loss_per_review']['interval95']
-        lines += ['', f"Currency as of {found['as_of']} over {found['history_days']:.1f} days of history: "
-                      f"{seen['losses']} loss(es) of standing in {seen['reviews']} claim reviews"
-                      + (f" ({percent(seen['loss_per_review']['estimate'])}, 95% interval "
-                         f"{percent(interval[0])} to {percent(interval[1])})" if interval else '')
-                      + f"; {seen['losses_when_folded_as_equivalent']} of them when claims were folded as equivalent. "
-                      f"{found['clocks_days']['never_reviewed']} claim(s) never reviewed. "
-                      f"Walk-forward check: {test['inside']} of {test['windows']} windows inside the predicted range."]
+        lines.append(f"Currency as of {found['as_of']} over {found['history_days']:.1f} days of history: "
+                     f"{seen['losses']} loss(es) of standing, {seen['losses_found_at_review']} found in "
+                     f"{seen['reviews']} claim reviews"
+                     + (f" ({percent(seen['loss_per_review']['estimate'])}, 95% interval "
+                        f"{percent(interval[0])} to {percent(interval[1])})" if interval else '')
+                     + f"; {seen['losses_when_folded_as_equivalent']} when claims were folded as equivalent. "
+                     f"{found['clocks_days']['never_reviewed']} claim(s) never reviewed. "
+                     f"Walk-forward check: {test['inside']} of {test['windows']} windows inside the predicted range.")
+    else:
+        lines.append('Currency: not reported for this change' + (f' ({reason}).' if reason else '.'))
     lines += ['', '_Arithmetic over record structure. It does not measure truth. See `docs/INFORMATION.md`._', '']
     return '\n'.join(lines)
 
 
-def ci_report(history: 'History', before: str, after: str, out: Path | None, with_history: bool) -> str:
+def ci_report(history: 'History', before: str, after: str, out: Path | None, with_history: bool,
+              budget: float, write) -> None:
+    """Write the reading part by part and flush each, so a slow or failing part never hides the others."""
+    def save(name: str, report: dict | None) -> None:
+        if out is not None and report is not None:
+            try:
+                out.mkdir(parents=True, exist_ok=True)
+                (out / f'{name}.json').write_bytes(json_bytes(report))
+            except OSError:
+                pass
+
+    deadline = time.monotonic() + budget
     current = history.records(after)
-    now, change, replayed = ledger(current), None, None
+    now, change = ledger(current), None
     if re.fullmatch(r'[0-9a-f]{7,64}', before or '') and set(before) != {'0'}:
         try:
             change = delta(history.records(before), current)
-        except Invalid:
-            change = None  # an unknown base revision leaves the change unmeasured, never guessed
+        except (ValueError, LookupError, TypeError):
+            change = None  # an unknown or unreadable base leaves the change unmeasured, never guessed
+    save('ledger', now)
+    save('change', change)
+    write(summary_head(now, change))
+    replayed, reason = None, 'history replay was not requested'
     if with_history:
-        replayed = history.replay(after)
-    if out is not None:
-        out.mkdir(parents=True, exist_ok=True)
-        for name, report in (('ledger', now), ('change', change), ('history', replayed)):
-            if report is not None:
-                (out / f'{name}.json').write_bytes(json_bytes(report))
-    return summary(now, change, replayed)
+        try:
+            replayed = history.replay(after, deadline)
+            save('history', replayed)
+        except (ValueError, LookupError, TypeError, OverflowError) as exc:
+            reason = str(exc) if isinstance(exc, Invalid) else type(exc).__name__
+    write(summary_history(replayed, reason))
 
 
 def working_tree(root: Path) -> dict:
-    records = {group: {} for group in GROUPS}
-    for group in GROUPS:
-        for path in sorted((Path(root) / group).glob('*.yaml')):
-            record = yaml.load(path.read_bytes(), Loader=LOADER)
-            records[group][record['id']] = record
-    judgments = [yaml.load(path.read_bytes(), Loader=LOADER)
-                 for folder in JUDGMENT_ROOTS for path in sorted((Path(root) / folder).glob('*.yaml'))]
+    """Records in a checkout, through the compiler's own reader."""
+    def load(folder: str) -> list[dict]:
+        found = []
+        for path in sorted((Path(root) / folder).glob('*.yaml')):
+            record = read_data(path)
+            if record.get('id') != path.stem:
+                raise Invalid('Record ID does not match its file name')
+            found.append(record)
+        return found
+    records = {group: {record['id']: record for record in load(group)} for group in GROUPS}
+    judgments = [record for folder in JUDGMENT_ROOTS for record in load(folder)]
     records['operations'] = collect_operations(judgments)
     records['reviews'] = collect_reviews(judgments)
     return records
@@ -1010,13 +1124,21 @@ def main() -> int:
     auto.add_argument('--after', default='HEAD')
     auto.add_argument('--out', type=Path)
     auto.add_argument('--no-history', action='store_true')
+    auto.add_argument('--budget', type=float, default=150.0, help='Seconds allowed for the whole report')
     args = parser.parse_args()
     if args.command == 'ci':
         # Advisory by contract: a failure here must never fail the job that called it.
+        def write(text: str) -> None:
+            try:
+                sys.stdout.write(text)
+                sys.stdout.flush()
+            except OSError:
+                # The reader went away. Nothing more can be said, and that is still not a failure.
+                sys.stdout = open(os.devnull, 'w', encoding='utf-8')
         try:
-            sys.stdout.write(ci_report(History(args.repo), args.before, args.after, args.out, not args.no_history))
+            ci_report(History(args.repo), args.before, args.after, args.out, not args.no_history, args.budget, write)
         except Exception as exc:  # noqa: BLE001
-            sys.stdout.write(f'### Information ledger (advisory)\n\nNot available for this change: {type(exc).__name__}.\n')
+            write(f'### Information ledger (advisory)\n\nNot available for this change: {type(exc).__name__}.\n')
         return 0
     try:
         history = History(args.repo)
@@ -1026,7 +1148,7 @@ def main() -> int:
             report = delta(history.records(args.before), history.records(args.after))
         else:
             report = history.replay(args.revision)
-    except (Invalid, OSError, ValueError, TypeError, KeyError) as exc:
+    except (OSError, ValueError, TypeError, LookupError, OverflowError) as exc:
         parser.exit(1, f'FAIL: {exc}\n')
     sys.stdout.buffer.write(json_bytes(report))
     return 0

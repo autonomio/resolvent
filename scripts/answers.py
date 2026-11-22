@@ -20,9 +20,9 @@ def number(value) -> Fraction:
         return value
     if isinstance(value, int) and not isinstance(value, bool):
         return Fraction(value)
-    if isinstance(value, str) and DECIMAL.fullmatch(value):
+    if isinstance(value, str) and len(value) <= 40 and DECIMAL.fullmatch(value):
         return Fraction(value)
-    raise ValueError('Answer numbers must be plain decimal text')
+    raise ValueError('Answer numbers must be plain decimal text of at most 40 characters')
 
 
 def grid(space: dict) -> tuple[Fraction, Fraction, int]:
