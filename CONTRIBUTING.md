@@ -21,6 +21,14 @@ python scripts/compiler.py --require-closure
 The compiler reports `structural_validation` as `passed` with empty `records`
 on the upstream template. Local checks run without service credentials.
 
+For an offline install, use a local wheelhouse containing wheels for your
+Python version and platform, including transitive dependencies. After installing,
+run the compiler check above.
+
+```sh
+python -m pip install --no-index --find-links "/path/to/wheelhouse" -r requirements.txt
+```
+
 ## Try a model read
 
 Build a local package from the checked-out commit and list up to five claims.
@@ -30,6 +38,13 @@ each build under the ignored `.resolvent/` directory.
 ```sh
 python scripts/build_knowledge.py --revision HEAD --output .resolvent/onboarding
 python scripts/query_knowledge.py --package .resolvent/onboarding search "" --limit 5
+```
+
+Run the focused suite when working on the research-state export.
+[Research-state export](docs/OPERATIONS.md#per-question-research-state-export)
+
+```sh
+python -m unittest discover -s tests -p test_research_state.py -v
 ```
 
 ## Try verified admission
@@ -56,7 +71,7 @@ on retry. Expect one passing test with two supported claims admitted.
 | Model records, admission and maintenance | [Ontology](docs/Ontology.md) and [agent jobs](docs/AGENT_JOBS.md) |
 | Local validation, writes and queries | [Compiler](scripts/compiler.py), [writer](scripts/world_control.py) and [repository operations](docs/OPERATIONS.md) |
 | Installed plugin and live workflows | [Shared skill](skills/resolvent/), [live references](workflows/resolvent/) and [plugin releases](docs/PLUGIN_RELEASE.md) |
-| Public workflow service | [Service setup and checks](scripts/workflow_mcp/README.md) |
+| Public workflow service | Run `node --version` and use Node 24.11 or later. [Service setup and checks](scripts/workflow_mcp/README.md) |
 
 ## Before opening a pull request
 
