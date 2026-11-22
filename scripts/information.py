@@ -29,7 +29,7 @@ if __package__ in (None, ''):
 from scripts.answers import admitted_set, capacity, grid
 from scripts.model import MAX_FILE_BYTES, Invalid, StrictLoader, read_data
 
-LEDGER_VERSION = '1.1'
+LEDGER_VERSION = '1.2'
 GROUPS = ('claims', 'evidence', 'sources', 'graph', 'questions')
 # Closures and completed maintenance carry the repository's recorded model judgments.
 JUDGMENT_ROOTS = ('briefs/closed', 'maintenance')
@@ -537,7 +537,7 @@ def commitment_delta(before: dict, after: dict) -> dict:
         total *= gain
         if question.get('focus'):
             focus *= gain
-        if gain < 1:
+        if gain < 1 and same_space:
             lost *= gain
         rows[qid] = {'held_before': bits(held_before), 'held_after': bits(held_after), 'gain': bits(gain),
                      'conflict_before': asked_before and len(old.states[qid]['maximal']) > 1,
@@ -657,7 +657,11 @@ def delta(before: dict, after: dict) -> dict:
     folded_now = {claim_id for group in equivalences for claim_id in group['claims']}
     for claim_id, row in rows.items():
         row['at_equivalence'] = claim_id in folded_now
-    if numbers['origins'] > 0:
+    identity_only = (bool(rows) and all(row['verdict'] == 'origin_reidentified' for row in rows.values())
+                     and not connector_rows and not commitment['questions'] and not equivalences)
+    if identity_only:
+        outcome = 'origin_identity_changed'
+    elif numbers['origins'] > 0:
         outcome = 'adds_origins'
     elif numbers['claims'] > 0:
         outcome = 'adds_claims_on_known_origins'
@@ -1060,8 +1064,11 @@ def ci_report(history: 'History', before: str, after: str, out: Path | None, wit
     """Write the reading part by part and flush each, so a slow or failing part never hides the others."""
     def save(name: str, report: dict | None) -> None:
         if out is not None and report is not None:
-            out.mkdir(parents=True, exist_ok=True)
-            (out / f'{name}.json').write_bytes(json_bytes(report))
+            try:
+                out.mkdir(parents=True, exist_ok=True)
+                (out / f'{name}.json').write_bytes(json_bytes(report))
+            except OSError:
+                pass
 
     deadline = time.monotonic() + budget
     current = history.records(after)

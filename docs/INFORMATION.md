@@ -1,6 +1,6 @@
 # Information ledger
 
-Status: ledger version 1.1. Advisory and read-only, implemented in
+Status: ledger version 1.2. Advisory and read-only, implemented in
 `scripts/information.py`. It runs in the validation workflow on every change and
 never blocks it.
 
@@ -90,7 +90,7 @@ Each is a test in `tests/test_information.py` and was checked on real records.
 | `gains_origin` | Existing claim gains an origin | Links, and the origin if new to the model |
 | `repeat_citation` | Existing claim gains passages, no origin | Citations only |
 | `support_withdrawn`, `support_changed` | Existing claim loses origins | Negative |
-| `origin_reidentified` | Same source records resolve to another origin | Origins and links move; no loss of standing |
+| `origin_reidentified` | Same source records resolve to another origin | Origins and links move; no loss of standing. A step with nothing else reads `origin_identity_changed` |
 | `retired` | Claim leaves the active set | Minus its links and exclusive origins |
 | `reassessed` | Class, uncertainty or valid time changed | None |
 | `unmeasured_edit` | Statement changed | None, flagged as unmeasurable |
@@ -197,8 +197,9 @@ origin, its own answer is widened or removed, or it leaves the active set. A cha
 to how a source is identified, or to a question, is not a loss. The ledger counts
 losses against two exposures: claim-days, and claim reviews for the losses found in
 the step that reviewed the claim. Each rate carries a 95% interval computed from the
-two counts alone. A committer time earlier than its parent's is read as its
-parent's, so no span is negative. A loss that coincides with the claim being folded into an
+two counts alone. Bits lost are counted the same way: a drop on a question whose
+space changed, or that was retired, is not a loss. A committer time earlier than its
+parent's is read as its parent's, so no span is negative. A loss that coincides with the claim being folded into an
 equivalence group is counted apart, because there the repository reconciled grades
 between duplicates and nothing was observed to change.
 

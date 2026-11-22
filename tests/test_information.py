@@ -468,11 +468,20 @@ class Hardening(unittest.TestCase):
         self.assertEqual({row['verdict'] for row in report['claims'].values()}, {'origin_reidentified'})
         self.assertEqual(([row['loss'] for row in report['claims'].values()], report['outcome']),
                          ([[], []], 'origin_identity_changed'))
+        split = world()  # two passages of one document; a digest on one of them splits the origin
+        split['sources']['S-a1']['ancestry'] = {'status': 'unknown', 'parent_source_ids': [], 'notes': ['n'],
+                                                'content_sha256': 'a' * 64}
+        report = delta(world(), split)
+        self.assertEqual((report['gain']['origins'], report['outcome'], report['claims']['C-a']['loss']),
+                         (1, 'origin_identity_changed', []))
         retired, regridded = asked(), asked()
         retired['questions']['Q-f']['state'] = 'retired'
         regridded['questions']['Q-n']['space'] = {**RATE, 'step': '0.5'}
         for after in (retired, regridded):
-            self.assertEqual([row['loss'] for row in delta(asked(), after)['claims'].values() if row['loss']], [])
+            report = delta(asked(), after)
+            self.assertEqual([row['loss'] for row in report['claims'].values() if row['loss']], [])
+            self.assertEqual(report['commitment']['loss']['ratio'], '1/1')  # the question changed, not the claims
+        self.assertLess(delta(asked(), retired)['commitment']['gain']['bits'], 0)  # fewer bits held, yet no loss booked
         dropped = asked()  # the claim's own answer removed is a loss
         del dropped['claims']['C-b']['answers']
         self.assertEqual(delta(asked(), dropped)['claims']['C-b']['loss'], ['answer_withdrawn'])
@@ -540,6 +549,17 @@ class Hardening(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn('| Now | 3 | 3 | 3 | 4 |', result.stdout)
         self.assertIn('Currency: not reported for this change (history is longer than the time allowed for replay).', result.stdout)
+
+    def test_ci_still_reports_when_its_report_files_cannot_be_written(self):
+        script = Path(__file__).resolve().parents[1] / 'scripts/information.py'
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self.repo(temporary)
+            blocked = Path(temporary) / 'claims' / 'C-a.yaml' / 'out'  # a path under a file can never be a directory
+            result = subprocess.run([sys.executable, str(script), '--repo', str(root), 'ci', '--out', str(blocked)],
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('| Now | 3 | 3 | 3 | 4 |', result.stdout)
+        self.assertIn('does not measure truth', result.stdout)
 
     def test_ci_exits_zero_when_its_reader_goes_away(self):
         script = Path(__file__).resolve().parents[1] / 'scripts/information.py'

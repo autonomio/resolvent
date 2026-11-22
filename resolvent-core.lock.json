@@ -452,10 +452,10 @@
       "sha256": "f245305c8ad81e9bbff7e659f28a2de2063d02e14686b205e044d39868f1fac4"
     },
     "docs/INFORMATION.md": {
-      "bytes": 22260,
-      "git_blob": "ee9e3b4debacb58b9a542e785d8bc5613b8444d8",
+      "bytes": 22432,
+      "git_blob": "5c29d7246b79fa784aed10f456e19be941168280",
       "mode": "100644",
-      "sha256": "c5f8cc96690c8e9e925b5f5d32b3ad9c0f53507f9de4d58d025669cf7155c162"
+      "sha256": "fc34e906482fa8616a519978bed9d22a2eeebd592eea6f8c6aa1059447c6861d"
     },
     "docs/OPERATIONS.md": {
       "bytes": 55578,
@@ -740,10 +740,10 @@
       "sha256": "868c9725e21daf544b289a60aed94b3a5065a13093db830c7cc4913f20688f1b"
     },
     "scripts/information.py": {
-      "bytes": 61766,
-      "git_blob": "c7c3c407b549efae15af9fbbbd29a3edcae5b878",
+      "bytes": 62127,
+      "git_blob": "93e2834071ec02140a923ab0dd8085c4abf0c4f4",
       "mode": "100644",
-      "sha256": "8b1c71e39a142654a1d9aeda1d423470da7252371d2a4a2f98cc0691617a99cb"
+      "sha256": "b2cccc9915010804db0de448206ae351b4189d4caaa493cf1c8fb93709673f6e"
     },
     "scripts/model.py": {
       "bytes": 30587,
@@ -1160,10 +1160,10 @@
       "sha256": "f443ccdec158e812b1c50a610d0a62614ed66deeb3cf6f7ca7f593c9848ddb80"
     },
     "tests/test_information.py": {
-      "bytes": 38496,
-      "git_blob": "9b2d191a72974d8705dcd536ae58b168c12ce3b0",
+      "bytes": 39983,
+      "git_blob": "f5c3220a2979a9042e8874cc5cf8df711495890e",
       "mode": "100644",
-      "sha256": "2594bf46b14b7089fdc208098f5fbe0bf4ea59d269b3ecb87b505535b232d330"
+      "sha256": "41a152c72df5c76d43f0e3e4283aedc2fd86d8106c41dc71de10f109455b7381"
     },
     "tests/test_knowledge.py": {
       "bytes": 16111,
