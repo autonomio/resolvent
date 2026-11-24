@@ -1,6 +1,6 @@
 # Resolvent plugin releases
 
-Resolvent 1.4.1 is the generic Autonomio plugin. The developer and website are
+Resolvent 1.5.0 is the generic Autonomio plugin. The developer and website are
 Autonomio and https://autonom.io. Its description identifies the supported task:
 update a Resolvent world model in a GitHub repository the user can access from
 the chat where the plugin is invoked.
@@ -51,7 +51,7 @@ repository operations remain in the invoking host or local session.
 - `.claude-plugin/marketplace.json`: local Claude catalog.
 - `assets/resolvent.svg` and `assets/resolvent.png`: original icon and directory PNG.
 - `docs/PLUGIN_README.md`: standalone README included in each plugin package.
-- `dist/chatgpt/resolvent-1.4.1.zip` and `dist/claude/resolvent-1.4.1.zip`: identical
+- `dist/chatgpt/resolvent-1.5.0.zip` and `dist/claude/resolvent-1.5.0.zip`: identical
   self-contained plugin distributions, with both host manifests.
 - `dist/plugin/resolvent/`: standalone local catalog source, generated from the same files.
 - `dist/resolvent.zip`: optional standalone Claude skill compatibility artifact.
@@ -116,7 +116,7 @@ The user authorized development/testing of a fixed client with future reviewed
 Autonomio workflow references on 2026-10-25. This does not establish public-directory
 acceptance or authorize unrelated repository access. The installed client fixes
 intent, destination, privacy and review boundaries. Its bundled contribution and
-1.0/1.1/1.2 schema references remain a compatibility baseline; the selected world's
+1.0 through 1.3 schema references remain a compatibility baseline; the selected world's
 approved current contracts and supported live guidance govern operational details.
 
 `workflows/resolvent/workflow.json` declares workflow version, entrypoint and client
@@ -456,3 +456,12 @@ procedure is unaffected. In an opted-in world, a receipt-bearing contribution
 admitted with agent decisions fails CI with a message naming `--verified`, which the
 selected world's live `docs/AGENT_JOBS.md` documents. No package or live-workflow
 release is required.
+
+## Report passage target compatibility (core 1.9.0)
+
+Core and compiler 1.9.0 support optional passage targets in contribution protocol
+1.3. Existing 1.0 through 1.2 submissions and closure formats remain valid. Plugin 1.5.0
+bundles the updated schema and authoring guidance and rebuilds both host packages.
+The public workflow MCP recognizes world protocol 1.3. The fixed client protocol
+and live workflow remain at 1.0 and 1.0.3. Each world must adopt the released
+core before a contribution can use the target, regardless of plugin installation.

@@ -1,4 +1,4 @@
-# Contribution protocol 1.2 (legacy 1.0/1.1 supported)
+# Contribution protocol 1.3 (legacy 1.0 through 1.2 supported)
 
 Normalized input: `input-artefacts/RUN-<32 lowercase hexadecimal UUID>.json`.
 The authoritative machine schema is `docs/schemas/submission.schema.json` in the
@@ -8,7 +8,7 @@ admission under `ADMISSION.md`, producing the canonical YAML and required
 brief/result/closure artifacts. A proposal-only PR is unfinished authoring work
 when the invoking agent can perform that approved job.
 
-Required fields: schema_version="1.0", "1.1" or "1.2", id, input_method, created_at (ISO datetime
+Required fields: schema_version="1.0", "1.1", "1.2" or "1.3", id, input_method, created_at (ISO datetime
 with timezone), researcher, title, scope, origin, parent_run_id (null for first run),
 brief, result, sources, evidence, claims, connectors, questions, handoff,
 method_metadata. `researcher` is an attributed name/handle from known context;
@@ -32,7 +32,8 @@ of candidate claims and the relevant existing model; no fixed edge count is requ
 `handoff`: summary, no_claims_reason: string/null, suggested_follow_up: string list.
 `method_metadata`: route-specific fields from ROUTES.md. Keep
 every ordinary route field. Use the selected world's approved protocol: optional
-`valid_time` requires 1.1 or later; optional source `ancestry` requires 1.2.
+`valid_time` requires 1.1 or later, source `ancestry` requires 1.2 or later,
+and `report_passage_target` requires 1.3.
 Never silently omit a requested extension on an older world. Run the authoritative
 submission and canonical validators before publication. The plugin does not
 install or weaken repository governance.
@@ -81,6 +82,17 @@ IDs or existing canonical S-IDs; admission remaps local IDs and retains canonica
 parents. Every parent must resolve, and self-links/cycles are invalid. This metadata
 does not relax independent inspected evidence requirements or promote uncertainty.
 Use legacy 1.0/1.1 where appropriate; adopt governance before submitting 1.2 fields.
+
+## Optional report passage target (1.3)
+
+To correct one passage in an accepted frozen report, use a new run and set
+`parent_run_id` to the original submission already closed on the world's
+accepted base. Set `report_passage_target` to an object with `submission_sha256`
+from that parent's closure, the producer's stable `report_id` for the frozen
+report, and its stable `passage_id` for the single passage. Verify that the IDs
+resolve uniquely in the frozen version. Keep the original wording and records.
+The new correction requires ordinary admission and independent review, including
+if it carries a producer verification receipt or adds zero claims.
 
 Use the JSON example in `assets/conversation-example.json` for field structure,
 replacing every illustrative value with actual selected material. It is a synthetic

@@ -346,12 +346,13 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
         fail(path == expected, f"Unexpected record location: {path}; expected {expected}")
     idx = indexes(state)
     claims, evidence, sources, graph = [idx.get(n, {}) for n in ("claims", "evidence", "sources", "graph")]
-    for p in idx.get("submission", {}).values():
+    submissions = idx.get("submission", {})
+    for p in submissions.values():
         validate_submission(p, claims, sources)
         parent = p["parent_run_id"]
-        fail(parent is None or parent in idx.get("submission", {}), f"{p['id']}: unknown parent contribution")
+        fail(parent is None or parent in submissions, f"{p['id']}: unknown parent contribution")
         fail(parent != p["id"], "A contribution cannot be its own parent")
-    acyclic([(p['id'], p['parent_run_id']) for p in idx.get('submission', {}).values() if p['parent_run_id']], 'contribution lineage')
+    acyclic([(p['id'], p['parent_run_id']) for p in submissions.values() if p['parent_run_id']], 'contribution lineage')
     premise_edges = []
     for source in sources.values():
         check_ancestry(source, set(sources))
@@ -385,9 +386,9 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
     for q in idx.get("questions", {}).values():
         check_space(q)
         fail(set(q["claim_ids"]) <= set(claims), f"{q['id']}: unresolved question claim")
-    submissions = idx.get("submission", {})
+    closures = idx.get("closure", {})
     closed = set()
-    for c in idx.get("closure", {}).values():
+    for c in closures.values():
         sid = c["submission_id"]
         fail(sid in submissions, f"{c['id']}: missing submission")
         p = submissions[sid]
@@ -425,6 +426,13 @@ def validate_state(state: dict[str, dict], policy_root: Path, require_closure: b
                 fail(archive is not None and archive["submission_id"] == sid and archive[kind] == payload,
                      f"{sid}: missing or inconsistent {kind} artifact")
         closed.add(sid)
+    for p in submissions.values():
+        if "report_passage_target" in p:
+            parent = p["parent_run_id"]
+            fail(parent in closed, f"{p['id']}: report passage target requires a closed parent submission")
+            parent_closure = closures[parent.replace("RUN-", "BC-")]
+            fail(p["report_passage_target"]["submission_sha256"] == parent_closure["submission_sha256"],
+                 f"{p['id']}: report passage target digest differs from the parent closure")
     if require_closure:
         fail(set(submissions) <= closed, "Awaiting admission agent: contributions need a materialized closure before merge: " + ", ".join(sorted(set(submissions)-closed)))
     for m in idx.get("maintenance", {}).values():
@@ -498,6 +506,11 @@ def validate_delta(root: Path, base: Path, current: dict[str, dict]) -> None:
     for path in old:
         if family(path) in ("submission", "closure", "brief", "result", "maintenance"):
             fail(old[path] == current.get(path), f"Merged provenance is immutable; use a new run: {path}")
+    for path in data_changes - old.keys():
+        if family(path) == "submission" and "report_passage_target" in current[path]:
+            parent_closure = current[path]["parent_run_id"].replace("RUN-", "BC-")
+            fail(f"briefs/closed/{parent_closure}.yaml" in old,
+                 f"{current[path]['id']}: report passage target parent must be closed on the accepted base")
     new_assessments = {subject for path in data_changes if path in current
                        for op in current[path].get('model_operations', [])
                        if op.get('kind') == 'reassessment' for subject in op['subject_ids']}

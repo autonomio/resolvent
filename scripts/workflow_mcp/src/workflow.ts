@@ -3,7 +3,7 @@ import { z } from "zod";
 export const SOURCE = "https://raw.githubusercontent.com/autonomio/resolvent/";
 export const INDEX = SOURCE + "workflow-release/workflow.json";
 export const CLIENT_PROTOCOL = "1.0";
-export const WORLD_PROTOCOLS = ["1.0", "1.1", "1.2"] as const;
+export const WORLD_PROTOCOLS = ["1.0", "1.1", "1.2", "1.3"] as const;
 const MAX_INDEX = 65_536;
 const MAX_FILE = 262_144;
 const MAX_TOTAL = 1_048_576;

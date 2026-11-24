@@ -72,7 +72,7 @@ test('bounds streamed response bodies without trusting Content-Length', async ()
 });
 
 test('reports supported legacy protocols and unsupported versions without migrating anything', () => {
-  for (const version of ['1.0','1.1','1.2']) assert.equal(compatibility('1.0', version).world_protocol_supported, true);
+  for (const version of ['1.0','1.1','1.2','1.3']) assert.equal(compatibility('1.0', version).world_protocol_supported, true);
   assert.equal(compatibility('2.0','1.2').client_compatible, false);
   assert.equal(compatibility('1.0','9.0').world_protocol_supported, false);
 });
