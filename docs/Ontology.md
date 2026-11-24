@@ -210,6 +210,33 @@ nor an equivalence decision redirects existing dependencies or moves evidence.
 Different propositions coexist; explicit reassessment changes their credibility.
 There is no new replacement-status field or automatic choice of a current proposition.
 
+## Corrections to frozen report passages
+
+A new contribution may identify a single passage using protocol 1.3's optional
+`report_passage_target` and `parent_run_id`. The parent must already be closed
+on the accepted base of the same world. The target's `submission_sha256` is the
+parent closure's digest of the normalized submission, distinct from any hash of
+a downloaded file or report object. A producer-defined `report_id` identifies
+one frozen report supplied by or deterministically reconstructed from that
+immutable submission. `passage_id` identifies one passage in that report.
+Both IDs are case-sensitive, with 1 to 128 ASCII characters. They start with a letter or digit and may
+contain letters, digits, periods, underscores, colons or hyphens.
+
+A passage correction follows ordinary admission and independent review, including
+when it introduces zero claims or carries a producer receipt. The compiler checks
+the parent and its digest. The reviewer verifies that the producer's IDs resolve
+uniquely to the intended passage in the identified version. A report reconstructed
+from the parent must use its frozen inputs to resolve these IDs.
+
+Readers use a pinned accepted revision of the same world. Find correction
+submissions and their matching closures in accepted provenance, then match the
+parent run, parent closure digest, report ID and passage ID exactly. Link the
+accepted correction by its own run ID beside the original wording. An unresolved
+or ambiguous target leaves the report without a passage link. Multiple accepted
+corrections to one passage remain individually linkable. Earlier corrections
+without a target retain their existing lineage. Adding a target for an earlier
+correction requires a new reviewed contribution.
+
 ## Research artifacts
 
 During research the contribution contains a prospective brief, result and proposed

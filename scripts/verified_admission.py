@@ -41,10 +41,11 @@ def enabled(root: Path) -> bool:
 
 
 def verified(p: dict) -> bool:
-    """A source_material contribution with a version 1 producer verification receipt."""
+    """A source_material contribution with a version 1 receipt and no passage correction."""
     meta = p.get('method_metadata')
     receipt = meta.get('verification') if isinstance(meta, dict) else None
-    return (p.get('input_method') == 'source_material' and isinstance(receipt, dict) and
+    return ('report_passage_target' not in p and p.get('input_method') == 'source_material' and
+            isinstance(receipt, dict) and
             type(receipt.get('version')) is int and receipt['version'] == RECEIPT_VERSION)
 
 
@@ -95,7 +96,8 @@ def plan_verified(state: dict[str, dict], submission_id: str, policy_root: Path)
     p = indexes(state).get('submission', {}).get(submission_id)
     fail(p is not None, f'Unknown contribution: {submission_id}')
     fail(verified(p), f'{submission_id}: mechanical admission needs a source_material contribution with a '
-                      'producer verification receipt; use admission-agent decisions instead')
+                      'producer verification receipt and no report passage target; '
+                      'use admission-agent decisions instead')
     return plan_admission(state, submission_id, decisions(p), policy_root)
 
 

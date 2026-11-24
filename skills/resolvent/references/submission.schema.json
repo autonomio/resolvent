@@ -5,7 +5,8 @@
       "enum": [
         "1.0",
         "1.1",
-        "1.2"
+        "1.2",
+        "1.3"
       ]
     },
     "id": {
@@ -81,6 +82,28 @@
           "type": "null"
         }
       ]
+    },
+    "report_passage_target": {
+      "type": "object",
+      "description": "Identifies one passage in the frozen report of the accepted parent submission.",
+      "properties": {
+        "submission_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])"
+        },
+        "report_id": {
+          "$ref": "#/$defs/report_locator_id"
+        },
+        "passage_id": {
+          "$ref": "#/$defs/report_locator_id"
+        }
+      },
+      "required": [
+        "submission_sha256",
+        "report_id",
+        "passage_id"
+      ],
+      "additionalProperties": false
     },
     "brief": {
       "anyOf": [
@@ -562,6 +585,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Resolvent contribution: proposal, not canonical state",
   "$defs": {
+    "report_locator_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\\s\\S])"
+    },
     "time_bound": {
       "type": "object",
       "properties": {
@@ -709,8 +736,25 @@
       "additionalProperties": false
     }
   },
-  "$comment": "Schema 1.2 adds optional source ancestry; 1.1 valid time and legacy 1.0 remain supported.",
+  "$comment": "Schema 1.3 adds optional report passage targets; legacy 1.0 through 1.2 remain supported.",
   "allOf": [
+    {
+      "if": {
+        "required": [
+          "report_passage_target"
+        ]
+      },
+      "then": {
+        "properties": {
+          "schema_version": {
+            "const": "1.3"
+          },
+          "parent_run_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
     {
       "if": {
         "properties": {

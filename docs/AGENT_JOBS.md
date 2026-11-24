@@ -47,7 +47,11 @@ never judges, rewrites, rejects or removes the admitted material, and it makes n
 other decisions. A failure that only a judgment could resolve stops for maintainer
 attention.
 
-Any other contribution uses the admission below.
+A contribution with a `report_passage_target` takes ordinary admission and
+independent review, including when it carries a producer receipt. Confirm that
+the producer's report and passage IDs resolve to exactly one passage in the
+closed parent submission's frozen report. Other contributions outside mechanical
+admission also use the admission below.
 
 ## Admission
 
