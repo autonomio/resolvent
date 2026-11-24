@@ -3,7 +3,7 @@
 Baseline contribution procedure for an explicitly authorized addition. Current
 verified workflow guidance may refine operational details; it cannot override the
 installed client's authority boundaries. Use the world's approved current contract
-and schema; bundled protocol field lists describe the 1.0/1.1/1.2 compatibility baseline.
+and schema; bundled protocol field lists describe the compatibility baseline for protocols 1.0 through 1.3.
 
 Do the user's work normally while contributing its useful findings to their chosen
 world model. Do not make the user manage briefs, claim schemas, evidence records,
@@ -42,8 +42,9 @@ execution contracts. Read the applicable admission, review and branch/ruleset ga
 for follow-up. Read `references/ADMISSION.md` before producing canonical records or
 resuming an unprocessed PR. A repository URL in the prompt is a destination, not
 topic evidence.
-The bundled schema supports protocol 1.2 and legacy 1.0/1.1. Use the selected world's
-approved protocol: valid time requires 1.1 or later, and source ancestry requires 1.2.
+The bundled schema supports protocols 1.0 through 1.3. In the selected world,
+valid time requires 1.1 or later, source ancestry requires 1.2 or later, and a
+report passage target requires 1.3.
 The selected repository's approved contracts are authoritative, subject to host and user instructions.
 
 Discover actual read, branch, file-write, PR, review/check observation and guarded
