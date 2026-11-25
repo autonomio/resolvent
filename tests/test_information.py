@@ -116,6 +116,12 @@ class Ledger(unittest.TestCase):
         self.assertEqual(ledger(second)['totals']['repeat_citations'], 2)  # both citing claims
         self.assertEqual(delta(first, second)['gain']['repeat_citations'], 2)
         self.assertEqual(delta(second, first)['gain']['repeat_citations'], -2)
+        subset = copy.deepcopy(first)
+        subset['evidence']['E-b']['source_ids'].append('S-b')
+        change = delta(first, subset)
+        self.assertEqual((change['gain']['citations'], change['gain']['repeat_citations']), (2, 0))
+        self.assertEqual(change['claims']['C-b']['verdict'], 'adds_citation')
+        self.assertEqual(change['outcome'], 'adds_citations')
         with tempfile.TemporaryDirectory() as temporary:
             Currency().history(Path(temporary), [(0, first, []), (1, second, []), (2, first, [])])
             steps = History(Path(temporary)).replay('HEAD')['steps']

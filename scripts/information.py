@@ -186,8 +186,8 @@ class Measure:
         for claim_id, record in self.claims.items():
             self.direct[claim_id], self.independent[claim_id], self.passages[claim_id] = bearing(record)
         # Count duplicate citation footprints, even when a citation reaches several origins.
-        self.repeat_citations = sum(len(passages) - len({by_source[sid] for sid in passages})
-                                    for passages in self.passages.values())
+        self.citation_origins = {claim_id: {by_source[sid] for sid in passages}
+                                 for claim_id, passages in self.passages.items()}
         self.degree = Counter(origin for origins in self.direct.values() for origin in origins)
         self.origins = frozenset(self.degree)
         # A proposition is a group of claims the repository has judged equivalent; a lone claim is its own.
@@ -256,7 +256,7 @@ class Measure:
         return {'claims': len(self.claims), 'propositions': len(self.members),
                 'proposition_links': sum(map(len, self.proposition_direct.values())),
                 'origins': len(self.origins), 'links': links,
-                'citations': citations, 'repeat_citations': self.repeat_citations,
+                'citations': citations, 'repeat_citations': citations - sum(map(len, self.citation_origins.values())),
                 'connectors': len(self.connectors),
                 'connectors_with_own_origins': sum(1 for own in self.connector_own.values() if own),
                 'unattached_evidence': len(self.unattached_evidence)}
@@ -589,10 +589,13 @@ def delta(before: dict, after: dict) -> dict:
         elif was and not now:
             verdict = 'retired' if claim_id in after.get('claims', {}) else 'removed'
         else:
+            added_passages = p_new - p_old
+            added_citation_origins = added_passages and new.citation_origins[claim_id] - old.citation_origins[claim_id]
             # The same source records resolving to another origin is an identity change, not a change of support.
             verdict = ('origin_reidentified' if (gained or lost) and p_old == p_new else
                        'support_changed' if gained and lost else 'gains_origin' if gained else
-                       'support_withdrawn' if lost else 'repeat_citation' if p_new - p_old else
+                       'support_withdrawn' if lost else 'adds_citation' if added_citation_origins else
+                       'repeat_citation' if added_passages else
                        'citations_withdrawn' if p_old - p_new else None)
             changed = [field for field in MEASURED_FIELDS if r_old.get(field) != r_new.get(field)]
             if changed:
@@ -686,7 +689,7 @@ def delta(before: dict, after: dict) -> dict:
     elif commitment['questions']:
         outcome = 'changes_commitment'
     elif numbers['citations'] > 0:
-        outcome = 'repeat_citations_only'
+        outcome = 'adds_citations' if verdicts.get('adds_citation') else 'repeat_citations_only'
     elif equivalences:
         outcome = 'records_equivalence'
     elif verdicts.get('origin_reidentified'):

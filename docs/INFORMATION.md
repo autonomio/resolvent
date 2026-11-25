@@ -87,7 +87,8 @@ Each is a test in `tests/test_information.py` and was checked on real records.
 | `new_claim_new_origin` | New claim, at least one origin new to the model | Claim, links, its share of each new origin |
 | `new_claim_known_origins` | New claim, every origin already held | Claim and links, no origin |
 | `gains_origin` | Existing claim gains an origin | Links, and the origin if new to the model |
-| `repeat_citation` | Existing claim gains passages, no origin | Citations only |
+| `repeat_citation` | Existing claim gains passages with already cited sets of terminal origins | Citations only |
+| `adds_citation` | Existing claim gains a new citation set of terminal origins already linked to it | Citations only |
 | `support_withdrawn`, `support_changed` | Existing claim loses origins | Negative |
 | `origin_reidentified` | Same source records resolve to another origin | Origins and links move; no loss of standing. A step with nothing else reads `origin_identity_changed` |
 | `retired` | Claim leaves the active set | Minus its links and exclusive origins |
@@ -99,7 +100,9 @@ whether the folded claims rested on different origins (`adds_origins`: the same
 finding from another source) or the same ones. The proposition gain also reflects
 splits of earlier groups.
 
-The step also gets one outcome label for sorting; the numbers carry the detail.
+The step also gets one outcome label for sorting. A citations-only gain reads
+`adds_citations` when it includes a new citation set of terminal origins, and
+`repeat_citations_only` when the sets already appear in earlier citations.
 `known_origin_share` is the fraction of the origins a step draws on that the model
 already held.
 
