@@ -6,15 +6,20 @@ producer material; inspection, citation and hashes never establish paper review.
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
 from pathlib import Path
 
-from scripts.build_knowledge import git, json_bytes, sha256
+from scripts.build_knowledge import git, sha256
 from scripts.model import CANONICAL_ROOTS, MAX_FILE_BYTES, Invalid, digest, family, unique_pairs
 from scripts.model_context import text_page
 
-MAX_EXPANDED_BYTES = 32 * 1024 * 1024
+MAX_EXPANDED_BYTES = 128 * 1024 * 1024
+
+
+class ArchiveReconstructionError(ValueError):
+    """A reconstruction failure whose message is safe to include in the export."""
 
 
 def parse(text):
@@ -53,23 +58,24 @@ def research_artifact(run):
         raise ValueError('Missing or ambiguous preserved research artifact')
     index, artifact = matches[0]
     encoding = run['method_metadata'].get('canary_encoding')
-    if encoding is None:
-        result = parse(artifact['content'])
-    else:
+    result = None
+    if encoding is not None:
         if (not isinstance(encoding, dict) or encoding.get('format') != 'canary.references'
                 or type(encoding.get('version')) is not int or encoding['version'] != 1):
             raise ValueError('Unsupported preserved artifact encoding')
         active = set()
         remaining = MAX_EXPANDED_BYTES
+        native_encoder = json.JSONEncoder(sort_keys=True, indent=2, ensure_ascii=False, allow_nan=False)
 
         def account(size):
             nonlocal remaining
             remaining -= size
             if remaining < 0:
-                raise ValueError('Preserved artifact expansion exceeds 32 MiB')
+                raise ArchiveReconstructionError(
+                    f'Preserved artifact expansion exceeds the {MAX_EXPANDED_BYTES // (1024 * 1024)} MiB budget')
 
         def unpack(node):
-            account(16)  # Conservative container/separator budget, also bounds node expansion.
+            account(64)  # Charge per node as well as for serialized strings and keys.
             if isinstance(node, list):
                 return [unpack(v) for v in node]
             if not isinstance(node, dict):
@@ -85,8 +91,10 @@ def research_artifact(run):
                         parts[1] == 'method_metadata' and (len(parts) < 3 or parts[2] in ('canary_view', 'canary_encoding'))):
                     raise ValueError('Reference targets encoded content')
                 value = pointer(run, path)
-                account(len(json_bytes(value)))
-                return copy.deepcopy(value)
+                for chunk in native_encoder.iterencode(value):
+                    account(len(chunk.encode('utf-8')))
+                account(1)  # Trailing newline in the native JSON budget.
+                return value  # Reconstruction and projection only read native values.
             if set(node) == {'$canary_value'}:
                 i = node['$canary_value']
                 if type(i) is not int or not 0 <= i < len(encoding['values']) or i in active:
@@ -100,6 +108,7 @@ def research_artifact(run):
                 number = parse(node['$canary_number'])
                 if type(number) not in (int, float) or (type(number) is float and not math.isfinite(number)):
                     raise ValueError('Invalid encoded number')
+                account(len(str(number)))
                 return number
             if set(node) == {'$canary_object'}:
                 result = {}
@@ -116,30 +125,44 @@ def research_artifact(run):
             account(sum(len(json.dumps(key, ensure_ascii=False).encode('utf-8')) + 4 for key in node))
             return {key: unpack(value) for key, value in node.items()}
 
-        expanded, seen = [], set()
-        result = None
+        checksum = hashlib.sha256(b'{"artifacts":[')
+        seen = set()
         for entry in encoding['artifacts']:
             i = entry['index']
             if (type(i) is not int or not 0 <= i < len(artifacts) or i in seen
                     or entry['name'] not in ('canary-bundle.json', 'canary-research.json')
                     or artifacts[i]['name'] != entry['name'] or entry['style'] not in ('default', 'compact')):
                 raise ValueError('Invalid encoded artifact descriptor')
+            if seen:
+                checksum.update(b',')
             seen.add(i)
             decoded = unpack(parse(artifacts[i]['content']))
-            expanded.append(json.dumps(decoded, ensure_ascii=False,
-                **({'separators': (',', ':')} if entry['style'] == 'compact' else {})))
+            separators = (',', ':') if entry['style'] == 'compact' else None
+            encoder = json.JSONEncoder(ensure_ascii=False, allow_nan=False, separators=separators)
+            # The checksum covers an array of JSON strings. Escape each serialized
+            # chunk as part of the outer string, without materializing either copy.
+            checksum.update(b'"')
+            for chunk in encoder.iterencode(decoded):
+                checksum.update(json.dumps(chunk, ensure_ascii=False)[1:-1].encode('utf-8'))
+            checksum.update(b'"')
             if i == index:
                 result = decoded
-        check = {'artifacts': expanded}
+            del decoded
+        checksum.update(b']')
         if encoding['view']:
-            check['view'] = unpack(run['method_metadata']['canary_view'])
-        if sha256(json.dumps(check, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()) != encoding['sha256']:
-            raise ValueError('Preserved artifact reconstruction checksum mismatch')
-        if result is None:
-            result = parse(artifact['content'])  # The selected artifact was not reference encoded.
+            checksum.update(b',"view":')
+            encoder = json.JSONEncoder(ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(',', ':'))
+            for chunk in encoder.iterencode(unpack(run['method_metadata']['canary_view'])):
+                checksum.update(chunk.encode('utf-8'))
+        checksum.update(b'}')
+        if checksum.hexdigest() != encoding['sha256']:
+            raise ArchiveReconstructionError('Preserved artifact reconstruction checksum mismatch')
+    if result is None:
+        result = parse(artifact['content'])
+        # The unencoded path still rejects non-finite numbers and malformed UTF-8.
+        json.dumps(result, ensure_ascii=False, allow_nan=False).encode('utf-8')
     if not isinstance(result, dict):
         raise ValueError('Preserved research artifact must be an object')
-    json_bytes(result)  # Reject non-finite numbers and invalid UTF-8 before the per-run fallback ends.
     return index, result
 
 
@@ -317,6 +340,9 @@ def export_state(knowledge, reference, *, repository, reference_pointer=None, so
             papers.extend(run_papers)
             findings.append({'submission_id': rid, 'basis': anchor,
                              'fields': {key: artifact[key] for key in ('contradictions', 'gaps', 'caveats', 'residue', 'next_questions', 'scope_note') if key in artifact}})
+        except ArchiveReconstructionError as error:
+            coverage.append({'submission_id': rid, 'status': 'unknown',
+                             'reason': f'{error}. Original is available at the pinned provenance path.'})
         except (ValueError, Invalid, KeyError, IndexError, TypeError, RecursionError, OverflowError):
             coverage.append({'submission_id': rid, 'status': 'unknown',
                              'reason': 'Missing, unsupported or invalid preserved research artifact; original is available at the pinned provenance path.'})
