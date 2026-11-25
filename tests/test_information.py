@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 from fractions import Fraction
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -119,13 +120,35 @@ class Ledger(unittest.TestCase):
         subset = copy.deepcopy(first)
         subset['evidence']['E-b']['source_ids'].append('S-b')
         change = delta(first, subset)
-        self.assertEqual((change['gain']['citations'], change['gain']['repeat_citations']), (2, 0))
-        self.assertEqual(change['claims']['C-b']['verdict'], 'adds_citation')
-        self.assertEqual(change['outcome'], 'adds_citations')
+        self.assertEqual(change['gain']['origins'], 0)
+        self.assertEqual(change['claims']['C-b']['origins']['exact'], '0/1')
+        script = Path(__file__).resolve().parents[1] / 'scripts/information.py'
         with tempfile.TemporaryDirectory() as temporary:
-            Currency().history(Path(temporary), [(0, first, []), (1, second, []), (2, first, [])])
-            steps = History(Path(temporary)).replay('HEAD')['steps']
-        self.assertEqual([row['step']['gain']['repeat_citations'] for row in steps], [0, 2, -2])
+            root = Path(temporary)
+            Currency().history(root, [(0, first, []), (1, subset, []), (2, first, []),
+                                      (3, second, []), (4, first, [])])
+            before = repo_git(root, 'rev-parse', 'HEAD~4')
+            after = repo_git(root, 'rev-parse', 'HEAD~3')
+            out = root / 'reports'
+
+            def run(*args):
+                return subprocess.check_output([sys.executable, str(script), '--repo', str(root), *args], text=True)
+
+            self.assertEqual(json.loads(run('delta', '--before', before, '--after', after)), change)
+            replay = json.loads(run('replay'))
+            self.assertIn('Citation gain: +2 total, +0 repeats.', run('ci', '--before', before, '--after', after,
+                                                                    '--out', str(out)))
+            self.assertEqual(json.loads((out / 'change.json').read_text()), change)
+            ci_replay = json.loads((out / 'history.json').read_text())
+        # An exhaustive consumer of these steps can still use the old outcome and verdict keys.
+        for step in (change, replay['steps'][1]['step'], ci_replay['steps'][1]['step']):
+            self.assertEqual(step['outcome'], 'repeat_citations_only')
+            self.assertEqual(step['verdicts'], {'repeat_citation': 2})
+            self.assertEqual((step['gain']['citations'], step['gain']['repeat_citations']), (2, 0))
+        self.assertEqual(change['claims']['C-b']['verdict'], 'repeat_citation')
+        self.assertEqual(ci_replay['outcomes'], {'adds_origins': 1, 'repeat_citations_only': 1})
+        self.assertEqual(replay['outcomes'], {'adds_origins': 1, 'loss': 2, 'repeat_citations_only': 2})
+        self.assertEqual([row['step']['gain']['repeat_citations'] for row in replay['steps']], [0, 0, 0, 2, -2])
 
     def test_declared_ancestry_resolves_to_the_original(self):
         records = world()
