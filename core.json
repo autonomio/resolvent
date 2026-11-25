@@ -1,6 +1,6 @@
 {
-  "core_version": "1.9.1",
+  "core_version": "1.9.2",
   "format_version": "1.0",
-  "lock_sha256": "dfc7b7fdef5da2db41d07d5301027a9c2d457a912b2f1633b3c060bd0981c1ec",
-  "source_commit": "b1d4a80e7a4e01e43593a8979b9ad56551d51891"
+  "lock_sha256": "f3347b3b4a377e0c3a3e05e20ae6332b15b5841ea890f9bc91c7995f40d23fc6",
+  "source_commit": "162a5443bce64b5c99efa624a977a22764f937c6"
 }
