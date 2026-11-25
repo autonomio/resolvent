@@ -58,11 +58,8 @@ def exact(value) -> dict:
 def origin_key(source: dict) -> tuple[str, str]:
     """Identity of a terminal source, from declared metadata only.
 
-    Declared content digest, else normalized address, else the declared title of
-    an address-less source, else the record itself. The key's prefix names the
-    basis, so every count can be read with the precision of its identity rule.
-    Every rule can only merge records, so the origin count never exceeds the
-    number of terminal source records.
+    Declared content digest, else normalized address, else the record itself.
+    Titles alone do not identify a source.
     """
     stratum = STRATA.get(source.get('kind') or '', 'unclassified')
     digest = (source.get('ancestry') or {}).get('content_sha256')
@@ -77,8 +74,6 @@ def origin_key(source: dict) -> tuple[str, str]:
         except ValueError:
             pass  # An unparseable address is kept verbatim, never guessed.
         return stratum, 'uri:' + uri
-    if source.get('title'):
-        return stratum, 'title:' + source['title']
     return stratum, 'source:' + source['id']
 
 
@@ -113,9 +108,23 @@ def collect_operations(provenance) -> dict:
 
 
 def collect_reviews(provenance) -> dict:
-    """Completed maintenance records and the claims each one reviewed."""
-    return {record['id']: list(record.get('reviewed_claim_ids') or []) for record in provenance
-            if isinstance(record, dict) and record.get('id', '').startswith('M-') and record.get('status') == 'completed'}
+    """Count each claim reviewed by a completed maintenance record or admission closure once per record."""
+    reviews = {}
+    for record in provenance:
+        if not isinstance(record, dict):
+            continue
+        record_id = record.get('id', '')
+        if record_id.startswith('M-') and record.get('status') == 'completed':
+            subjects = set(record.get('reviewed_claim_ids') or [])
+        elif record_id.startswith('BC-'):
+            subjects = set()
+        else:
+            continue
+        subjects.update(claim_id for op in record.get('model_operations') or []
+                        if op['kind'] == 'reassessment' for claim_id in op['subject_ids'])
+        if subjects or record_id.startswith('M-'):
+            reviews[record_id] = sorted(subjects)
+    return reviews
 
 
 def current_comparisons(records: dict) -> dict[tuple, str]:
@@ -176,6 +185,9 @@ class Measure:
         self.direct, self.independent, self.passages = {}, {}, {}
         for claim_id, record in self.claims.items():
             self.direct[claim_id], self.independent[claim_id], self.passages[claim_id] = bearing(record)
+        # Count duplicate citation footprints, even when a citation reaches several origins.
+        self.repeat_citations = sum(len(passages) - len({by_source[sid] for sid in passages})
+                                    for passages in self.passages.values())
         self.degree = Counter(origin for origins in self.direct.values() for origin in origins)
         self.origins = frozenset(self.degree)
         # A proposition is a group of claims the repository has judged equivalent; a lone claim is its own.
@@ -244,7 +256,8 @@ class Measure:
         return {'claims': len(self.claims), 'propositions': len(self.members),
                 'proposition_links': sum(map(len, self.proposition_direct.values())),
                 'origins': len(self.origins), 'links': links,
-                'citations': citations, 'connectors': len(self.connectors),
+                'citations': citations, 'repeat_citations': self.repeat_citations,
+                'connectors': len(self.connectors),
                 'connectors_with_own_origins': sum(1 for own in self.connector_own.values() if own),
                 'unattached_evidence': len(self.unattached_evidence)}
 
@@ -281,7 +294,7 @@ def ledger(records: dict) -> dict:
             'origins_by_stratum': {name: strata.get(name, 0) for name in STRATUM_ORDER},
             'origins_by_identity_basis': {name: basis.get(name, 0) for name in IDENTITY_BASES},
             'links': links, 'citations': totals['citations'],
-            'repeat_citations': totals['citations'] - links,
+            'repeat_citations': totals['repeat_citations'],
         },
         'connectors': {
             'connectors': totals['connectors'],
@@ -510,14 +523,14 @@ def commitment_delta(before: dict, after: dict) -> dict:
                 verdict = 'space_changed'
             elif was is None:
                 space = question['space']
-                cut = surprise(space, prior, now)
+                cut = Fraction(1) if now in prior.values() else surprise(space, prior, now)
                 row['surprise'] = INFINITE if cut is None else bits(cut)
                 contested = len(families) > 1 and any(claim_id not in family for family in families)
                 if cut is None:
                     verdict = 'conflicts'
                 elif not prior:
                     verdict = 'conflicts' if contested else 'first_answer'
-                elif cut == 1 or now in prior.values():
+                elif cut == 1:
                     verdict = 'repeats'
                 else:
                     verdict = 'conflicts' if contested else 'narrows'
@@ -636,12 +649,11 @@ def delta(before: dict, after: dict) -> dict:
     known = len(step_origins & old.origins)
     numbers = {column: int(gain[column]) for column in COLUMNS}
     extra = {key: after_totals[key] - before_totals[key]
-             for key in ('propositions', 'proposition_links', 'connectors', 'connectors_with_own_origins',
-                         'unattached_evidence')}
-    earlier = {frozenset(members) for members in old.members.values()}
+             for key in ('repeat_citations', 'propositions', 'proposition_links', 'connectors',
+                         'connectors_with_own_origins', 'unattached_evidence')}
     equivalences = []
     for root, members in sorted(new.members.items()):
-        if len(members) > 1 and frozenset(members) not in earlier:
+        if len({old.root.get(claim_id, claim_id) for claim_id in members}) > 1:
             widest = max(len(new.direct[c]) for c in members)
             equivalences.append({'claims': members, 'origins': len(new.proposition_direct[root]),
                                  'verdict': 'adds_origins' if len(new.proposition_direct[root]) > widest else 'same_origins'})
@@ -689,7 +701,7 @@ def delta(before: dict, after: dict) -> dict:
         outcome = 'no_change'
     return {
         'ledger_version': LEDGER_VERSION, 'outcome': outcome,
-        'gain': {**numbers, 'repeat_citations': numbers['citations'] - numbers['links'], **extra},
+        'gain': {**numbers, **extra},
         'origins_entered': len(entered), 'origins_left': len(left),
         'origins_entered_by_stratum': {name: sum(1 for stratum, _ in entered if stratum == name)
                                        for name in STRATUM_ORDER},

@@ -81,15 +81,45 @@ class Ledger(unittest.TestCase):
         shuffled = {group: dict(reversed(list(items.items()))) for group, items in world().items()}
         self.assertEqual(ledger(base), ledger(shuffled))
 
-    def test_identity_uses_declared_digest_then_address_then_title(self):
+    def test_identity_uses_declared_digest_then_address_then_record(self):
         self.assertEqual(origin_key(source('S-1', 'HTTPS://Host.example/p?q=1#frag'))[1], 'uri:https://host.example/p?q=1')
-        self.assertEqual(origin_key(source('S-2', None, kind='simulation', title='Run 1')), ('generated', 'title:Run 1'))
+        self.assertEqual(origin_key(source('S-2', None, kind='simulation', title='Run 1')), ('generated', 'source:S-2'))
         digest = {'status': 'unknown', 'parent_source_ids': [], 'notes': ['n'], 'content_sha256': 'a' * 64}
         self.assertEqual(origin_key(source('S-3', 'https://x.example', ancestry=digest))[1], 'sha256:' + 'a' * 64)
         records = world()  # the same bytes at two addresses are one origin once the digest is declared
         records['sources']['S-b']['ancestry'] = digest
         records['sources']['S-c']['ancestry'] = digest
         self.assertEqual(ledger(records)['totals']['origins'], 2)
+
+    def test_identical_titles_without_addresses_do_not_fold_distinct_sources(self):
+        records = world()
+        for sid in ('S-b', 'S-c'):
+            records['sources'][sid] = source(sid, None, kind='simulation', title='Simulation run')
+        totals = ledger(records)['totals']
+        self.assertEqual(totals['origins'], 3)
+        self.assertEqual(totals['origins_by_identity_basis'], {'sha256': 0, 'uri': 1, 'title': 0, 'source': 2})
+
+    def test_multi_origin_citations_repeat_only_another_citation_with_the_same_origins(self):
+        first = world()
+        first['sources']['S-summary'] = source('S-summary', 'https://example.org/summary', ancestry={
+            'status': 'derived', 'parent_source_ids': ['S-b', 'S-c'], 'notes': ['Draws on two originals'],
+        })
+        first['evidence']['E-b']['source_ids'] = ['S-summary']
+        first['evidence']['E-a']['source_ids'] = ['S-a1']
+        totals = ledger(first)['totals']
+        self.assertEqual((totals['citations'], totals['links'], totals['repeat_citations']), (4, 5, 0))
+        second = copy.deepcopy(first)
+        second['sources']['S-copy'] = source('S-copy', None, ancestry={
+            'status': 'derived', 'parent_source_ids': ['S-summary'], 'notes': ['Repeats the summary'],
+        })
+        second['evidence']['E-b']['source_ids'].append('S-copy')
+        self.assertEqual(ledger(second)['totals']['repeat_citations'], 2)  # both citing claims
+        self.assertEqual(delta(first, second)['gain']['repeat_citations'], 2)
+        self.assertEqual(delta(second, first)['gain']['repeat_citations'], -2)
+        with tempfile.TemporaryDirectory() as temporary:
+            Currency().history(Path(temporary), [(0, first, []), (1, second, []), (2, first, [])])
+            steps = History(Path(temporary)).replay('HEAD')['steps']
+        self.assertEqual([row['step']['gain']['repeat_citations'] for row in steps], [0, 2, -2])
 
     def test_declared_ancestry_resolves_to_the_original(self):
         records = world()
@@ -318,6 +348,17 @@ class Equivalence(unittest.TestCase):
         self.assertEqual(ledger(records)['totals']['propositions'], 3)
         self.assertEqual(ledger(records)['equivalence']['compared_pairs'], {'distinct': 1})
 
+    def test_splitting_a_group_does_not_fold_or_tag_its_remaining_members(self):
+        before = self.judged(**{'M-1#x': compared('C-a', 'C-b', 'equivalent'),
+                                'M-2#x': compared('C-b', 'C-c', 'equivalent')})
+        after = copy.deepcopy(before)
+        after['operations']['M-3#x'] = compared('C-b', 'C-c', 'distinct', supersedes='M-2#x')
+        after['claims']['C-b']['uncertainty'] = 'high'
+        report = delta(before, after)
+        self.assertEqual((report['gain']['propositions'], report['equivalences']), (1, []))
+        self.assertEqual(report['claims']['C-b']['loss'], ['uncertainty_raised'])
+        self.assertFalse(report['claims']['C-b']['at_equivalence'])
+
     def test_a_pair_already_judged_is_not_flagged_again(self):
         def restated(operations):
             after = self.judged(**operations)
@@ -336,14 +377,15 @@ class Currency(unittest.TestCase):
         git = lambda *args, **env: subprocess.run(['git', '-C', str(root), *args], check=True, capture_output=True,
                                                   env={'PATH': __import__('os').environ['PATH'], **env})
         git('init', '-q')
-        for number, (day, state, maintenance) in enumerate(states):
+        for number, (day, state, judgments) in enumerate(states):
             for group in GROUPS:
                 (root / group).mkdir(exist_ok=True)
                 for record_id, record in state[group].items():
                     (root / group / f'{record_id}.yaml').write_text(yaml.safe_dump(record), encoding='utf-8')
-            (root / 'maintenance').mkdir(exist_ok=True)
-            for record in maintenance:
-                (root / 'maintenance' / f"{record['id']}.yaml").write_text(yaml.safe_dump(record), encoding='utf-8')
+            for record in judgments:
+                folder = root / ('briefs/closed' if record['id'].startswith('BC-') else 'maintenance')
+                folder.mkdir(parents=True, exist_ok=True)
+                (folder / f"{record['id']}.yaml").write_text(yaml.safe_dump(record), encoding='utf-8')
             when = f'{self.T0 + day * 86400} +0000'
             git('add', '-A')
             git('-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q', '--allow-empty', '-m', f'step {number}',
@@ -382,6 +424,28 @@ class Currency(unittest.TestCase):
         self.assertEqual(found['attrition']['loss_per_claim_day']['interval95'][0], 0.0)
         self.assertGreater(found['attrition']['loss_per_claim_day']['interval95'][1], 0.0)
         self.assertEqual(found['attrition']['loss_per_review'], {'estimate': None, 'interval95': None})
+
+    def test_admission_and_maintenance_reassessments_count_once_per_record(self):
+        first, second = world(), world()
+        for cid in ('C-a', 'C-b'):
+            second['claims'][cid]['uncertainty'] = 'high'
+        reassessment = {'id': 'grade', 'kind': 'reassessment', 'subject_ids': ['C-a', 'C-b'],
+                        'basis_ids': ['E-a', 'E-b'], 'reason': 'New evidence raises uncertainty',
+                        'uncertainty': 'high', 'predecessors': {'C-a': None, 'C-b': None},
+                        'read_sha256': {}, 'previous_uncertainty': {'C-a': 'medium', 'C-b': 'medium'}}
+        admission = {'id': 'BC-' + 'a' * 32, 'schema_version': '1.1', 'model_operations': [reassessment]}
+        maintenance = {'id': 'M-1', 'status': 'completed', 'reviewed_claim_ids': ['C-c'],
+                       'model_operations': [{**reassessment, 'subject_ids': ['C-c']}]}
+        pending = {'id': 'M-2', 'status': 'pending', 'model_operations': [reassessment]}
+        with tempfile.TemporaryDirectory() as temporary:
+            self.history(Path(temporary), [(0, first, []), (1, second, [admission, maintenance, pending]),
+                                           (2, second, [])])
+            found = History(Path(temporary)).replay('HEAD')['currency']
+        attrition = found['attrition']
+        self.assertEqual((attrition['reviews'], attrition['losses_found_at_review'],
+                          attrition['losses_outside_review']), (3, 2, 0))
+        self.assertEqual(attrition['loss_per_review'], {'estimate': 0.666667, 'interval95': wilson(2, 3)})
+        self.assertEqual(found['clocks_days']['since_last_review']['max'], 1.0)
 
 
 def repo_git(root: Path, *args: str, **env: str) -> str:
@@ -520,6 +584,7 @@ class Hardening(unittest.TestCase):
         restated = answering(split, 'C-z', values('Q-4', 'a', 'b'))
         row = commitment_delta(split, restated)['questions']['Q-4']
         self.assertEqual((row['answers']['C-z']['verdict'], row['gain']['ratio']), ('repeats', '1/1'))
+        self.assertEqual(row['answers']['C-z']['surprise'], bits(1))
 
     def test_statistics_hold_at_their_edges(self):
         self.assertTrue(800 < poisson_quantile(800, 0.975) < 900)
@@ -529,11 +594,15 @@ class Hardening(unittest.TestCase):
         self.assertEqual(period_end('2024-02') - period_end('2024-01'), 29)
 
     def test_commit_times_that_run_backwards_never_give_a_negative_span(self):
+        weakened = world()
+        weakened['claims']['C-a']['uncertainty'] = 'high'
         with tempfile.TemporaryDirectory() as temporary:
-            Currency().history(Path(temporary), [(10, world(), []), (0, world(), []), (1, world(), [])])
+            Currency().history(Path(temporary), [(10, world(), []), (12, world(), []), (9, weakened, [])])
             found = History(Path(temporary)).replay('HEAD')['currency']
-        self.assertEqual((found['history_days'], found['clocks_days']['since_admitted']['min']), (0.0, 0.0))
-        self.assertIsNone(found['projection']['expected_losses']['interval95'])  # no exposure, so no rate is stated
+        self.assertEqual((found['history_days'], found['clocks_days']['since_admitted']['min']), (2.0, 2.0))
+        self.assertEqual(found['attrition']['loss_per_claim_day']['exposure'], 6.0)
+        self.assertEqual(found['projection']['horizon_days'], 2.0)
+        self.assertTrue(all(0 <= value <= 1 for value in found['projection']['share_keeping_standing']['interval95']))
 
     def test_declaring_answers_is_not_read_as_no_change(self):
         before = asked()

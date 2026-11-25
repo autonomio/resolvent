@@ -29,11 +29,10 @@ to the sources with no recorded parent, then identify each by the first of:
 
 1. `sha256:` its declared `ancestry.content_sha256`;
 2. `uri:` its address, with scheme and host lower-cased and the fragment dropped;
-3. `title:` its title, when it has no address;
-4. `source:` its record ID.
+3. `source:` its record ID, including when its title matches another source.
 
-The prefix is the **identity basis** and is reported with every count. Each rule can
-only merge records, so the origin count is an upper bound on distinct originals.
+The prefix is the **identity basis** and is reported with every count. The report
+retains the `title` bucket with a count of zero for compatibility.
 
 **Stratum.** What kind of thing the origin is, from source `kind`: `observational`
 (publication, web), `testimonial` (conversation, interview) or `generated`
@@ -43,8 +42,8 @@ rating.
 **Link.** An origin *bears on* a claim when any evidence record of that active claim
 cites a source resolving to it. A link says the origin was used, not that it agrees.
 
-**Citation.** One source record cited for one claim. Citations beyond the first from
-the same origin for the same claim are **repeat citations**.
+**Citation.** One source record cited for one claim. Citations beyond the first with
+the same set of terminal origins for the same claim are **repeat citations**.
 
 **Proposition.** Claims the repository has judged `equivalent` through a standing
 comparison operation are one proposition; any other claim is its own. The ledger
@@ -95,9 +94,10 @@ Each is a test in `tests/test_information.py` and was checked on real records.
 | `reassessed` | Class, uncertainty or valid time changed | None |
 | `unmeasured_edit` | Statement changed | None, flagged as unmeasurable |
 
-A newly recorded equivalence is reported apart, with the number of propositions it
-folds and whether the folded claims rested on different origins (`adds_origins`: the
-same finding from another source) or the same ones.
+A group that brings previously separate claims together is reported apart, with
+whether the folded claims rested on different origins (`adds_origins`: the same
+finding from another source) or the same ones. The proposition gain also reflects
+splits of earlier groups.
 
 The step also gets one outcome label for sorting; the numbers carry the detail.
 `known_origin_share` is the fraction of the origins a step draws on that the model
@@ -138,7 +138,7 @@ disagreement; the verdict is derived, in this order:
 |---|---|---|
 | Shares nothing with what was admitted before (infinite surprise) | `conflicts` | Loss; the question is flagged |
 | No earlier answer | `first_answer` | Gain against the declared space |
-| Admits everything admitted before, or equals an existing answer | `repeats` | None |
+| Admits everything admitted before, or equals an existing answer | `repeats` | Zero surprise |
 | After the step it cannot hold together with every other answer | `conflicts` | The question is flagged |
 | Otherwise | `narrows` | Gain |
 
@@ -188,7 +188,8 @@ history shows, and applies it to groups of claims, never to one.
 **Clocks**, each exact for the revision measured:
 
 - since the claim was admitted (first-parent committer time);
-- since a completed maintenance record last reviewed it, or never;
+- since it was last reviewed in a completed maintenance record or explicitly
+  reassessed in an admission closure, or never;
 - since its newest evidence was reported, as a lower bound from source dates.
 
 **Attrition.** A *loss of standing* is a reviewed change to the claim itself that
@@ -196,7 +197,9 @@ weakens it: its uncertainty is raised, a cited source is withdrawn along with it
 origin, its own answer is widened or removed, or it leaves the active set. A change
 to how a source is identified, or to a question, is not a loss. The ledger counts
 losses against two exposures: claim-days, and claim reviews for the losses found in
-the step that reviewed the claim. Each rate carries a 95% interval computed from the
+the step that reviewed the claim. Each completed record counts a claim at most
+once, including when a maintenance record both lists it as reviewed and reassesses
+it. Each rate carries a 95% interval computed from the
 two counts alone. Bits lost are counted the same way: a drop on a question whose
 space changed, or that was retired, is not a loss. A committer time earlier than its
 parent's is read as its parent's, so no span is negative. A loss that coincides with the claim being folded into an
@@ -278,7 +281,7 @@ identifiers in free-form locators the ledger does not read. Against those:
 | Content digest declared | 357 (+3.5%) | 10 of 66 | 2 |
 | World's own identifiers | 345 | 0 | 0 |
 
-Every error is an over-count, as the merge-only rule predicts.
+Every error in this sample is an over-count.
 
 **Equivalence.** The repository's reviews had compared 197 pairs of claims: 57
 equivalent, 100 overlapping, 40 distinct. They fold 57 claims into 45 groups, 20 of
@@ -354,10 +357,10 @@ Every reading matched.
 
 ## Limits
 
-- **Origin identity** is as precise as declared metadata. Declaring
-  `ancestry.content_sha256`, and a common parent for copies of one work, is the fix.
-  Origin count is an upper bound on independent observations; only the reviewed
-  `independent` flag speaks to independence.
+- **Origin identity** depends on declared metadata. A shared address can still
+  identify distinct works, and one work can appear at several addresses. Declaring
+  `ancestry.content_sha256` or a common parent can identify copies of one work.
+  Reviewed `independent` flags provide the ledger's evidence of independence.
 - **A claim record is not a proposition** until review compares it. Uncompared
   restatements count as separate propositions.
 - **Attribution is by claim**, not by proposition; folded claims keep their shares.
