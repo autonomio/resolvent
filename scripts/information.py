@@ -11,6 +11,7 @@ import argparse
 from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from fractions import Fraction
+from itertools import accumulate, chain
 import json
 import math
 import os
@@ -746,16 +747,49 @@ def byar(events: int) -> tuple[float, float]:
 
 def poisson_quantile(mean: float, level: float) -> int:
     """Smallest count whose cumulative probability reaches the level."""
-    if mean > 500:
-        # exp(-mean) underflows long before this matters; the normal form is accurate here.
-        return max(0, math.floor(mean + statistics.NormalDist().inv_cdf(level) * math.sqrt(mean) + 0.5))
-    term = total = math.exp(-mean)
-    count = 0
-    while total < level and count < 100000:
+    if mean <= 500:
+        term = total = math.exp(-mean)
+        count = 0
+        while total < level and count < 100000:
+            count += 1
+            term *= mean / count
+            total += term
+        return count
+    if not 0 < level < 1:
+        raise statistics.StatisticsError('p must be in the range 0.0 < p < 1.0')
+
+    # Relative masses around the mode avoid starting at exp(-mean), which can underflow.
+    # Each tail's decreasing recurrence ratios bound the omitted mass by a geometric sum.
+    mode = math.floor(mean)
+    tolerance = math.ulp(min(level, 1 - level)) / 4
+    below = []
+    count, mass = mode, 1.0
+    while count:
+        mass *= count / mean
+        count -= 1
+        if mass <= tolerance * (1 - count / mean):
+            break
+        below.append(mass)
+
+    above = [1.0]  # includes the mode
+    count, mass = mode, 1.0
+    while True:
         count += 1
-        term *= mean / count
-        total += term
-    return count
+        mass *= mean / count
+        if mass <= tolerance * (1 - mean / (count + 1)):
+            break
+        above.append(mass)
+
+    total = math.fsum(chain(below, above))
+    if level <= 0.5:
+        cdf = accumulate(chain(reversed(below), above))
+        offset = next(i for i, mass in enumerate(cdf) if mass >= level * total)
+        return mode - len(below) + offset
+
+    # Sum the survival tail directly to avoid cancellation at levels close to one.
+    tail = accumulate(chain(reversed(above), below))
+    offset = next(i for i, mass in enumerate(tail) if mass > (1 - level) * total)
+    return mode + len(above) - 1 - offset
 
 
 def period_end(text) -> int | None:
