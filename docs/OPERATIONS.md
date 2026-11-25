@@ -711,11 +711,15 @@ those unadmitted proposals remain at their pinned origins rather than being copi
 into continuation context. Canonical supporting passages remain included.
 
 The existing `canary-research.json` and `canary.references` version 1 extension are
-read locally with a checked reconstruction checksum and a conservative 32 MiB
-decoding budget. No Canary installation, provider, credentials or filesystem/URL
-reference resolution is required. Missing, malformed or unsupported reports yield
-unknown coverage with pinned provenance. In producer `basis` strings, a pointer
-after a second `#` addresses the decoded embedded JSON document.
+read locally. Reference-encoded reports share a 128 MiB reconstruction budget per
+submission, including node overhead, across all encoded artifacts and the view.
+The reader checks the legacy checksum incrementally. No Canary installation,
+provider, credentials or filesystem/URL reference resolution is required.
+Missing, malformed or unsupported reports yield unknown coverage with pinned
+provenance. If reconstruction exceeds the budget or fails its checksum,
+`review_coverage.submissions` names the affected run and gives the reason. This
+also applies to `--complete`. In producer `basis` strings, a pointer after a
+second `#` addresses the decoded embedded JSON document.
 
 Exact repeats of the selected reference, review and gap display fields share one
 display entry with every occurrence's provenance. Differing coverage and review

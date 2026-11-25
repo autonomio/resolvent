@@ -5,6 +5,7 @@ import json
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
 
 import jsonschema
 
@@ -382,10 +383,48 @@ class ResearchStateTests(unittest.TestCase):
         self.assertEqual(research_artifact(p)[1], expected)
         p['method_metadata']['canary_encoding']['sha256'] = '0'*64
         with self.assertRaisesRegex(ValueError, 'checksum'): research_artifact(p)
-        self.assertEqual(self.export(self.query(admitted(p)))['review_coverage']['submissions'][0]['status'], 'unknown')
+        result = self.export(self.query(admitted(p)))
+        jsonschema.validate(result, SCHEMA)
+        report, = result['review_coverage']['submissions']
+        self.assertEqual(report['submission_id'], p['id'])
+        self.assertEqual(report['status'], 'unknown')
+        self.assertIn('checksum mismatch', report['reason'])
+        self.assertEqual(result['references'], [])
+        self.assertEqual(result['reviewed_papers'], [])
+
+    def test_complete_cli_recovers_ledgers_above_legacy_expansion_budget(self):
+        p = proposal()
+        excerpt = 'x' * (256 * 1024)
+        parts = [{'$canary_value': 0}] * 132
+        restored_parts = [excerpt] * len(parts)
+        view = {'z': 'café\n', 'a': {'b': False, 'a': '"\\'}}
+        p['result']['artifacts'] = [
+            {'name': 'canary-bundle.json', 'content': json.dumps({'excerpts': parts[:4]})},
+            {'name': 'canary-research.json', 'content': json.dumps(dict(research(), excerpts=parts))}]
+        restored = [json.dumps({'excerpts': restored_parts[:4]}, separators=(',', ':')),
+                    json.dumps(dict(research(), excerpts=restored_parts))]
+        self.assertGreater(len(restored[1]), 32 * 1024 * 1024)
+        body = json.dumps({'view': view, 'artifacts': restored}, ensure_ascii=False,
+                          sort_keys=True, separators=(',', ':'))
+        p['method_metadata'].update(canary_view=view, canary_encoding={
+            'format': 'canary.references', 'version': 1, 'values': [excerpt],
+            'artifacts': [{'index': 0, 'name': 'canary-bundle.json', 'style': 'compact'},
+                          {'index': 1, 'name': 'canary-research.json', 'style': 'default'}],
+            'view': True, 'sha256': hashlib.sha256(body.encode()).hexdigest()})
+        fixture = QueryFixture(admitted(p))
+        self.addCleanup(fixture.temp.cleanup)
+        raw = subprocess.check_output([
+            sys.executable, str(ROOT/'scripts/query_knowledge.py'), '--package', str(fixture.package),
+            'research-state', 'external-question-9', '--repository', 'example/world',
+            '--reference-pointer', '/method_metadata/external/question',
+            '--source-repo', str(fixture.root/'repo'), '--complete'])
+        result = json.loads(raw)
+        jsonschema.validate(result, SCHEMA)
+        self.assertEqual(result['review_coverage']['submissions'][0]['status'], 'preserved_producer_report')
+        self.assertEqual([row['id'] for row in result['references']], ['paper-one'])
+        self.assertEqual([row['work_id'] for row in result['reviewed_papers']], ['paper-one'])
 
     def test_encoded_cycles_external_pointers_and_expansion_are_bounded(self):
-        from unittest.mock import patch
         for token in ({'$canary_value': 0}, {'$canary_ref': 'https://example.invalid/payload'},
                       {'$canary_ref': '/result/artifacts/0/content'}):
             p = proposal(); p['result']['artifacts'][0]['content'] = json.dumps(token)
@@ -399,8 +438,15 @@ class ResearchStateTests(unittest.TestCase):
             'values': [], 'artifacts': [{'index': 0, 'name': 'canary-research.json', 'style': 'default'}],
             'view': False, 'sha256': checksum}
         self.assertEqual(research_artifact(p)[1], research())
+        query = self.query(admitted(p))
         with patch('scripts.research_state.MAX_EXPANDED_BYTES', 10):
             with self.assertRaisesRegex(ValueError, 'expansion exceeds'): research_artifact(p)
+            result = self.export(query)
+        jsonschema.validate(result, SCHEMA)
+        report, = result['review_coverage']['submissions']
+        self.assertEqual(report['submission_id'], p['id'])
+        self.assertEqual(report['status'], 'unknown')
+        self.assertIn('expansion exceeds', report['reason'])
 
     def test_encoded_values_literals_numbers_ordered_objects_and_native_arrays(self):
         p = proposal()
