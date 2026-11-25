@@ -592,12 +592,19 @@ class Hardening(unittest.TestCase):
         self.assertEqual((row['answers']['C-z']['verdict'], row['gain']['ratio']), ('repeats', '1/1'))
         self.assertEqual(row['answers']['C-z']['surprise'], bits(1))
 
-    def test_statistics_hold_at_their_edges(self):
-        self.assertTrue(800 < poisson_quantile(800, 0.975) < 900)
-        self.assertTrue(700 < poisson_quantile(800, 0.025) < 800)
-        self.assertEqual(poisson_quantile(0.0, 0.975), 0)
+    def test_period_end_rejects_invalid_dates_and_handles_leap_year(self):
         self.assertEqual([period_end(text) for text in ('2024-13', '2024-00', '2024-05-00', '2024-02-30', 'soon')], [None] * 5)
         self.assertEqual(period_end('2024-02') - period_end('2024-01'), 29)
+
+    def test_poisson_quantile_reaches_both_tails_at_the_first_count(self):
+        # Reference counts from a high-precision Poisson CDF.
+        for mean, lower, upper in ((0, 0, 0), (0.5, 0, 2), (500, 457, 544),
+                                   (500.5, 457, 545), (512, 468, 557), (1000, 938, 1062),
+                                   (100000, 99381, 100620)):
+            with self.subTest(mean=mean):
+                self.assertEqual(poisson_quantile(mean, 0.025), lower)
+                self.assertEqual(poisson_quantile(mean, 0.975), upper)
+        self.assertEqual(poisson_quantile(1000, 0.9999999999999999), 1270)
 
     def test_commit_times_that_run_backwards_never_give_a_negative_span(self):
         weakened = world()

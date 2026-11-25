@@ -79,8 +79,9 @@ jobs:
           LEDGER_BEFORE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
         run: |
           if [ -f policy/scripts/information.py ]; then
+            # Use the trusted parser's default budget for compatibility with older core releases.
             timeout 240 python policy/scripts/information.py --repo candidate ci \
-              --before "$LEDGER_BEFORE" --budget 150 --out "$RUNNER_TEMP/resolvent-information" >> "$GITHUB_STEP_SUMMARY" || true
+              --before "$LEDGER_BEFORE" --out "$RUNNER_TEMP/resolvent-information" >> "$GITHUB_STEP_SUMMARY" || true
           fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         continue-on-error: true
