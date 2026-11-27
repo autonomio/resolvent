@@ -333,12 +333,49 @@ class CoreTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Existing update branch differs'):
                 core_update.publish(self.world,'example/world',provider=provider)
 
+    def test_published_validation_workflow_can_upgrade_an_existing_world(self):
+        path = '.github/workflows/validate.yml'
+        workflow = core_release.git(ROOT, 'show', 'HEAD:' + path)
+        (self.upstream / path).write_bytes(workflow)
+        self.lock(self.upstream, '1.2.0')
+        self.commit(self.upstream, 'Synthetic release with the actual validation workflow')
+        core_release.git(self.upstream, 'push', 'origin', 'HEAD:main')
+        core_release.publish_channel(self.upstream, 'autonomio/resolvent', reviewer=lambda *_: None)
+        provider = Provider()
+        with patch.object(core_update, 'git', side_effect=self.local_fetch):
+            result = core_update.publish(self.world, 'example/world', provider=provider)
+        self.assertEqual(result['status'], 'pr_created')
+        branch = 'refs/heads/resolvent/core/1.2.0'
+        self.assertEqual(core_release.git(self.remote, 'show', branch + ':' + path), workflow)
+        self.assertEqual(core_release.git(self.remote, 'show', branch + ':resolvent.yaml'),
+                         core_release.git(self.world, 'show', self.base + ':resolvent.yaml'))
+        self.assertIn(('workflow', 'run', 'validate.yml', '--repo', 'example/world',
+                       '--ref', 'resolvent/core/1.2.0'), [args for args, _ in provider.calls])
+        self.assertFalse(self.marker.exists())
+
     def test_candidate_validation_is_unprivileged_and_updates_are_opt_in(self):
         load=lambda path:yaml.load((ROOT/path).read_text(),Loader=yaml.BaseLoader)
         workflow=load('.github/workflows/core-update.yml')
         self.assertIn("vars.RESOLVENT_CORE_UPDATES == 'true'",workflow['jobs']['prepare']['if'])
         self.assertEqual(set(workflow['on']),{'schedule','workflow_dispatch','workflow_run'})
-        validate=load('.github/workflows/validate.yml')['jobs']['tests']
+        validation=load('.github/workflows/validate.yml')
+        self.assertEqual(validation['name'], 'Resolvent validation')
+        self.assertEqual(set(validation['on']), {'pull_request','merge_group','push','workflow_dispatch'})
+        self.assertEqual(validation['on']['push']['branches'], ['main'])
+        integrity=validation['jobs']['integrity']
+        validate=validation['jobs']['tests']
+        self.assertEqual(integrity['name'], 'World model integrity')
+        self.assertEqual(validate['name'], 'Tests and skill package')
+        for job in (integrity, validate):
+            self.assertNotIn('if', job)
+            self.assertNotIn('continue-on-error', job)
+        policy=next(step for step in integrity['steps'] if step.get('name')=='Check out trusted policy')
+        self.assertEqual(policy['with']['ref'],
+                         "${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || 'main' }}")
+        gate=next(step for step in integrity['steps'] if step.get('name')=='Enforce model integrity and closed admission')
+        self.assertIn('--root candidate --policy-root policy --base policy --require-closure', gate['run'])
+        self.assertNotIn('if', gate)
+        self.assertNotIn('continue-on-error', gate)
         self.assertEqual(validate['permissions'],{'contents':'read'})
         checkouts=[step for step in validate['steps'] if step.get('uses','').startswith('actions/checkout@')]
         self.assertEqual([step['with']['persist-credentials'] for step in checkouts],['false'])
