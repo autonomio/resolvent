@@ -171,6 +171,17 @@ published lock before attributing its capabilities. Other recognized baselines
 need the same byte verification and their own policy interpretation; an older or
 future implementation is not granted this reference's capabilities by its version.
 
+The validation workflow is a downstream interface. Keep the workflow name
+`Resolvent validation`, the `validate.yml` dispatch path, the PR/merge-group and
+main push triggers, and the required check names `World model integrity` and
+`Tests and skill package`. Preserve read-only candidate validation, the trusted
+base-policy integrity gate and the proposed-core compiler gate. Advisory reports
+can evolve within this interface. When an advisory change calls base-policy code,
+it must tolerate older releases where that command or option is unavailable.
+The normal validation suite checks this interface and copies the actual proposed
+workflow through the published upgrade path into a disposable populated world.
+Hosts still verify the exact installed workflow against its published inventory.
+
 ### Selected-repository GitHub reads
 
 The following are GET-only observation sources, relative to `repos/OWNER/REPO`.
