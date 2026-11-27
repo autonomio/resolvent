@@ -1,5 +1,5 @@
 {
-  "core_version": "1.9.5",
+  "core_version": "1.9.6",
   "files": {
     ".agents/plugins/marketplace.json": {
       "bytes": 370,
@@ -1160,10 +1160,10 @@
       "sha256": "8f791718c2e0bd75eec557605fd3d7ac83f3f3a505bacec1c736a07e21a08414"
     },
     "tests/test_core_update.py": {
-      "bytes": 30337,
-      "git_blob": "0dfaea18a0748a449a322483deb342307c246cdf",
+      "bytes": 30710,
+      "git_blob": "aea6911620dab48cf3e0bad086f1270bea76afba",
       "mode": "100644",
-      "sha256": "c21d2988aad818445e3bf72b5529864f19075fbeff736c5865cee4232a156d98"
+      "sha256": "9423554029775942e4f507cedbbcefa5f80b68a7e8497c3a33addbb1f2d990bc"
     },
     "tests/test_file_limits.py": {
       "bytes": 3187,

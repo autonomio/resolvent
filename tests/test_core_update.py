@@ -372,14 +372,21 @@ class CoreTests(unittest.TestCase):
         policy=next(step for step in integrity['steps'] if step.get('name')=='Check out trusted policy')
         self.assertEqual(policy['with']['ref'],
                          "${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || 'main' }}")
+        self.assertNotIn('if', policy)
+        self.assertNotIn('continue-on-error', policy)
         gate=next(step for step in integrity['steps'] if step.get('name')=='Enforce model integrity and closed admission')
-        self.assertIn('--root candidate --policy-root policy --base policy --require-closure', gate['run'])
+        integrity_command=('python policy/scripts/compiler.py '
+                           '--root candidate --policy-root policy --base policy --require-closure')
+        self.assertEqual(gate['run'].replace(chr(92) + '\n', ' ').split(), integrity_command.split())
         self.assertNotIn('if', gate)
         self.assertNotIn('continue-on-error', gate)
         self.assertEqual(validate['permissions'],{'contents':'read'})
         checkouts=[step for step in validate['steps'] if step.get('uses','').startswith('actions/checkout@')]
         self.assertEqual([step['with']['persist-credentials'] for step in checkouts],['false'])
-        self.assertIn('python scripts/compiler.py --require-closure',[step.get('run') for step in validate['steps']])
+        closure=next(step for step in validate['steps']
+                     if step.get('run')=='python scripts/compiler.py --require-closure')
+        self.assertNotIn('if', closure)
+        self.assertNotIn('continue-on-error', closure)
         inventory=next(step for step in validate['steps'] if step.get('name')=='Verify committed core inventory')
         version=next(step for step in validate['steps'] if step.get('name')=='Require a version bump for core changes')
         self.assertEqual(inventory['if'],"github.repository == 'autonomio/resolvent'")
